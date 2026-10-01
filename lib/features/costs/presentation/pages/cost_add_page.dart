@@ -3,10 +3,12 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import 'package:ev_tool_app/core/domain/maintenance_costs.dart';
 import 'package:ev_tool_app/core/domain/numbers.dart';
 import 'package:ev_tool_app/core/extensions/context_extensions.dart';
+import 'package:ev_tool_app/core/routing/route_names.dart';
 import 'package:ev_tool_app/core/theme/app_colors.dart';
 import 'package:ev_tool_app/core/widgets/app_primary_button.dart';
 import 'package:ev_tool_app/core/widgets/app_sheet.dart';
@@ -46,6 +48,7 @@ class _CostAddPageState extends ConsumerState<CostAddPage> {
   String? _amountError;
   Timer? _draftTimer;
   bool _initialized = false;
+  bool _preselected = false;
 
   bool get _isEdit => widget.expenseId != null;
 
@@ -68,6 +71,26 @@ class _CostAddPageState extends ConsumerState<CostAddPage> {
     WidgetsBinding.instance.addPostFrameCallback((_) => _initForm());
     _amountController.addListener(_scheduleDraftSave);
     _noteController.addListener(_scheduleDraftSave);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    // 从车辆页添加车辆返回后补做默认车预选（挂载时无车的场景）
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || _isEdit || _vehicleId != null || _preselected) return;
+      final vehicles = ref.read(vehiclesProvider);
+      if (vehicles.isEmpty) return;
+      final defaultVehicle =
+          vehicles.where((v) => v.isDefault).firstOrNull ??
+          vehicles.firstOrNull;
+      if (defaultVehicle == null) return;
+      _preselected = true;
+      setState(() {
+        _vehicleId = defaultVehicle.id;
+        _vehicleName = defaultVehicle.name;
+      });
+    });
   }
 
   @override
@@ -100,6 +123,7 @@ class _CostAddPageState extends ConsumerState<CostAddPage> {
     final defaultVehicle =
         vehicles.where((v) => v.isDefault).firstOrNull ?? vehicles.firstOrNull;
     if (defaultVehicle != null) {
+      _preselected = true;
       setState(() {
         _vehicleId = defaultVehicle.id;
         _vehicleName = defaultVehicle.name;
@@ -387,6 +411,14 @@ class _CostAddPageState extends ConsumerState<CostAddPage> {
                             color: palette.textHint,
                           ),
                         ),
+                      ),
+                      TextButton(
+                        onPressed: () => context.push(RouteNames.vehicles),
+                        style: TextButton.styleFrom(
+                          visualDensity: VisualDensity.compact,
+                          padding: const EdgeInsets.symmetric(horizontal: 8),
+                        ),
+                        child: const Text('去添加'),
                       ),
                     ],
                   )
