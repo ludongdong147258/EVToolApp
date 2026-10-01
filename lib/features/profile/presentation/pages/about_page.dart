@@ -1,20 +1,194 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:go_router/go_router.dart';
 
 import 'package:ev_tool_app/core/constants/app_constants.dart';
+import 'package:ev_tool_app/core/extensions/context_extensions.dart';
+import 'package:ev_tool_app/core/routing/route_names.dart';
+import 'package:ev_tool_app/core/widgets/app_toast.dart';
+import 'package:ev_tool_app/features/profile/presentation/legal_texts.dart';
 
+/// 应用描述（移植小程序 about 页 APP_DESCRIPTION）。
+const String _appDescription =
+    '一款面向电车（新能源车辆）用户的实用工具小程序，提供充电记录管理、充电统计、'
+    '油电成本对比、峰谷电价计算等实用功能，帮助您更好地了解用车成本。';
+
+/// 关于页（子页）：品牌区 + 简介 + 信息列表。
 class AboutPage extends StatelessWidget {
   const AboutPage({super.key});
 
+  /// 复制联系邮箱到剪贴板。
+  Future<void> _copyEmail(BuildContext context) async {
+    try {
+      await Clipboard.setData(const ClipboardData(text: contactEmail));
+      if (context.mounted) showAppToast(context, '已复制');
+    } on Exception {
+      if (context.mounted) showAppToast(context, '复制失败');
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
+    final palette = context.palette;
+    final accent = palette.accent;
+
     return Scaffold(
-      appBar: AppBar(title: const Text('About')),
+      appBar: AppBar(title: const Text('关于应用')),
       body: ListView(
-        children: const [
-          SizedBox(height: 24),
-          ListTile(title: Text('应用名称'), trailing: Text(AppConstants.appName)),
-          ListTile(title: Text('版本'), trailing: Text(AppConstants.appVersion)),
+        padding: const EdgeInsets.fromLTRB(16, 24, 16, 32),
+        children: [
+          // 品牌区
+          Column(
+            children: [
+              Container(
+                width: 72,
+                height: 72,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      Color(accent.primary),
+                      Color(accent.heroGradientEnd),
+                    ],
+                  ),
+                  shape: BoxShape.circle,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Color(
+                        accent.primaryContainer,
+                      ).withValues(alpha: 0.3),
+                      blurRadius: 14,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: const Icon(
+                  Icons.ev_station_rounded,
+                  size: 36,
+                  color: Colors.white,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                '${AppConstants.appName} 电车工具',
+                style: context.textTheme.titleMedium?.copyWith(
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 20),
+          // 简介
+          Card(
+            margin: EdgeInsets.zero,
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: Text(
+                _appDescription,
+                style: TextStyle(
+                  fontSize: 13,
+                  height: 1.6,
+                  color: palette.onSurfaceVariant,
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+          // 信息列表
+          Card(
+            margin: EdgeInsets.zero,
+            child: Column(
+              children: [
+                _InfoRow(
+                  icon: Icons.content_copy_rounded,
+                  text: '联系邮箱',
+                  value: contactEmail,
+                  onTap: () => _copyEmail(context),
+                ),
+                Divider(
+                  height: 1,
+                  indent: 16,
+                  endIndent: 16,
+                  color: palette.divider,
+                ),
+                _InfoRow(
+                  icon: Icons.menu_book_rounded,
+                  text: '用户协议',
+                  onTap: () => context.push(RouteNames.agreement),
+                ),
+                Divider(
+                  height: 1,
+                  indent: 16,
+                  endIndent: 16,
+                  color: palette.divider,
+                ),
+                _InfoRow(
+                  icon: Icons.lock_rounded,
+                  text: '隐私政策',
+                  onTap: () => context.push(RouteNames.privacy),
+                ),
+                Divider(
+                  height: 1,
+                  indent: 16,
+                  endIndent: 16,
+                  color: palette.divider,
+                ),
+                const _InfoRow(
+                  icon: Icons.info_outline_rounded,
+                  text: '版本',
+                  value: AppConstants.appVersion,
+                ),
+              ],
+            ),
+          ),
         ],
+      ),
+    );
+  }
+}
+
+/// 信息列表行：图标 + 文案 + 值/箭头。
+class _InfoRow extends StatelessWidget {
+  const _InfoRow({
+    required this.icon,
+    required this.text,
+    this.value,
+    this.onTap,
+  });
+
+  final IconData icon;
+  final String text;
+  final String? value;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = context.palette;
+    return InkWell(
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+        child: Row(
+          children: [
+            Icon(icon, size: 20, color: palette.textSecondary),
+            const SizedBox(width: 12),
+            Expanded(child: Text(text, style: const TextStyle(fontSize: 14))),
+            if (value != null)
+              Flexible(
+                child: Text(
+                  value!,
+                  style: TextStyle(fontSize: 13, color: palette.textHint),
+                ),
+              ),
+            if (onTap != null)
+              Icon(
+                Icons.chevron_right_rounded,
+                size: 20,
+                color: palette.textHint,
+              ),
+          ],
+        ),
       ),
     );
   }

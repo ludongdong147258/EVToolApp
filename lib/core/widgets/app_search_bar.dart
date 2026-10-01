@@ -1,11 +1,11 @@
 import 'package:flutter/material.dart';
 
-import 'package:ev_tool_app/core/theme/app_colors.dart';
+import 'package:ev_tool_app/core/extensions/context_extensions.dart';
 
 class AppSearchBar extends StatelessWidget {
   const AppSearchBar({
     super.key,
-    this.hint = 'Search...',
+    this.hint = '搜索...',
     this.controller,
     this.onChanged,
     this.onSubmitted,
@@ -18,12 +18,12 @@ class AppSearchBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final palette = context.palette;
 
     return Container(
       height: 44,
       decoration: BoxDecoration(
-        color: isDark ? AppColors.cardDark : AppColors.searchBarBackground,
+        color: palette.inputBg,
         borderRadius: BorderRadius.circular(22),
       ),
       child: TextField(
@@ -32,15 +32,8 @@ class AppSearchBar extends StatelessWidget {
         onSubmitted: onSubmitted,
         decoration: InputDecoration(
           hintText: hint,
-          hintStyle: const TextStyle(
-            color: AppColors.textTertiary,
-            fontSize: 14,
-          ),
-          prefixIcon: const Icon(
-            Icons.search,
-            size: 20,
-            color: AppColors.textTertiary,
-          ),
+          hintStyle: TextStyle(color: palette.textHint, fontSize: 14),
+          prefixIcon: Icon(Icons.search, size: 20, color: palette.textHint),
           border: InputBorder.none,
           contentPadding: const EdgeInsets.symmetric(vertical: 12),
         ),

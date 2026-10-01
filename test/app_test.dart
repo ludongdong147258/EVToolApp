@@ -28,11 +28,10 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    // Assert — 4 nav items visible on the home shell
-    // （"首页" 同时出现在页面标题和导航标签中，故用 findsWidgets）
-    expect(find.text('首页'), findsWidgets);
-    expect(find.text('充电'), findsOneWidget);
-    expect(find.text('工具'), findsOneWidget);
+    // Assert — 4 nav items visible on the records shell
+    expect(find.text('充电记录'), findsWidgets);
+    expect(find.text('养车支出'), findsOneWidget);
+    expect(find.text('实用工具'), findsOneWidget);
     expect(find.text('我的'), findsOneWidget);
   });
 }

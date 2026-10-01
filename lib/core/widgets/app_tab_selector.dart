@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'package:ev_tool_app/core/theme/app_colors.dart';
+import 'package:ev_tool_app/core/extensions/context_extensions.dart';
 
 class AppTabSelector extends StatelessWidget {
   const AppTabSelector({
@@ -22,15 +22,11 @@ class AppTabSelector extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
-    final surfaceColor = colorScheme.surface;
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final palette = context.palette;
 
     return Container(
       decoration: BoxDecoration(
-        color: isDark
-            ? AppColors.cardDark.withValues(alpha: 0.5)
-            : AppColors.glassWhite,
+        color: palette.inputBg,
         borderRadius: BorderRadius.circular(22),
       ),
       child: Row(
@@ -48,7 +44,7 @@ class AppTabSelector extends StatelessWidget {
                   padding: const EdgeInsets.symmetric(vertical: 10),
                   decoration: BoxDecoration(
                     color: isActive
-                        ? (activeColor ?? surfaceColor)
+                        ? (activeColor ?? palette.surfaceCard)
                         : Colors.transparent,
                     borderRadius: BorderRadius.circular(22),
                   ),
@@ -59,8 +55,8 @@ class AppTabSelector extends StatelessWidget {
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
                       color: isActive
-                          ? (activeTextColor ?? colorScheme.onSurface)
-                          : (inactiveTextColor ?? colorScheme.onSurfaceVariant),
+                          ? (activeTextColor ?? palette.primaryContainer)
+                          : (inactiveTextColor ?? palette.onSurfaceVariant),
                     ),
                   ),
                 ),

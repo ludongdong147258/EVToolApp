@@ -1,0 +1,616 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
+import 'package:url_launcher/url_launcher.dart';
+
+import 'package:ev_tool_app/core/domain/charge_map.dart';
+import 'package:ev_tool_app/core/domain/charge_records.dart';
+import 'package:ev_tool_app/core/domain/date_utils.dart';
+import 'package:ev_tool_app/core/domain/numbers.dart';
+import 'package:ev_tool_app/core/domain/vehicles.dart';
+import 'package:ev_tool_app/core/extensions/context_extensions.dart';
+import 'package:ev_tool_app/core/routing/route_names.dart';
+import 'package:ev_tool_app/core/theme/app_colors.dart';
+import 'package:ev_tool_app/core/widgets/app_sheet.dart';
+import 'package:ev_tool_app/core/widgets/app_toast.dart';
+import 'package:ev_tool_app/core/widgets/empty_state.dart';
+import 'package:ev_tool_app/core/widgets/gradient_hero_card.dart';
+import 'package:ev_tool_app/features/maps/presentation/widgets/apple_map_view.dart';
+import 'package:ev_tool_app/features/records/presentation/providers/records_provider.dart';
+
+/// 无点位记录时地图兜底（北京）。
+const double _fallbackLatitude = 39.904;
+const double _fallbackLongitude = 116.407;
+
+/// 地图区高度（px）。
+const double _mapHeight = 320;
+
+/// 高频城市条形卡取前 N 名。
+const int _cityTopN = 3;
+
+/* 时间范围选项（key → filterRecords 的 monthKey/year 入参） */
+const List<({String key, String text})> _rangeOptions = [
+  (key: 'all', text: '全部'),
+  (key: 'year', text: '本年'),
+  (key: 'month', text: '本月'),
+];
+
+/* 类型选项（null = 全部） */
+const List<({String? key, String text})> _typeOptions = [
+  (key: null, text: '全部'),
+  (key: 'home', text: '家充'),
+  (key: 'fast', text: '快充'),
+];
+
+/// 充电点位地图（移植小程序 charge-map）。
+///
+/// 个人充电地点分布回顾：散点标记（家充绿点 / 快充橙点），无路线绘制；
+/// 渐变 Hero 统计卡 + 高频城市条形；不申请定位权限（点位均为手动录入）。
+class ChargeMapPage extends ConsumerStatefulWidget {
+  const ChargeMapPage({super.key});
+
+  @override
+  ConsumerState<ChargeMapPage> createState() => _ChargeMapPageState();
+}
+
+class _ChargeMapPageState extends ConsumerState<ChargeMapPage> {
+  String? _vehicleFilter; // null = 全部车辆
+  String? _typeFilter; // null | "fast" | "home"
+  String _rangeFilter = 'all'; // "all" | "year" | "month"
+  String? _selectedKey; // 选中点位（groups.key），驱动标注气泡
+  MapViewport _viewport = const MapViewport(
+    latitude: _fallbackLatitude,
+    longitude: _fallbackLongitude,
+    zoom: 4,
+  );
+  bool _centerLocked = false; // 首次定位后锁定，切筛选不重置视野
+
+  @override
+  Widget build(BuildContext context) {
+    final records = ref.watch(recordsProvider);
+    final vehicles = ref.watch(vehiclesProvider);
+    final filtered = _filterRecords(records);
+    final groups = groupRecordsByLocation(filtered);
+    final stats = calcLocationStats(filtered);
+    final cityTop = calcCityTop(filtered, _cityTopN);
+
+    final viewport = _centerLocked
+        ? _viewport
+        : getMapCenter(
+            filtered,
+            fallbackLatitude: _fallbackLatitude,
+            fallbackLongitude: _fallbackLongitude,
+          );
+    if (!_centerLocked) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          _viewport = viewport;
+          _centerLocked = true;
+        }
+      });
+    }
+
+    return Scaffold(
+      appBar: AppBar(title: const Text('充电点位地图')),
+      body: SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            _buildFilterRow(vehicles),
+            const SizedBox(height: 12),
+            _buildMap(groups, viewport),
+            const SizedBox(height: 16),
+            if (groups.isEmpty)
+              _buildMapEmpty(records)
+            else ...[
+              _buildHeroStats(groups, stats),
+              if (cityTop.isNotEmpty) ...[
+                const SizedBox(height: 12),
+                _buildCityTopCard(cityTop),
+              ],
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  /* --- 数据推导 --- */
+
+  List<ChargeRecord> _filterRecords(List<ChargeRecord> records) {
+    final now = DateTime.now();
+    final String? monthKey = _rangeFilter == 'month'
+        ? getCurrentMonthKey(now: now)
+        : null;
+    final String? year = _rangeFilter == 'year' ? '${now.year}' : null;
+    return filterRecords(
+      records,
+      RecordFilters(
+        monthKey: monthKey,
+        year: year,
+        type: _typeFilter,
+        vehicleId: _vehicleFilter,
+      ),
+    );
+  }
+
+  /* --- 筛选 --- */
+
+  void _handleVehicleFilter(String vehicleId) {
+    setState(() {
+      _vehicleFilter = _vehicleFilter == vehicleId ? null : vehicleId;
+    });
+  }
+
+  void _handleTypeFilter(String? type) {
+    setState(() {
+      _typeFilter = type;
+    });
+  }
+
+  void _handleRangeFilter(String range) {
+    setState(() {
+      _rangeFilter = range;
+    });
+  }
+
+  /* --- 地图与点位 --- */
+
+  Widget _buildFilterRow(List<Vehicle> vehicles) {
+    final vehicleOptions = [
+      for (final vehicle in vehicles) (key: vehicle.id, text: vehicle.name),
+    ];
+    return SizedBox(
+      height: 36,
+      child: ListView(
+        scrollDirection: Axis.horizontal,
+        children: [
+          const _FilterLabel('时间'),
+          for (final option in _rangeOptions)
+            _FilterChip(
+              text: option.text,
+              active: _rangeFilter == option.key,
+              onTap: () => _handleRangeFilter(option.key),
+            ),
+          const _FilterLabel('类型', indent: true),
+          for (final option in _typeOptions)
+            _FilterChip(
+              text: option.text,
+              active: _typeFilter == option.key,
+              onTap: () => _handleTypeFilter(option.key),
+            ),
+          if (vehicleOptions.isNotEmpty) ...[
+            const _FilterLabel('车辆', indent: true),
+            for (final option in vehicleOptions)
+              _FilterChip(
+                text: option.text,
+                active: _vehicleFilter == option.key,
+                onTap: () => _handleVehicleFilter(option.key),
+              ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMap(List<LocationGroup> groups, MapViewport viewport) {
+    final markers = buildLocationMarkers(groups, selectedKey: _selectedKey);
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(AppColors.radiusLg),
+      child: SizedBox(
+        height: _mapHeight,
+        child: Stack(
+          children: [
+            Positioned.fill(
+              child: AppleMapView(
+                initialCameraPosition: MapViewCameraPosition(
+                  latitude: viewport.latitude,
+                  longitude: viewport.longitude,
+                  zoom: viewport.zoom,
+                ),
+                markers: [
+                  for (final marker in markers)
+                    MapViewMarker(
+                      id: marker.id,
+                      latitude: marker.latitude,
+                      longitude: marker.longitude,
+                      color: marker.isHome
+                          ? AppColors.homeCharge
+                          : AppColors.fastCharge,
+                      isSelected: marker.isSelected,
+                      calloutText: marker.calloutText,
+                      onTap: () => _openGroupSheet(groups[marker.id]),
+                    ),
+                ],
+              ),
+            ),
+            Positioned(
+              left: 8,
+              bottom: 8,
+              child: _MapLegend(pointCount: groups.length),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// marker 点击 → 弹出该点位记录列表。
+  Future<void> _openGroupSheet(LocationGroup group) async {
+    setState(() => _selectedKey = group.key);
+    await showAppSheet(
+      context: context,
+      title: '${group.locationName} · 共${group.count}次',
+      builder: (_) => AppSheetScrollBody(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            for (final record in group.records)
+              _GroupRecordTile(
+                record: record,
+                onTap: () {
+                  Navigator.of(context).pop();
+                  context.push('${RouteNames.recordAdd}?id=${record.id}');
+                },
+              ),
+            const SizedBox(height: 12),
+            OutlinedButton.icon(
+              onPressed: () => _navigateTo(group),
+              icon: const Icon(Icons.arrow_forward, size: 16),
+              label: const Text('导航到此点位'),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (mounted) {
+      setState(() => _selectedKey = null);
+    }
+  }
+
+  /// 唤起腾讯地图网页导航（group 坐标为用户录入的真实点位坐标）。
+  Future<void> _navigateTo(LocationGroup group) async {
+    final url = Uri.https('apis.map.qq.com', '/uri/v1/routeplan', {
+      'type': 'drive',
+      'to': group.locationName,
+      'tocoord': '${group.latitude},${group.longitude}',
+    });
+    try {
+      final launched = await launchUrl(
+        url,
+        mode: LaunchMode.externalApplication,
+      );
+      if (!launched && mounted) {
+        showAppToast(context, '唤起导航失败');
+      }
+    } on Exception {
+      if (mounted) {
+        showAppToast(context, '唤起导航失败');
+      }
+    }
+  }
+
+  void _goAddRecord() {
+    context.push(RouteNames.recordAdd);
+  }
+
+  /* --- 统计面板 --- */
+
+  Widget _buildHeroStats(List<LocationGroup> groups, LocationStats stats) {
+    return GradientHeroCard(
+      child: HeroStatsRow(
+        items: [
+          HeroStatItem(label: '充电点位', value: '${groups.length}'),
+          HeroStatItem(label: '充电次数', value: '${stats.recordCount}'),
+          HeroStatItem(label: '家充占比', value: '${stats.homeRatio}%'),
+          HeroStatItem(label: '快充占比', value: '${stats.fastRatio}%'),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildCityTopCard(List<({String city, int count})> cityTop) {
+    final maxCount = cityTop.first.count;
+    final palette = context.palette;
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: palette.surfaceCard,
+        borderRadius: BorderRadius.circular(AppColors.radiusLg),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text('高频充电城市', style: context.textTheme.titleSmall),
+          const SizedBox(height: 12),
+          for (var i = 0; i < cityTop.length; i++)
+            _CityTopItem(
+              rank: i + 1,
+              city: cityTop[i].city,
+              count: cityTop[i].count,
+              percent: maxCount > 0 ? cityTop[i].count / maxCount : 0,
+            ),
+        ],
+      ),
+    );
+  }
+
+  /* --- 空态 --- */
+
+  Widget _buildMapEmpty(List<ChargeRecord> records) {
+    final hasLocatedEver = records.any(
+      (record) => record.latitude != null && record.longitude != null,
+    );
+    return EmptyState(
+      icon: Icons.place_outlined,
+      title: hasLocatedEver ? '当前筛选下没有充电点位' : '还没有充电地点记录',
+      subtitle: hasLocatedEver ? '试试切换时间范围或车辆筛选' : '新增充电记录时会自动定位充电地点，即可在这里回顾分布',
+      ctaText: hasLocatedEver ? null : '去添加充电记录',
+      onCta: hasLocatedEver ? null : _goAddRecord,
+    );
+  }
+}
+
+/// 筛选行前缀文案（时间 / 类型 / 车辆）。
+class _FilterLabel extends StatelessWidget {
+  const _FilterLabel(this.text, {this.indent = false});
+
+  final String text;
+  final bool indent;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: EdgeInsets.only(left: indent ? 12 : 4, top: 9),
+      child: Text(
+        text,
+        style: context.textTheme.bodySmall?.copyWith(
+          color: context.palette.textHint,
+        ),
+      ),
+    );
+  }
+}
+
+/// 筛选 chip（小号）。
+class _FilterChip extends StatelessWidget {
+  const _FilterChip({
+    required this.text,
+    required this.active,
+    required this.onTap,
+  });
+
+  final String text;
+  final bool active;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = context.palette;
+    return Padding(
+      padding: const EdgeInsets.only(right: 8),
+      child: Material(
+        color: active ? palette.primary : palette.surfaceContainer,
+        borderRadius: BorderRadius.circular(AppColors.radiusMd),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(AppColors.radiusMd),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            child: Text(
+              text,
+              style: context.textTheme.bodySmall?.copyWith(
+                color: active ? Colors.white : palette.onSurfaceVariant,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// 地图左下角图例：颜色含义 + 当前点位数。
+class _MapLegend extends StatelessWidget {
+  const _MapLegend({required this.pointCount});
+
+  final int pointCount;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = context.palette;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      decoration: BoxDecoration(
+        color: palette.surfaceCard.withValues(alpha: 0.9),
+        borderRadius: BorderRadius.circular(AppColors.radiusMd),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          const _LegendDot(AppColors.homeCharge),
+          const SizedBox(width: 4),
+          Text('家充', style: context.textTheme.bodySmall),
+          const SizedBox(width: 8),
+          const _LegendDot(AppColors.fastCharge),
+          const SizedBox(width: 4),
+          Text('快充', style: context.textTheme.bodySmall),
+          const SizedBox(width: 8),
+          Text(
+            '共 $pointCount 个点位',
+            style: context.textTheme.bodySmall?.copyWith(
+              color: palette.textHint,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _LegendDot extends StatelessWidget {
+  const _LegendDot(this.color);
+
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 8,
+      height: 8,
+      decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+    );
+  }
+}
+
+/// 高频城市条目：名次徽标 + 城市名 + 次数条形（长度相对 TOP1）。
+class _CityTopItem extends StatelessWidget {
+  const _CityTopItem({
+    required this.rank,
+    required this.city,
+    required this.count,
+    required this.percent,
+  });
+
+  final int rank;
+  final String city;
+  final int count;
+  final double percent;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = context.palette;
+    final isFirst = rank == 1;
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Row(
+        children: [
+          Container(
+            width: 20,
+            height: 20,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              color: isFirst
+                  ? palette.primary
+                  : palette.surfaceContainerHighest,
+              shape: BoxShape.circle,
+            ),
+            child: Text(
+              '$rank',
+              style: TextStyle(
+                fontSize: 11,
+                color: isFirst ? Colors.white : palette.onSurfaceVariant,
+              ),
+            ),
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        city,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: context.textTheme.bodyMedium,
+                      ),
+                    ),
+                    Text(
+                      '$count次',
+                      style: context.textTheme.bodySmall?.copyWith(
+                        color: palette.textHint,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 6),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(2),
+                  child: SizedBox(
+                    height: 6,
+                    child: Stack(
+                      children: [
+                        Container(color: palette.surfaceContainer),
+                        FractionallySizedBox(
+                          alignment: Alignment.centerLeft,
+                          widthFactor: percent.clamp(0, 1),
+                          child: Container(color: palette.primary),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// 弹层内记录条目：日期 + 类型 + 花费/度数，点击跳编辑。
+class _GroupRecordTile extends StatelessWidget {
+  const _GroupRecordTile({required this.record, required this.onTap});
+
+  final ChargeRecord record;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = context.palette;
+    final isHome = record.type == 'home';
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(AppColors.radiusMd),
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 10),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Expanded(
+                  child: Text(record.date, style: context.textTheme.bodyMedium),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 2,
+                  ),
+                  decoration: BoxDecoration(
+                    color: isHome
+                        ? AppColors.homeCharge.withValues(alpha: 0.12)
+                        : AppColors.fastCharge.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(AppColors.radiusSm),
+                  ),
+                  child: Text(
+                    typeDefaultTitles[record.type] ?? record.type,
+                    style: TextStyle(
+                      fontSize: 11,
+                      color: isHome
+                          ? AppColors.homeCharge
+                          : AppColors.fastCharge,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 4),
+            Text(
+              '¥${formatYuan(record.cost)} · ${record.energy}度',
+              style: context.textTheme.bodySmall?.copyWith(
+                color: palette.textSecondary,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}

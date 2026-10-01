@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'package:ev_tool_app/core/theme/app_colors.dart';
+import 'package:ev_tool_app/core/extensions/context_extensions.dart';
 
 class AppPrimaryButton extends StatelessWidget {
   const AppPrimaryButton({
@@ -9,9 +9,9 @@ class AppPrimaryButton extends StatelessWidget {
     this.onTap,
     this.backgroundColor,
     this.textColor,
-    this.borderRadius = 10,
+    this.borderRadius = 12,
     this.height = 50,
-    this.fontSize = 15,
+    this.fontSize = 16,
   });
 
   final String text;
@@ -24,7 +24,7 @@ class AppPrimaryButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+    final palette = context.palette;
 
     return SizedBox(
       width: double.infinity,
@@ -35,8 +35,8 @@ class AppPrimaryButton extends StatelessWidget {
         child: ElevatedButton(
           onPressed: onTap,
           style: ElevatedButton.styleFrom(
-            backgroundColor: backgroundColor ?? AppColors.primaryTeal,
-            foregroundColor: textColor ?? colorScheme.onPrimary,
+            backgroundColor: backgroundColor ?? palette.primaryContainer,
+            foregroundColor: textColor ?? Colors.white,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(borderRadius),
             ),

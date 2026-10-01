@@ -1,110 +1,151 @@
 import 'package:flutter/material.dart';
 
+import 'package:ev_tool_app/core/domain/theme_colors.dart';
 import 'package:ev_tool_app/core/theme/app_colors.dart';
+import 'package:ev_tool_app/core/theme/app_palette.dart';
 import 'package:ev_tool_app/core/theme/app_typography.dart';
 
+/// Material 3 主题构建：品牌色由 [AccentTheme] 参数化，支持运行时换肤。
 class AppTheme {
   AppTheme._();
 
-  static ThemeData get lightTheme => ThemeData(
-    useMaterial3: true,
-    brightness: Brightness.light,
-    colorScheme: const ColorScheme.light(
-      primary: AppColors.primaryTeal,
-      secondary: AppColors.blue,
-      surface: AppColors.backgroundCoolWhite,
-      error: AppColors.error,
-      onPrimary: Colors.white,
-      onSurface: AppColors.textPrimary,
-    ),
-    textTheme: AppTypography.light,
-    scaffoldBackgroundColor: AppColors.backgroundCoolWhite,
-    appBarTheme: const AppBarTheme(
-      elevation: 0,
-      centerTitle: true,
-      backgroundColor: Colors.transparent,
-      foregroundColor: AppColors.textPrimary,
-    ),
-    cardTheme: CardThemeData(
-      elevation: 0,
-      color: Colors.white,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-    ),
-    inputDecorationTheme: const InputDecorationTheme(
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.all(Radius.circular(10)),
-        borderSide: BorderSide(color: AppColors.borderGray),
-      ),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.all(Radius.circular(10)),
-        borderSide: BorderSide(color: AppColors.borderGray),
-      ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.all(Radius.circular(10)),
-        borderSide: BorderSide(color: AppColors.primaryTeal),
-      ),
-      contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-      hintStyle: TextStyle(color: AppColors.textPlaceholder, fontSize: 14),
-    ),
-    elevatedButtonTheme: ElevatedButtonThemeData(
-      style: ElevatedButton.styleFrom(
-        backgroundColor: AppColors.primaryTeal,
-        foregroundColor: Colors.white,
-        minimumSize: const Size(double.infinity, 50),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
-      ),
-    ),
-  );
+  static ThemeData light(AccentTheme accent) =>
+      _build(Brightness.light, accent);
 
-  static ThemeData get darkTheme => ThemeData(
-    useMaterial3: true,
-    brightness: Brightness.dark,
-    colorScheme: const ColorScheme.dark(
-      primary: AppColors.primaryTeal,
-      secondary: AppColors.blue,
-      surface: AppColors.backgroundDark,
-      error: AppColors.error,
-      onPrimary: Colors.black,
-      onSurface: Colors.white,
-    ),
-    textTheme: AppTypography.dark,
-    scaffoldBackgroundColor: AppColors.backgroundDark,
-    appBarTheme: const AppBarTheme(
-      elevation: 0,
-      centerTitle: true,
-      backgroundColor: Colors.transparent,
-      foregroundColor: Colors.white,
-    ),
-    cardTheme: CardThemeData(
-      elevation: 0,
-      color: AppColors.cardDark,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
-    ),
-    inputDecorationTheme: const InputDecorationTheme(
-      border: OutlineInputBorder(
-        borderRadius: BorderRadius.all(Radius.circular(10)),
-        borderSide: BorderSide(color: AppColors.borderGray),
+  static ThemeData dark(AccentTheme accent) => _build(Brightness.dark, accent);
+
+  static ThemeData _build(Brightness brightness, AccentTheme accent) {
+    final palette = EvPalette(brightness: brightness, accent: accent);
+    final isDark = brightness == Brightness.dark;
+
+    return ThemeData(
+      useMaterial3: true,
+      brightness: brightness,
+      colorScheme: ColorScheme(
+        brightness: brightness,
+        primary: palette.primary,
+        onPrimary: Colors.white,
+        primaryContainer: palette.primaryContainer,
+        onPrimaryContainer: Colors.white,
+        secondary: palette.secondary,
+        onSecondary: Colors.white,
+        secondaryContainer: palette.secondaryContainer,
+        onSecondaryContainer: palette.onSecondaryContainer,
+        surface: palette.surfaceCard,
+        onSurface: palette.onSurface,
+        surfaceContainerHighest: palette.surfaceContainerHighest,
+        onSurfaceVariant: palette.onSurfaceVariant,
+        outlineVariant: palette.outlineVariant,
+        error: palette.error,
+        onError: Colors.white,
+        errorContainer: palette.errorContainer,
+        onErrorContainer: palette.onErrorContainer,
       ),
-      enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.all(Radius.circular(10)),
-        borderSide: BorderSide(color: AppColors.borderGray),
+      scaffoldBackgroundColor: palette.backgroundPale,
+      extensions: [palette],
+      textTheme: isDark ? AppTypography.dark : AppTypography.light,
+      appBarTheme: AppBarTheme(
+        elevation: 0,
+        scrolledUnderElevation: 0,
+        centerTitle: true,
+        backgroundColor: palette.backgroundPale,
+        foregroundColor: palette.onSurface,
+        titleTextStyle: (isDark ? AppTypography.dark : AppTypography.light)
+            .titleLarge
+            ?.copyWith(color: palette.onSurface),
       ),
-      focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.all(Radius.circular(10)),
-        borderSide: BorderSide(color: AppColors.primaryTeal),
+      cardTheme: CardThemeData(
+        elevation: 0,
+        color: palette.surfaceCard,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppColors.radiusLg),
+        ),
       ),
-      contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-      hintStyle: TextStyle(color: AppColors.textTertiary, fontSize: 14),
-    ),
-    elevatedButtonTheme: ElevatedButtonThemeData(
-      style: ElevatedButton.styleFrom(
-        backgroundColor: AppColors.primaryTeal,
-        foregroundColor: Colors.black,
-        minimumSize: const Size(double.infinity, 50),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        textStyle: const TextStyle(fontSize: 15, fontWeight: FontWeight.w700),
+      dividerTheme: DividerThemeData(color: palette.divider, thickness: 0.5),
+      inputDecorationTheme: InputDecorationTheme(
+        filled: true,
+        fillColor: palette.inputBg,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppColors.radiusMd),
+          borderSide: BorderSide.none,
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppColors.radiusMd),
+          borderSide: BorderSide.none,
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppColors.radiusMd),
+          borderSide: BorderSide(color: palette.primary, width: 1.5),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppColors.radiusMd),
+          borderSide: const BorderSide(color: AppColors.error, width: 1),
+        ),
+        focusedErrorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(AppColors.radiusMd),
+          borderSide: const BorderSide(color: AppColors.error, width: 1.5),
+        ),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 14,
+        ),
+        hintStyle: TextStyle(color: palette.textHint, fontSize: 14),
       ),
-    ),
-  );
+      filledButtonTheme: FilledButtonThemeData(
+        style: FilledButton.styleFrom(
+          backgroundColor: palette.primaryContainer,
+          foregroundColor: Colors.white,
+          minimumSize: const Size.fromHeight(50),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppColors.radiusLg),
+          ),
+          textStyle: const TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+        ),
+      ),
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(foregroundColor: palette.primary),
+      ),
+      bottomSheetTheme: BottomSheetThemeData(
+        backgroundColor: palette.surfaceCard,
+        modalBackgroundColor: palette.surfaceCard,
+        shape: const RoundedRectangleBorder(
+          borderRadius: BorderRadius.vertical(
+            top: Radius.circular(AppColors.radiusXl),
+          ),
+        ),
+        showDragHandle: false,
+      ),
+      snackBarTheme: SnackBarThemeData(
+        backgroundColor: palette.onSurface,
+        contentTextStyle: TextStyle(color: palette.backgroundPale),
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppColors.radiusLg),
+        ),
+      ),
+      switchTheme: SwitchThemeData(
+        thumbColor: WidgetStateProperty.resolveWith(
+          (states) => states.contains(WidgetState.selected)
+              ? Colors.white
+              : palette.surfaceContainerHighest,
+        ),
+        trackColor: WidgetStateProperty.resolveWith(
+          (states) => states.contains(WidgetState.selected)
+              ? palette.primaryContainer
+              : palette.surfaceContainer,
+        ),
+      ),
+      checkboxTheme: CheckboxThemeData(
+        fillColor: WidgetStateProperty.resolveWith(
+          (states) => states.contains(WidgetState.selected)
+              ? palette.primaryContainer
+              : Colors.transparent,
+        ),
+        side: BorderSide(color: palette.outlineVariant, width: 1.5),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppColors.radiusSm),
+        ),
+      ),
+    );
+  }
 }

@@ -1,85 +1,40 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import 'package:ev_tool_app/core/routing/access_guard.dart';
 import 'package:ev_tool_app/core/routing/route_names.dart';
 import 'package:ev_tool_app/core/widgets/app_error_widget.dart';
 import 'package:ev_tool_app/core/widgets/main_shell.dart';
-import 'package:ev_tool_app/features/auth/presentation/auth_state.dart';
-import 'package:ev_tool_app/features/auth/presentation/pages/login_page.dart';
-import 'package:ev_tool_app/features/charging/presentation/pages/charging_page.dart';
-import 'package:ev_tool_app/features/home/presentation/pages/home_page.dart';
+import 'package:ev_tool_app/features/costs/presentation/pages/cost_add_page.dart';
+import 'package:ev_tool_app/features/costs/presentation/pages/cost_report_page.dart';
+import 'package:ev_tool_app/features/equipment/presentation/pages/equipment_page.dart';
+import 'package:ev_tool_app/features/maps/presentation/pages/charge_map_page.dart';
+import 'package:ev_tool_app/features/costs/presentation/pages/cost_list_page.dart';
+import 'package:ev_tool_app/features/handbooks/presentation/pages/modification_compliance_page.dart';
+import 'package:ev_tool_app/features/handbooks/presentation/pages/warranty_handbook_page.dart';
+import 'package:ev_tool_app/features/memos/presentation/pages/inspection_memo_page.dart';
 import 'package:ev_tool_app/features/profile/presentation/pages/about_page.dart';
+import 'package:ev_tool_app/features/profile/presentation/pages/agreement_page.dart';
+import 'package:ev_tool_app/features/profile/presentation/pages/backup_restore_page.dart';
+import 'package:ev_tool_app/features/profile/presentation/pages/privacy_page.dart';
 import 'package:ev_tool_app/features/profile/presentation/pages/profile_page.dart';
-import 'package:ev_tool_app/features/profile/presentation/pages/settings_page.dart';
+import 'package:ev_tool_app/features/records/presentation/pages/record_add_page.dart';
+import 'package:ev_tool_app/features/records/presentation/pages/records_page.dart';
+import 'package:ev_tool_app/features/tools/presentation/pages/fuel_ev_calc_page.dart';
+import 'package:ev_tool_app/features/tools/presentation/pages/home_charger_calc_page.dart';
+import 'package:ev_tool_app/features/tools/presentation/pages/peak_valley_calc_page.dart';
+import 'package:ev_tool_app/features/tools/presentation/pages/range_calc_page.dart';
+import 'package:ev_tool_app/features/stations/presentation/pages/nearby_stations_page.dart';
+import 'package:ev_tool_app/features/stats/presentation/pages/annual_report_page.dart';
+import 'package:ev_tool_app/features/stats/presentation/pages/charge_stats_page.dart';
 import 'package:ev_tool_app/features/tools/presentation/pages/tools_page.dart';
+import 'package:ev_tool_app/features/vehicles/presentation/pages/vehicles_page.dart';
+import 'package:ev_tool_app/features/profile/presentation/pages/settings_page.dart';
 
-final _rootNavigatorKey = GlobalKey<NavigatorState>();
-
-/// Validate that a redirect target is a known internal route.
-bool _isValidRoute(String path) {
-  const validRoutes = <String>{
-    RouteNames.home,
-    RouteNames.charging,
-    RouteNames.tools,
-    RouteNames.profile,
-    RouteNames.login,
-    RouteNames.settings,
-    RouteNames.about,
-  };
-  return validRoutes.contains(path);
-}
-
-/// Bridges Riverpod provider changes into GoRouter's ChangeNotifier world:
-/// any auth state change re-runs the router redirect.
-class GoRouterRefreshStream extends ChangeNotifier {
-  GoRouterRefreshStream(this._ref) {
-    _authSubscription = _ref.listen<AuthState>(
-      authNotifierProvider,
-      (_, _) => notifyListeners(),
-      fireImmediately: false,
-    );
-  }
-
-  final Ref _ref;
-  late final ProviderSubscription<AuthState> _authSubscription;
-
-  @override
-  void dispose() {
-    _authSubscription.close();
-    super.dispose();
-  }
-}
-
+/// 全量本地应用，无登录守卫；auth 代码保留但未挂载（见 access_guard.dart）。
 final goRouterProvider = Provider<GoRouter>((ref) {
   return GoRouter(
-    navigatorKey: _rootNavigatorKey,
-    initialLocation: RouteNames.home,
-    debugLogDiagnostics: kDebugMode,
-    refreshListenable: GoRouterRefreshStream(ref),
-    redirect: (context, state) {
-      // 在 redirect 回调内读取 auth 状态，避免 GoRouter 因 ref.watch 被重建
-      final isAuthenticated =
-          ref.read(authNotifierProvider) is AuthAuthenticated;
-      final isLoginRoute = state.matchedLocation == RouteNames.login;
-
-      // 已登录用户访问登录页时跳转到原始目标页面或首页
-      if (isAuthenticated && isLoginRoute) {
-        final from = state.uri.queryParameters['from'];
-        if (from != null && from.isNotEmpty && _isValidRoute(from)) {
-          return from;
-        }
-        return RouteNames.home;
-      }
-
-      // 受保护路由（我的）：校验登录态，未登录跳登录页并保留目标位置。
-      return resolveProtectedAccess(
-        location: state.matchedLocation,
-        isAuthenticated: isAuthenticated,
-      );
-    },
+    initialLocation: RouteNames.records,
     routes: [
       StatefulShellRoute.indexedStack(
         builder: (context, state, navigationShell) {
@@ -89,18 +44,18 @@ final goRouterProvider = Provider<GoRouter>((ref) {
           StatefulShellBranch(
             routes: [
               GoRoute(
-                path: RouteNames.home,
-                name: 'home',
-                builder: (context, state) => const HomePage(),
+                path: RouteNames.records,
+                name: 'records',
+                builder: (context, state) => const RecordsPage(),
               ),
             ],
           ),
           StatefulShellBranch(
             routes: [
               GoRoute(
-                path: RouteNames.charging,
-                name: 'charging',
-                builder: (context, state) => const ChargingPage(),
+                path: RouteNames.costs,
+                name: 'costs',
+                builder: (context, state) => const CostListPage(),
               ),
             ],
           ),
@@ -124,27 +79,126 @@ final goRouterProvider = Provider<GoRouter>((ref) {
           ),
         ],
       ),
-      GoRoute(
-        path: RouteNames.login,
-        name: 'login',
-        builder: (context, state) => const LoginPage(),
-      ),
-      GoRoute(
-        path: RouteNames.settings,
-        name: 'settings',
-        builder: (context, state) => const SettingsPage(),
-      ),
-      GoRoute(
-        path: RouteNames.about,
-        name: 'about',
-        builder: (context, state) => const AboutPage(),
-      ),
+      ..._subRoutes(),
     ],
     errorBuilder: (context, state) => Scaffold(
       body: AppErrorWidget(
         message: 'Page not found: ${state.error}',
-        onRetry: () => context.go(RouteNames.home),
+        onRetry: () => context.go(RouteNames.records),
       ),
     ),
   );
 });
+
+/// push 子页（逐阶段由 FeaturePlaceholderPage 替换为真实页面）。
+List<GoRoute> _subRoutes() {
+  return [
+    GoRoute(
+      path: RouteNames.recordAdd,
+      name: 'record-add',
+      builder: (context, state) =>
+          RecordAddPage(recordId: state.uri.queryParameters['id']),
+    ),
+    GoRoute(
+      path: RouteNames.chargeStats,
+      name: 'charge-stats',
+      builder: (context, state) => const ChargeStatsPage(),
+    ),
+    GoRoute(
+      path: RouteNames.annualReport,
+      name: 'annual-report',
+      builder: (context, state) => const AnnualReportPage(),
+    ),
+    GoRoute(
+      path: RouteNames.chargeMap,
+      name: 'charge-map',
+      builder: (context, state) => const ChargeMapPage(),
+    ),
+    GoRoute(
+      path: RouteNames.costAdd,
+      name: 'cost-add',
+      builder: (context, state) =>
+          CostAddPage(expenseId: state.uri.queryParameters['id']),
+    ),
+    GoRoute(
+      path: RouteNames.costReport,
+      name: 'cost-report',
+      builder: (context, state) => const CostReportPage(),
+    ),
+    GoRoute(
+      path: RouteNames.vehicles,
+      name: 'vehicles',
+      builder: (context, state) => const VehiclesPage(),
+    ),
+    GoRoute(
+      path: RouteNames.inspectionMemo,
+      name: 'inspection-memo',
+      builder: (context, state) => const InspectionMemoPage(),
+    ),
+    GoRoute(
+      path: RouteNames.fuelEvCalc,
+      name: 'fuel-ev-calc',
+      builder: (context, state) => const FuelEvCalcPage(),
+    ),
+    GoRoute(
+      path: RouteNames.rangeCalc,
+      name: 'range-calc',
+      builder: (context, state) => const RangeCalcPage(),
+    ),
+    GoRoute(
+      path: RouteNames.peakValleyCalc,
+      name: 'peak-valley-calc',
+      builder: (context, state) => const PeakValleyCalcPage(),
+    ),
+    GoRoute(
+      path: RouteNames.homeChargerCalc,
+      name: 'home-charger-calc',
+      builder: (context, state) => const HomeChargerCalcPage(),
+    ),
+    GoRoute(
+      path: RouteNames.nearbyStations,
+      name: 'nearby-stations',
+      builder: (context, state) => const NearbyStationsPage(),
+    ),
+    GoRoute(
+      path: RouteNames.modificationCompliance,
+      name: 'modification-compliance',
+      builder: (context, state) => const ModificationCompliancePage(),
+    ),
+    GoRoute(
+      path: RouteNames.warrantyHandbook,
+      name: 'warranty-handbook',
+      builder: (context, state) => const WarrantyHandbookPage(),
+    ),
+    GoRoute(
+      path: RouteNames.equipment,
+      name: 'equipment',
+      builder: (context, state) => const EquipmentPage(),
+    ),
+    GoRoute(
+      path: RouteNames.backupRestore,
+      name: 'backup-restore',
+      builder: (context, state) => const BackupRestorePage(),
+    ),
+    GoRoute(
+      path: RouteNames.settings,
+      name: 'settings',
+      builder: (context, state) => const SettingsPage(),
+    ),
+    GoRoute(
+      path: RouteNames.about,
+      name: 'about',
+      builder: (context, state) => const AboutPage(),
+    ),
+    GoRoute(
+      path: RouteNames.agreement,
+      name: 'agreement',
+      builder: (context, state) => const AgreementPage(),
+    ),
+    GoRoute(
+      path: RouteNames.privacy,
+      name: 'privacy',
+      builder: (context, state) => const PrivacyPage(),
+    ),
+  ];
+}

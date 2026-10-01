@@ -39,6 +39,21 @@ dependencies:
   # Env
   flutter_dotenv: ^5.2.1
 
+  # Files & Sharing
+  path_provider: ^2.1.5
+  share_plus: ^10.1.4
+  file_picker: ^8.1.7
+
+  # Media
+  image_picker: ^1.1.2
+  flutter_image_compress: ^2.3.0
+
+  # Maps (Apple MapKit)
+  apple_maps_flutter: ^1.2.0
+
+  # External links
+  url_launcher: ^6.3.1
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
