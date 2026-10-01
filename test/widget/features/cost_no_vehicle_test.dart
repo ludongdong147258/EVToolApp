@@ -19,19 +19,22 @@ Vehicle _vehicle(String id, String name, {bool isDefault = false}) => Vehicle(
   updatedAt: 1,
 );
 
+Future<ProviderContainer> _bootstrap() async {
+  SharedPreferences.setMockInitialValues(const {});
+  final prefs = await SharedPreferences.getInstance();
+  final container = ProviderContainer(
+    overrides: [
+      sharedPreferencesProvider.overrideWithValue(prefs),
+      localStorageProvider.overrideWithValue(LocalStorage(prefs)),
+    ],
+  );
+  addTearDown(container.dispose);
+  return container;
+}
+
 void main() {
-  testWidgets('cost add 无车时显示提示 + 去添加；添加后自动预选默认车', (tester) async {
-    TestWidgetsFlutterBinding.ensureInitialized();
-    SharedPreferences.setMockInitialValues(const {});
-    final prefs = await SharedPreferences.getInstance();
-    final localStorage = LocalStorage(prefs);
-    final container = ProviderContainer(
-      overrides: [
-        sharedPreferencesProvider.overrideWithValue(prefs),
-        localStorageProvider.overrideWithValue(localStorage),
-      ],
-    );
-    addTearDown(container.dispose);
+  testWidgets('无车时仍显示选择框（与添加充电记录一致），弹层仅「暂不关联」', (tester) async {
+    final container = await _bootstrap();
 
     await tester.pumpWidget(
       UncontrolledProviderScope(
@@ -41,9 +44,29 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    // 无车：提示文案 + 去添加按钮，无选择框
-    expect(find.text('在「我的 → 我的车辆」添加后可关联'), findsOneWidget);
-    expect(find.text('去添加'), findsOneWidget);
+    // 无车：字段始终显示（值「暂不关联」），无提示行/去添加按钮
+    expect(find.byIcon(Icons.directions_car_rounded), findsOneWidget);
+    expect(find.text('暂不关联'), findsOneWidget);
+    expect(find.text('去添加'), findsNothing);
+
+    // 点开弹层：无车时只有「暂不关联」可选
+    // （字段本身也显示「暂不关联」，弹层打开后共 2 处）
+    await tester.tap(find.byIcon(Icons.directions_car_rounded));
+    await tester.pumpAndSettle();
+    expect(find.text('选择车辆'), findsOneWidget);
+    expect(find.text('暂不关联'), findsWidgets);
+  });
+
+  testWidgets('添加车辆后字段自动预选默认车', (tester) async {
+    final container = await _bootstrap();
+
+    await tester.pumpWidget(
+      UncontrolledProviderScope(
+        container: container,
+        child: const MaterialApp(home: CostAddPage()),
+      ),
+    );
+    await tester.pumpAndSettle();
 
     // 模拟用户在车辆页经 vehiclesProvider 添加了默认车
     await container
@@ -51,7 +74,8 @@ void main() {
         .add(_vehicle('v1', '小海豹', isDefault: true));
     await tester.pumpAndSettle();
 
-    // 表单 watch 到车辆出现：选择框恢复并预选默认车（didChangeDependencies 补预选）
+    // 字段值由「暂不关联」切换为默认车名
     expect(find.byIcon(Icons.directions_car_rounded), findsOneWidget);
+    expect(find.text('小海豹'), findsOneWidget);
   });
 }

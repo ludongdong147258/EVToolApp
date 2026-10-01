@@ -29,17 +29,16 @@ void main() {
         'updatedAt': 1,
       },
     ]);
-    final container = ProviderContainer(overrides: [
-      sharedPreferencesProvider.overrideWithValue(prefs),
-      localStorageProvider.overrideWithValue(localStorage),
-    ]);
+    final container = ProviderContainer(
+      overrides: [
+        sharedPreferencesProvider.overrideWithValue(prefs),
+        localStorageProvider.overrideWithValue(localStorage),
+      ],
+    );
     addTearDown(container.dispose);
 
     await tester.pumpWidget(
-      UncontrolledProviderScope(
-        container: container,
-        child: const EvToolApp(),
-      ),
+      UncontrolledProviderScope(container: container, child: const EvToolApp()),
     );
     await tester.pumpAndSettle();
 

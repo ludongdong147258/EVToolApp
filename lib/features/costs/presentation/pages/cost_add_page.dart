@@ -3,12 +3,10 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 
 import 'package:ev_tool_app/core/domain/maintenance_costs.dart';
 import 'package:ev_tool_app/core/domain/numbers.dart';
 import 'package:ev_tool_app/core/extensions/context_extensions.dart';
-import 'package:ev_tool_app/core/routing/route_names.dart';
 import 'package:ev_tool_app/core/theme/app_colors.dart';
 import 'package:ev_tool_app/core/widgets/app_primary_button.dart';
 import 'package:ev_tool_app/core/widgets/app_sheet.dart';
@@ -71,26 +69,6 @@ class _CostAddPageState extends ConsumerState<CostAddPage> {
     WidgetsBinding.instance.addPostFrameCallback((_) => _initForm());
     _amountController.addListener(_scheduleDraftSave);
     _noteController.addListener(_scheduleDraftSave);
-  }
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    // 从车辆页添加车辆返回后补做默认车预选（挂载时无车的场景）
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (!mounted || _isEdit || _vehicleId != null || _preselected) return;
-      final vehicles = ref.read(vehiclesProvider);
-      if (vehicles.isEmpty) return;
-      final defaultVehicle =
-          vehicles.where((v) => v.isDefault).firstOrNull ??
-          vehicles.firstOrNull;
-      if (defaultVehicle == null) return;
-      _preselected = true;
-      setState(() {
-        _vehicleId = defaultVehicle.id;
-        _vehicleName = defaultVehicle.name;
-      });
-    });
   }
 
   @override
@@ -330,7 +308,23 @@ class _CostAddPageState extends ConsumerState<CostAddPage> {
 
   @override
   Widget build(BuildContext context) {
-    final palette = context.palette;
+    // 挂载时无车、之后（如从车辆页添加返回）出现车辆时补做默认车预选
+    ref.listen(vehiclesProvider, (previous, next) {
+      if (_isEdit || _vehicleId != null || _preselected || next.isEmpty) {
+        return;
+      }
+      final defaultVehicle =
+          next.where((v) => v.isDefault).firstOrNull ?? next.firstOrNull;
+      if (defaultVehicle == null) return;
+      _preselected = true;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        setState(() {
+          _vehicleId = defaultVehicle.id;
+          _vehicleName = defaultVehicle.name;
+        });
+      });
+    });
     final vehicles = ref.watch(vehiclesProvider);
     final selectedVehicle = vehicles
         .where((v) => v.id == _vehicleId)
@@ -394,42 +388,15 @@ class _CostAddPageState extends ConsumerState<CostAddPage> {
                 ),
                 const SizedBox(height: 16),
                 const _FieldLabel('关联车辆（选填）'),
-                if (vehicles.isEmpty)
-                  Row(
-                    children: [
-                      Icon(
-                        Icons.directions_car_rounded,
-                        size: 18,
-                        color: palette.textHint,
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          '在「我的 → 我的车辆」添加后可关联',
-                          style: TextStyle(
-                            fontSize: 13,
-                            color: palette.textHint,
-                          ),
-                        ),
-                      ),
-                      TextButton(
-                        onPressed: () => context.push(RouteNames.vehicles),
-                        style: TextButton.styleFrom(
-                          visualDensity: VisualDensity.compact,
-                          padding: const EdgeInsets.symmetric(horizontal: 8),
-                        ),
-                        child: const Text('去添加'),
-                      ),
-                    ],
-                  )
-                else
-                  _PickerField(
-                    value: selectedVehicle == null
-                        ? '暂不关联'
-                        : selectedVehicle.name,
-                    icon: Icons.directions_car_rounded,
-                    onTap: _pickVehicle,
-                  ),
+                // 与添加充电记录页一致：无论有无车辆始终显示选择框
+                // （无车时弹层内仅「暂不关联」可选）
+                _PickerField(
+                  value: selectedVehicle == null
+                      ? '暂不关联'
+                      : selectedVehicle.name,
+                  icon: Icons.directions_car_rounded,
+                  onTap: _pickVehicle,
+                ),
                 const SizedBox(height: 16),
                 const _FieldLabel('备注（选填，最多 100 字）'),
                 TextField(
