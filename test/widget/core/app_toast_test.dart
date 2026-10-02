@@ -22,9 +22,7 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
     // 模拟用户开了大字号（辅助功能文本缩放）
     tester.platformDispatcher.textScaleFactorTestValue = 2.5;
-    addTearDown(
-      tester.platformDispatcher.clearTextScaleFactorTestValue,
-    );
+    addTearDown(tester.platformDispatcher.clearTextScaleFactorTestValue);
 
     await tester.pumpWidget(const MaterialApp(home: _ToastHostPage()));
     await tester.tap(find.text('show'));

@@ -88,10 +88,7 @@ class _ToastView extends StatelessWidget {
             type: MaterialType.transparency,
             child: Container(
               margin: const EdgeInsets.symmetric(horizontal: 40),
-              padding: const EdgeInsets.symmetric(
-                horizontal: 24,
-                vertical: 12,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
               decoration: BoxDecoration(
                 color: Colors.black.withValues(alpha: 0.8),
                 borderRadius: BorderRadius.circular(AppColors.radiusMd),
@@ -106,10 +103,7 @@ class _ToastView extends StatelessWidget {
                   Flexible(
                     child: Text(
                       message,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 14,
-                      ),
+                      style: const TextStyle(color: Colors.white, fontSize: 14),
                       textAlign: TextAlign.center,
                       maxLines: 3,
                       overflow: TextOverflow.ellipsis,

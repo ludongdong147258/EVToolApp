@@ -59,8 +59,15 @@ class PhotoStore {
       throw const PhotoStoreException('照片路径无效');
     }
     await _directory.create(recursive: true);
-    final filename = '${key}_${DateTime.now().millisecondsSinceEpoch}.jpg';
-    final targetPath = resolvePath(filename);
+    // 同毫秒内多次保存会撞名（时间戳相同）：存在即追加序号直至唯一
+    var filename = '${key}_${DateTime.now().millisecondsSinceEpoch}.jpg';
+    var targetPath = resolvePath(filename);
+    var seq = 0;
+    while (File(targetPath).existsSync()) {
+      seq++;
+      filename = '${key}_${DateTime.now().millisecondsSinceEpoch}_$seq.jpg';
+      targetPath = resolvePath(filename);
+    }
     Object? compressed;
     try {
       compressed = await _compressor(source, targetPath);
