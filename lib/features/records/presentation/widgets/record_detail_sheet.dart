@@ -28,6 +28,7 @@ Future<void> showRecordDetailSheet(
         children: [
           const SizedBox(height: 4),
           Row(
+            mainAxisAlignment: MainAxisAlignment.center,
             children: [
               Container(
                 width: 44,
@@ -44,26 +45,24 @@ Future<void> showRecordDetailSheet(
                 ),
               ),
               const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      '¥${formatYuan(record.cost)}',
-                      style: context.textTheme.headlineSmall?.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.center,
+                children: [
+                  Text(
+                    '¥${formatYuan(record.cost)}',
+                    style: context.textTheme.headlineSmall?.copyWith(
+                      fontWeight: FontWeight.w700,
                     ),
-                    const SizedBox(height: 2),
-                    Text(
-                      typeDefaultTitles[record.type] ?? record.type,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: palette.textSecondary,
-                      ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    typeDefaultTitles[record.type] ?? record.type,
+                    style: TextStyle(
+                      fontSize: 12,
+                      color: palette.textSecondary,
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ],
           ),
@@ -100,31 +99,39 @@ Future<void> showRecordDetailSheet(
           if (record.note.isNotEmpty)
             _SheetRow(label: '备注', value: record.note),
           const SizedBox(height: 16),
-          FilledButton.icon(
-            onPressed: () {
-              Navigator.of(context).pop();
-              onEdit();
-            },
-            icon: const Icon(Icons.edit_outlined, size: 18),
-            label: const Text('编辑这条记录'),
-          ),
-          const SizedBox(height: 8),
-          OutlinedButton.icon(
-            style: OutlinedButton.styleFrom(
-              foregroundColor: palette.error,
-              minimumSize: const Size.fromHeight(50),
-              side: BorderSide(color: palette.errorContainer),
-            ),
-            onPressed: () {
-              Navigator.of(context).pop();
-              onDelete();
-            },
-            icon: Icon(
-              Icons.delete_outline_rounded,
-              size: 18,
-              color: palette.error,
-            ),
-            label: const Text('删除这条记录'),
+          Row(
+            children: [
+              Expanded(
+                child: FilledButton.icon(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                    onEdit();
+                  },
+                  icon: const Icon(Icons.edit_outlined, size: 18),
+                  label: const Text('编辑'),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: OutlinedButton.icon(
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: palette.error,
+                    minimumSize: const Size.fromHeight(50),
+                    side: BorderSide(color: palette.errorContainer),
+                  ),
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                    onDelete();
+                  },
+                  icon: Icon(
+                    Icons.delete_outline_rounded,
+                    size: 18,
+                    color: palette.error,
+                  ),
+                  label: const Text('删除'),
+                ),
+              ),
+            ],
           ),
         ],
       ),

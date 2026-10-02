@@ -446,6 +446,7 @@ class _RecordAddPageState extends ConsumerState<RecordAddPage> {
                       Expanded(
                         child: _NumberField(
                           label: '费用（元）',
+                          hint: '如 45.5',
                           controller: _costController,
                         ),
                       ),
@@ -453,6 +454,7 @@ class _RecordAddPageState extends ConsumerState<RecordAddPage> {
                       Expanded(
                         child: _NumberField(
                           label: '电量（kWh）',
+                          hint: '如 30.2',
                           controller: _energyController,
                         ),
                       ),
@@ -472,6 +474,7 @@ class _RecordAddPageState extends ConsumerState<RecordAddPage> {
                       Expanded(
                         child: _NumberField(
                           label: '小时',
+                          hint: '如 2',
                           controller: _hoursController,
                           allowDecimal: false,
                           maxDigits: 2,
@@ -481,6 +484,7 @@ class _RecordAddPageState extends ConsumerState<RecordAddPage> {
                       Expanded(
                         child: _NumberField(
                           label: '分钟',
+                          hint: '如 30',
                           controller: _minutesController,
                           allowDecimal: false,
                           maxDigits: 2,
@@ -496,14 +500,14 @@ class _RecordAddPageState extends ConsumerState<RecordAddPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const _FieldLabel('关联车辆'),
+                  const _FieldLabel('关联车辆（选填）'),
                   _PickerField(
                     value: _vehicleName ?? '暂不关联',
                     icon: Icons.directions_car_rounded,
                     onTap: _pickVehicle,
                   ),
                   const SizedBox(height: 16),
-                  const _FieldLabel('充电地点'),
+                  const _FieldLabel('充电地点（选填）'),
                   _PickerField(
                     value:
                         [
@@ -687,12 +691,14 @@ class _NumberField extends StatelessWidget {
   const _NumberField({
     required this.label,
     required this.controller,
+    this.hint,
     this.allowDecimal = true,
     this.maxDigits,
     this.isMultiline = false,
   });
 
   final String label;
+  final String? hint;
   final TextEditingController controller;
   final bool allowDecimal;
   final int? maxDigits;
@@ -722,7 +728,15 @@ class _NumberField extends StatelessWidget {
               allowDecimal ? RegExp(r'[0-9.]') : RegExp(r'[0-9]'),
             ),
           ],
-          decoration: const InputDecoration(counterText: '', isDense: true),
+          // 单行数字输入（费用/电量/小时/分钟）收紧内边距降低高度
+          decoration: InputDecoration(
+            counterText: '',
+            isDense: true,
+            hintText: hint,
+            contentPadding: isMultiline
+                ? null
+                : const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+          ),
         ),
       ],
     );

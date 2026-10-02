@@ -52,29 +52,37 @@ class _AppSheetShell extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    title,
-                    style: context.textTheme.headlineSmall?.copyWith(
-                      color: palette.primaryContainer,
-                      fontWeight: FontWeight.w600,
+            // 标题水平居中：Stack 让标题占满全宽居中，关闭按钮叠在右侧
+            SizedBox(
+              height: 44,
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  Center(
+                    child: Text(
+                      title,
+                      style: context.textTheme.headlineSmall?.copyWith(
+                        color: palette.primaryContainer,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
                   ),
-                ),
-                if (showClose)
-                  IconButton(
-                    onPressed: () => Navigator.of(context).maybePop(),
-                    icon: const Icon(Icons.close, size: 24),
-                    color: palette.onSurfaceVariant,
-                    tooltip: '关闭',
-                    constraints: const BoxConstraints(
-                      minWidth: 44,
-                      minHeight: 44,
+                  if (showClose)
+                    Positioned(
+                      right: 0,
+                      child: IconButton(
+                        onPressed: () => Navigator.of(context).maybePop(),
+                        icon: const Icon(Icons.close, size: 24),
+                        color: palette.onSurfaceVariant,
+                        tooltip: '关闭',
+                        constraints: const BoxConstraints(
+                          minWidth: 44,
+                          minHeight: 44,
+                        ),
+                      ),
                     ),
-                  ),
-              ],
+                ],
+              ),
             ),
             Flexible(child: child),
           ],
