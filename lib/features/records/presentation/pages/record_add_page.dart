@@ -846,24 +846,23 @@ class _NumberField extends StatelessWidget {
                     : TextInputType.number),
           // 多行备注：文本无数字过滤，限 100 字（label 口径）；计数条已隐藏
           maxLength: isMultiline ? 100 : maxDigits,
-          // 备注等宽：空态单行高度，输入增长最多 3 行
+          // 备注与养车支出备注框同高：空态即 3 行固定高度
           maxLines: isMultiline ? 3 : 1,
-          minLines: 1,
+          minLines: isMultiline ? 3 : 1,
           inputFormatters: [
             if (!isMultiline)
               FilteringTextInputFormatter.allow(
                 allowDecimal ? RegExp(r'[0-9.]') : RegExp(r'[0-9]'),
               ),
           ],
-          // 收紧内边距降低高度（多行与单行数字输入同口径）
+          // 单行数字输入收紧内边距；多行备注与养车支出备注框同高（走全局主题内边距）
           decoration: InputDecoration(
             counterText: '',
-            isDense: true,
             hintText: hint,
-            contentPadding: const EdgeInsets.symmetric(
-              horizontal: 16,
-              vertical: 10,
-            ),
+            isDense: !isMultiline,
+            contentPadding: isMultiline
+                ? null
+                : const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
           ),
         ),
       ],

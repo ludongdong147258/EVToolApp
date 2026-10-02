@@ -376,6 +376,12 @@ class _CostAddPageState extends ConsumerState<CostAddPage> {
                     FilteringTextInputFormatter.allow(RegExp(r'[0-9.]')),
                   ],
                   decoration: InputDecoration(
+                    // 收紧内边距降低高度（与充电记录页数字输入同口径）
+                    isDense: true,
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 10,
+                    ),
                     hintText: '0.00',
                     suffixText: '元',
                     errorText: _amountError,

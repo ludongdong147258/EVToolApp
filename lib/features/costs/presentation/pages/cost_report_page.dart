@@ -639,7 +639,7 @@ class _LegendRow extends StatelessWidget {
   }
 }
 
-/// 筛选 chip（选中态次级容器底色 + 主色描边，与支出页同款）。
+/// 筛选 chip（chip--sm 小号胶囊，与充电统计/支出页同款）。
 class _FilterChip extends StatelessWidget {
   const _FilterChip({
     required this.label,
@@ -654,14 +654,15 @@ class _FilterChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final palette = context.palette;
+    // chip--sm：小号胶囊（对齐小程序 padding 10/4 + 全圆角 + 12px 文字，与充电统计同款）
     return InkWell(
-      borderRadius: BorderRadius.circular(18),
+      borderRadius: BorderRadius.circular(20),
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
         decoration: BoxDecoration(
           color: isSelected ? palette.secondaryContainer : palette.inputBg,
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(20),
           border: Border.all(
             color: isSelected ? palette.primaryContainer : Colors.transparent,
           ),
@@ -669,7 +670,7 @@ class _FilterChip extends StatelessWidget {
         child: Text(
           label,
           style: TextStyle(
-            fontSize: 13,
+            fontSize: 12,
             color: isSelected
                 ? palette.onSecondaryContainer
                 : palette.onSurfaceVariant,
