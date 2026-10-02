@@ -8,6 +8,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 
+import 'package:ev_tool_app/core/utils/share_files.dart';
+
 import 'package:ev_tool_app/core/domain/backup_file.dart';
 import 'package:ev_tool_app/core/domain/export_data.dart';
 import 'package:ev_tool_app/core/extensions/context_extensions.dart';
@@ -158,7 +160,8 @@ class BackupRestorePage extends ConsumerWidget {
       final tempDir = await getTemporaryDirectory();
       final file = File('${tempDir.path}/$fileName');
       await file.writeAsString(payload.text, flush: true);
-      final result = await Share.shareXFiles([XFile(file.path)]);
+      if (!context.mounted) return;
+      final result = await shareFiles(context, [XFile(file.path)]);
       if (result.status == ShareResultStatus.success && context.mounted) {
         showAppToast(context, '备份文件已分享');
       }

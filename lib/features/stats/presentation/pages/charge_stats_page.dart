@@ -17,6 +17,7 @@ import 'package:ev_tool_app/core/extensions/context_extensions.dart';
 import 'package:ev_tool_app/core/routing/route_names.dart';
 import 'package:ev_tool_app/core/theme/app_colors.dart';
 import 'package:ev_tool_app/core/utils/logger.dart';
+import 'package:ev_tool_app/core/utils/share_files.dart';
 import 'package:ev_tool_app/core/widgets/app_sheet.dart';
 import 'package:ev_tool_app/core/widgets/app_toast.dart';
 import 'package:ev_tool_app/core/widgets/empty_state.dart';
@@ -241,7 +242,8 @@ class _ChargeStatsPageState extends ConsumerState<ChargeStatsPage> {
       final vehicleFile = File('${dir.path}/evtool_vehicles_$stamp.csv');
       await recordFile.writeAsString(recordsToCsv(records));
       await vehicleFile.writeAsString(vehiclesToCsv(vehicles));
-      await Share.shareXFiles([
+      if (!mounted) return;
+      await shareFiles(context, [
         XFile(recordFile.path),
         XFile(vehicleFile.path),
       ]);
