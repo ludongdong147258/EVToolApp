@@ -81,30 +81,42 @@ class _ToastView extends StatelessWidget {
     return Positioned.fill(
       child: IgnorePointer(
         child: Center(
-          child: Container(
-            margin: const EdgeInsets.symmetric(horizontal: 40),
-            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-            decoration: BoxDecoration(
-              color: Colors.black.withValues(alpha: 0.8),
-              borderRadius: BorderRadius.circular(AppColors.radiusMd),
-            ),
-            child: Row(
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                if (icon != null) ...[
-                  Icon(icon, color: Colors.white, size: 20),
-                  const SizedBox(width: 8),
-                ],
-                Flexible(
-                  child: Text(
-                    message,
-                    style: const TextStyle(color: Colors.white, fontSize: 14),
-                    textAlign: TextAlign.center,
-                    maxLines: 3,
-                    overflow: TextOverflow.ellipsis,
+          // Material 提供 DefaultTextStyle：rootOverlay 的 entry 没有 Material 祖先，
+          // 否则 Text 会命中 MaterialApp 的 _errorTextStyle fallback，
+          // 继承到黄色双下划线 decoration（表现为"已保存"下方两条横线）。
+          child: Material(
+            type: MaterialType.transparency,
+            child: Container(
+              margin: const EdgeInsets.symmetric(horizontal: 40),
+              padding: const EdgeInsets.symmetric(
+                horizontal: 24,
+                vertical: 12,
+              ),
+              decoration: BoxDecoration(
+                color: Colors.black.withValues(alpha: 0.8),
+                borderRadius: BorderRadius.circular(AppColors.radiusMd),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  if (icon != null) ...[
+                    Icon(icon, color: Colors.white, size: 20),
+                    const SizedBox(width: 8),
+                  ],
+                  Flexible(
+                    child: Text(
+                      message,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 14,
+                      ),
+                      textAlign: TextAlign.center,
+                      maxLines: 3,
+                      overflow: TextOverflow.ellipsis,
+                    ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),

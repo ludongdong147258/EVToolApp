@@ -15,6 +15,29 @@ void main() {
     expect(find.text('已保存'), findsNothing);
   });
 
+  testWidgets('golden：大字号下 toast 无异常条纹（缺 Material 祖先后果守护）', (tester) async {
+    tester.view.physicalSize = const Size(402, 874);
+    tester.view.devicePixelRatio = 1.0;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    // 模拟用户开了大字号（辅助功能文本缩放）
+    tester.platformDispatcher.textScaleFactorTestValue = 2.5;
+    addTearDown(
+      tester.platformDispatcher.clearTextScaleFactorTestValue,
+    );
+
+    await tester.pumpWidget(const MaterialApp(home: _ToastHostPage()));
+    await tester.tap(find.text('show'));
+    await tester.pump();
+
+    await expectLater(
+      find.byType(MaterialApp),
+      matchesGoldenFile('goldens_tmp/toast_scale.png'),
+    );
+    // 消化 toast 的 2 秒移除 Timer
+    await tester.pump(const Duration(seconds: 3));
+  });
+
   testWidgets('路由退出转场中调用：等转场结束再插入 toast', (tester) async {
     await tester.pumpWidget(const MaterialApp(home: _ToastHostPage()));
 
