@@ -60,7 +60,7 @@ void main() {
 
       expect(find.text('充电统计'), findsWidgets);
       expect(find.text('暂无充电数据'), findsOneWidget);
-      expect(find.text('去添加记录'), findsOneWidget);
+      expect(find.text('去添加'), findsOneWidget);
     });
 
     testWidgets('有记录时展示累计 hero 与月份导航', (tester) async {

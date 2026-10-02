@@ -42,12 +42,16 @@ class ChargeStatsPage extends ConsumerStatefulWidget {
   ConsumerState<ChargeStatsPage> createState() => _ChargeStatsPageState();
 }
 
+/// 列表分批渲染每批条数（记录量大时避免一次性全量渲染，对齐小程序 RENDER_BATCH）。
+const int _renderBatch = 30;
+
 class _ChargeStatsPageState extends ConsumerState<ChargeStatsPage> {
   String _monthKey = getCurrentMonthKey();
   String? _typeFilter;
   String? _vehicleFilter;
   List<ChargeRecord> _deletedPending = [];
   bool _undoFailed = false;
+  int _renderLimit = _renderBatch;
 
   @override
   void didChangeDependencies() {
@@ -160,14 +164,20 @@ class _ChargeStatsPageState extends ConsumerState<ChargeStatsPage> {
     final prev = shiftMonthKey(_monthKey, -1);
     if (prev == null || oldest == null || prev.compareTo(oldest) < 0) return;
     unawaited(HapticFeedback.selectionClick());
-    setState(() => _monthKey = prev);
+    setState(() {
+      _monthKey = prev;
+      _renderLimit = _renderBatch;
+    });
   }
 
   void _goNextMonth() {
     final next = shiftMonthKey(_monthKey, 1);
     if (next == null || next.compareTo(getCurrentMonthKey()) > 0) return;
     unawaited(HapticFeedback.selectionClick());
-    setState(() => _monthKey = next);
+    setState(() {
+      _monthKey = next;
+      _renderLimit = _renderBatch;
+    });
   }
 
   /* ---------- 导出 / 复制小结 ---------- */
@@ -284,15 +294,11 @@ class _ChargeStatsPageState extends ConsumerState<ChargeStatsPage> {
               children: [
                 const Text(
                   '累计充电支出',
-                  style: TextStyle(
-                    fontSize: 13,
-                    color: AppColors.onPrimaryA85,
-                    fontWeight: FontWeight.w600,
-                  ),
+                  style: TextStyle(fontSize: 14, color: AppColors.onPrimaryA85),
                 ),
                 const SizedBox(height: 8),
                 HeroValue(value: formatYuan(total.totalCost), unit: '¥'),
-                const SizedBox(height: 16),
+                const SizedBox(height: 20),
                 HeroStatsRow(
                   items: [
                     HeroStatItem(
@@ -317,7 +323,7 @@ class _ChargeStatsPageState extends ConsumerState<ChargeStatsPage> {
               ],
             ),
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 16),
 
           // 月度概览（浅色卡，含月份切换）
           _MonthCard(
@@ -331,7 +337,7 @@ class _ChargeStatsPageState extends ConsumerState<ChargeStatsPage> {
             count: month.count,
             costPerKwh: month.costPerKwh,
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 16),
 
           // 类型 / 车辆筛选
           Wrap(
@@ -342,25 +348,29 @@ class _ChargeStatsPageState extends ConsumerState<ChargeStatsPage> {
                 _FilterChip(
                   label: label,
                   isSelected: _typeFilter == value,
-                  onTap: () => setState(() => _typeFilter = value),
+                  onTap: () => setState(() {
+                    _typeFilter = value;
+                    _renderLimit = _renderBatch;
+                  }),
                 ),
               for (final vehicle in vehicles)
                 _FilterChip(
                   label: vehicle.name,
                   isSelected: _vehicleFilter == vehicle.id,
-                  onTap: () => setState(
-                    () => _vehicleFilter = _vehicleFilter == vehicle.id
+                  onTap: () => setState(() {
+                    _vehicleFilter = _vehicleFilter == vehicle.id
                         ? null
-                        : vehicle.id,
-                  ),
+                        : vehicle.id;
+                    _renderLimit = _renderBatch;
+                  }),
                 ),
             ],
           ),
-          const SizedBox(height: 12),
+          const SizedBox(height: 16),
 
           // 年度报告入口卡
           _ReportEntryCard(onTap: () => context.push(RouteNames.annualReport)),
-          const SizedBox(height: 12),
+          const SizedBox(height: 16),
 
           // 月份记录列表 / 空态
           Row(
@@ -368,8 +378,11 @@ class _ChargeStatsPageState extends ConsumerState<ChargeStatsPage> {
               Expanded(
                 child: Text(
                   '$monthLabel · ${monthRecords.length} 条',
-                  style: context.textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w600,
+                  // section-title：18px w700（对齐小程序）
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w700,
+                    color: palette.onSurface,
                   ),
                 ),
               ),
@@ -409,7 +422,7 @@ class _ChargeStatsPageState extends ConsumerState<ChargeStatsPage> {
               icon: Icons.insights_rounded,
               title: '暂无充电数据',
               subtitle: '去充电记录页添加记录，这里将展示统计',
-              ctaText: '去添加记录',
+              ctaText: '去添加',
               onCta: () => context.go(RouteNames.records),
             )
           else if (monthRecords.isEmpty)
@@ -418,8 +431,8 @@ class _ChargeStatsPageState extends ConsumerState<ChargeStatsPage> {
               icon: Icons.search_off_rounded,
               title: '本月暂无符合条件的记录',
             )
-          else
-            for (final record in monthRecords)
+          else ...[
+            for (final record in monthRecords.take(_renderLimit))
               RecordCard(
                 record: record,
                 vehicles: vehicles,
@@ -432,6 +445,12 @@ class _ChargeStatsPageState extends ConsumerState<ChargeStatsPage> {
                 onEdit: (id) => context.push('${RouteNames.recordAdd}?id=$id'),
                 onDelete: _confirmDelete,
               ),
+            if (monthRecords.length > _renderLimit)
+              _LoadMorePill(
+                remaining: monthRecords.length - _renderLimit,
+                onTap: () => setState(() => _renderLimit += _renderBatch),
+              ),
+          ],
         ],
       ),
     );
@@ -465,10 +484,22 @@ class _MonthCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final palette = context.palette;
-    return Card(
-      margin: EdgeInsets.zero,
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    // cs-month-card：浅色卡 + 软阴影（对齐小程序）
+    return Container(
+      decoration: BoxDecoration(
+        color: palette.surfaceCard,
+        borderRadius: BorderRadius.circular(AppColors.radiusLg),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: isDark ? 0.30 : 0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
         child: Column(
           children: [
             Row(
@@ -478,12 +509,14 @@ class _MonthCard extends StatelessWidget {
                   size: 16,
                   color: palette.primary,
                 ),
-                const SizedBox(width: 6),
+                const SizedBox(width: 8),
                 Expanded(
                   child: Text(
                     isCurrentMonth ? '$monthLabel · 本月' : monthLabel,
-                    style: context.textTheme.titleSmall?.copyWith(
+                    style: TextStyle(
+                      fontSize: 14,
                       fontWeight: FontWeight.w600,
+                      color: palette.onSurface,
                     ),
                   ),
                 ),
@@ -492,7 +525,7 @@ class _MonthCard extends StatelessWidget {
                   enabled: canGoPrev,
                   onTap: onPrev,
                 ),
-                const SizedBox(width: 4),
+                const SizedBox(width: 8),
                 _NavArrow(
                   icon: Icons.chevron_right_rounded,
                   enabled: canGoNext,
@@ -532,7 +565,7 @@ class _MonthCard extends StatelessWidget {
   Widget _statDivider(Color color) => Container(
     width: 1,
     height: 28,
-    margin: const EdgeInsets.symmetric(horizontal: 8),
+    margin: const EdgeInsets.symmetric(horizontal: 12),
     color: color,
   );
 }
@@ -547,10 +580,15 @@ class _StatCol extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final palette = context.palette;
+    // 全局 .stat-col：label 14 textSecondary / value 18 w700 / unit 10 textHint
     return Column(
       mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(label, style: TextStyle(fontSize: 12, color: palette.textHint)),
+        Text(
+          label,
+          style: TextStyle(fontSize: 14, color: palette.textSecondary),
+        ),
         const SizedBox(height: 4),
         RichText(
           maxLines: 1,
@@ -560,7 +598,7 @@ class _StatCol extends StatelessWidget {
               TextSpan(
                 text: value,
                 style: TextStyle(
-                  fontSize: 17,
+                  fontSize: 18,
                   fontWeight: FontWeight.w700,
                   color: palette.onSurface,
                 ),
@@ -591,17 +629,20 @@ class _NavArrow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return InkWell(
-      borderRadius: BorderRadius.circular(16),
-      onTap: enabled ? onTap : null,
-      child: Padding(
-        padding: const EdgeInsets.all(4),
-        child: Icon(
-          icon,
-          size: 22,
-          color: enabled
-              ? context.palette.onSurfaceVariant
-              : context.palette.divider,
+    // cs-month-nav-btn：24px 圆形浅底，禁用 35% 透明
+    return Opacity(
+      opacity: enabled ? 1 : 0.35,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: enabled ? onTap : null,
+        child: Container(
+          width: 24,
+          height: 24,
+          decoration: BoxDecoration(
+            color: context.palette.surfaceContainerLow,
+            shape: BoxShape.circle,
+          ),
+          child: Icon(icon, size: 18, color: context.palette.textHint),
         ),
       ),
     );
@@ -617,53 +658,70 @@ class _ReportEntryCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final palette = context.palette;
-    return Card(
-      margin: EdgeInsets.zero,
-      child: InkWell(
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    // cs-report-entry：浅色卡 + 软阴影 + 36px secondaryContainer 图标盒
+    return Container(
+      decoration: BoxDecoration(
+        color: palette.surfaceCard,
         borderRadius: BorderRadius.circular(AppColors.radiusLg),
-        onTap: onTap,
-        child: Padding(
-          padding: const EdgeInsets.all(14),
-          child: Row(
-            children: [
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: palette.primaryContainer,
-                  borderRadius: BorderRadius.circular(AppColors.radiusMd),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: isDark ? 0.30 : 0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          borderRadius: BorderRadius.circular(AppColors.radiusLg),
+          onTap: onTap,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+            child: Row(
+              children: [
+                Container(
+                  width: 36,
+                  height: 36,
+                  decoration: BoxDecoration(
+                    color: palette.secondaryContainer,
+                    borderRadius: BorderRadius.circular(AppColors.radiusMd),
+                  ),
+                  child: Icon(
+                    Icons.insights_rounded,
+                    size: 20,
+                    color: palette.primaryContainer,
+                  ),
                 ),
-                child: Icon(
-                  Icons.insights_rounded,
-                  size: 20,
-                  color: palette.onSecondaryContainer,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      '充电年度报告',
-                      style: context.textTheme.titleSmall?.copyWith(
-                        fontWeight: FontWeight.w600,
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        '充电年度报告',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: palette.onSurface,
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      '回顾这一年的充电足迹与花费',
-                      style: TextStyle(fontSize: 12, color: palette.textHint),
-                    ),
-                  ],
+                      const SizedBox(height: 2),
+                      Text(
+                        '回顾这一年的充电足迹与花费',
+                        style: TextStyle(fontSize: 12, color: palette.textHint),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-              Icon(
-                Icons.chevron_right_rounded,
-                size: 18,
-                color: palette.textHint,
-              ),
-            ],
+                Icon(
+                  Icons.chevron_right_rounded,
+                  size: 18,
+                  color: palette.textHint,
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -686,14 +744,15 @@ class _FilterChip extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final palette = context.palette;
+    // chip--sm：小号胶囊（对齐小程序 padding 10/4 + 全圆角 + 12px 文字）
     return InkWell(
-      borderRadius: BorderRadius.circular(18),
+      borderRadius: BorderRadius.circular(20),
       onTap: onTap,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
         decoration: BoxDecoration(
           color: isSelected ? palette.secondaryContainer : palette.inputBg,
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(20),
           border: Border.all(
             color: isSelected ? palette.primaryContainer : Colors.transparent,
           ),
@@ -701,11 +760,44 @@ class _FilterChip extends StatelessWidget {
         child: Text(
           label,
           style: TextStyle(
-            fontSize: 13,
+            fontSize: 12,
             color: isSelected
                 ? palette.onSecondaryContainer
                 : palette.onSurfaceVariant,
             fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// 分批渲染「再显示 N 条」胶囊（对齐小程序 cs-load-more）。
+class _LoadMorePill extends StatelessWidget {
+  const _LoadMorePill({required this.remaining, required this.onTap});
+
+  final int remaining;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = context.palette;
+    return Padding(
+      padding: const EdgeInsets.only(top: 8),
+      child: Center(
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: onTap,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+            decoration: BoxDecoration(
+              color: palette.surfaceContainerLow,
+              borderRadius: BorderRadius.circular(20),
+            ),
+            child: Text(
+              '再显示 ${remaining < _renderBatch ? remaining : _renderBatch} 条',
+              style: TextStyle(fontSize: 12, color: palette.textSecondary),
+            ),
           ),
         ),
       ),
