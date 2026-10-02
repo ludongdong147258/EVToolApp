@@ -228,27 +228,56 @@ class _RecordsPageState extends ConsumerState<RecordsPage> {
           ],
           const SizedBox(height: 8),
           Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Expanded(
-                child: Text(
-                  '最近记录 · ${recent.length} 条',
-                  style: context.textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w600,
+              Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(
+                    '最近记录 · ${recent.length} 条',
+                    style: context.textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
-                ),
+                  if (records.isNotEmpty) ...[
+                    const SizedBox(width: 6),
+                    Text(
+                      '长按可删除',
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: context.palette.textHint,
+                      ),
+                    ),
+                  ],
+                ],
               ),
-              if (records.isNotEmpty)
-                Text(
-                  '长按可删除',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: context.palette.textHint,
-                  ),
-                ),
               if (records.length > _recentLimit)
-                TextButton(
-                  onPressed: () => context.push(RouteNames.chargeStats),
-                  child: const Text('查看全部'),
+                GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: () => context.push(RouteNames.chargeStats),
+                  child: Padding(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 4,
+                      vertical: 4,
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          '查看全部',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: context.palette.textHint,
+                          ),
+                        ),
+                        Icon(
+                          Icons.chevron_right_rounded,
+                          size: 16,
+                          color: context.palette.textHint,
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
             ],
           ),
