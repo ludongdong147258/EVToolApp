@@ -116,7 +116,9 @@ class AnnualPoster extends StatelessWidget {
                 height: 1.1,
               ),
             ),
-            const Spacer(),
+            // 对齐 canvas 版 statTop：指标行紧跟主数字（底部留渐变空白），
+            // 不再 Spacer 钉底（会造成 ~150 大间隙）
+            const SizedBox(height: 56),
             IntrinsicHeight(
               child: Row(
                 children: [
@@ -299,6 +301,7 @@ class AnnualPoster extends StatelessWidget {
                         items[i].label,
                         style: const TextStyle(
                           fontSize: 24,
+                          height: 1.2,
                           color: Color(0xFF666666),
                         ),
                       ),
@@ -307,6 +310,7 @@ class AnnualPoster extends StatelessWidget {
                       items[i].value,
                       style: TextStyle(
                         fontSize: 30,
+                        height: 1.2,
                         fontWeight: FontWeight.w700,
                         color: _PosterPalette.light.primary,
                       ),
@@ -320,6 +324,7 @@ class AnnualPoster extends StatelessWidget {
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                     fontSize: 20,
+                    height: 1.2,
                     color: _PosterPalette.hint,
                   ),
                 ),
@@ -350,12 +355,6 @@ class AnnualPoster extends StatelessWidget {
               color: _PosterPalette.light.primary,
             ),
           ),
-          const SizedBox(height: 8),
-          const Text(
-            'EVTool 电车充电记录',
-            textAlign: TextAlign.center,
-            style: TextStyle(fontSize: 18, color: _PosterPalette.hint),
-          ),
         ],
       ),
     );
@@ -369,34 +368,30 @@ class _HeroStat extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // 标签 / 数值 / 单位三行纵排（与应用内 hero 卡同口径）
     return Column(
       mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           line.label,
           style: const TextStyle(fontSize: 24, color: Color(0xD9FFFFFF)),
         ),
         const SizedBox(height: 8),
-        RichText(
+        Text(
+          line.value,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
-          textAlign: TextAlign.center,
-          text: TextSpan(
-            children: [
-              TextSpan(
-                text: line.value,
-                style: const TextStyle(
-                  fontSize: 32,
-                  fontWeight: FontWeight.w700,
-                  color: Colors.white,
-                ),
-              ),
-              TextSpan(
-                text: ' ${line.unit}',
-                style: const TextStyle(fontSize: 20, color: Color(0xD9FFFFFF)),
-              ),
-            ],
+          style: const TextStyle(
+            fontSize: 32,
+            fontWeight: FontWeight.w700,
+            color: Colors.white,
           ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          line.unit,
+          style: const TextStyle(fontSize: 20, color: Color(0xD9FFFFFF)),
         ),
       ],
     );
