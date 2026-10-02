@@ -29,6 +29,9 @@ class StackedBar extends StatelessWidget {
       child: SizedBox(
         height: height,
         child: Row(
+          // stretch：色块填满条高（ColoredBox 无 child 在宽松高度约束下
+          // 会塌缩为 0 高，占比条会一直只剩占位空条）
+          crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             for (final segment in clipped)
               Expanded(

@@ -10,6 +10,8 @@ import 'package:go_router/go_router.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 
+import 'package:ev_tool_app/core/utils/share_files.dart';
+
 import 'package:ev_tool_app/core/domain/annual_report.dart';
 import 'package:ev_tool_app/core/domain/charge_records.dart';
 import 'package:ev_tool_app/core/domain/numbers.dart';
@@ -105,7 +107,8 @@ class _AnnualReportPageState extends ConsumerState<AnnualReportPage> {
       final stamp = DateTime.now().millisecondsSinceEpoch;
       final file = File('${dir.path}/evtool_annual_$stamp.png');
       await file.writeAsBytes(bytes);
-      await Share.shareXFiles([XFile(file.path)]);
+      if (!mounted) return;
+      await shareFiles(context, [XFile(file.path)]);
     } on Exception catch (err) {
       appLogger.e('海报导出失败', error: err);
       if (mounted) showAppToast(context, '海报导出失败，请重试');
@@ -373,11 +376,14 @@ class _SplitCard extends StatelessWidget {
       child: Column(
         children: [
           ClipRRect(
-            borderRadius: BorderRadius.circular(5),
+            borderRadius: BorderRadius.circular(8),
             child: Container(
-              height: 10,
-              color: palette.surfaceContainerHighest,
+              height: 16,
+              color: palette.surfaceVariant,
               child: Row(
+                // stretch：色块填满条高（ColoredBox 无 child 在宽松高度
+                // 约束下会塌缩为 0 高，占比条会一直只剩灰色轨道）
+                crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   if (report.fast.count > 0)
                     Expanded(
@@ -387,7 +393,7 @@ class _SplitCard extends StatelessWidget {
                   if (report.home.count > 0)
                     Expanded(
                       flex: 100 - fastPercent,
-                      child: const ColoredBox(color: AppColors.homeCharge),
+                      child: const ColoredBox(color: AppColors.amber),
                     ),
                 ],
               ),
@@ -403,7 +409,7 @@ class _SplitCard extends StatelessWidget {
             ),
           if (report.home.count > 0)
             _SplitRow(
-              dotColor: AppColors.homeCharge,
+              dotColor: AppColors.amber,
               label: '家充',
               summary: report.home,
               totalCount: totalCount,
@@ -438,16 +444,23 @@ class _SplitRow extends StatelessWidget {
       child: Row(
         children: [
           Container(
-            width: 8,
-            height: 8,
+            width: 6,
+            height: 6,
             decoration: BoxDecoration(color: dotColor, shape: BoxShape.circle),
           ),
           const SizedBox(width: 8),
-          Text(label, style: const TextStyle(fontSize: 13)),
+          Text(
+            label,
+            style: TextStyle(fontSize: 12, color: palette.textSecondary),
+          ),
           const Spacer(),
           Text(
             '${summary.count}次 · ¥${formatYuan(summary.totalCost)} · $percent%',
-            style: TextStyle(fontSize: 12, color: palette.textSecondary),
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+              color: palette.onSurface,
+            ),
           ),
         ],
       ),

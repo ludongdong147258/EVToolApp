@@ -19,8 +19,8 @@ abstract final class _PosterPalette {
   /// 空月份灰柱
   static const Color barEmpty = Color(0xFFE0E0E0);
 
-  /// 家充占比（与页面图例一致的品牌绿）
-  static const Color home = AppColors.homeCharge;
+  /// 家充占比（琥珀，与页面占比条/图例一致）
+  static const Color home = AppColors.amber;
 }
 
 /// 12 月柱区最小柱高（设计 px），与小程序 BAR_MIN_PX 一致。
@@ -160,6 +160,8 @@ class AnnualPoster extends StatelessWidget {
             height: 20,
             color: _PosterPalette.track,
             child: Row(
+              // stretch：色块填满条高（同 annual_report_page 占比条）
+              crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 if (model.fastPercent > 0)
                   Expanded(
