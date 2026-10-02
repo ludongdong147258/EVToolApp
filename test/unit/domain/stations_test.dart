@@ -455,4 +455,57 @@ void main() {
       expect(normalizeGeocoderResult(null), isNull);
     });
   });
+
+  group('nearestPoiTitle 最近 POI 标题', () {
+    Map<String, dynamic> mkBody(List<dynamic> pois) => {
+      'status': 0,
+      'result': {'pois': pois},
+    };
+
+    test('返回按距离升序的首个 POI 标题', () {
+      // Arrange
+      final body = mkBody([
+        {'title': '', 'distance': 12}, // 空标题跳过
+        {'title': '小鹏超充站(南山店)', 'distance': 45},
+        {'title': '国家电网充电站', 'distance': 120},
+      ]);
+
+      // Act & Assert
+      expect(nearestPoiTitle(body), '小鹏超充站(南山店)');
+    });
+
+    test('首个 POI 非法时取后续有效 POI', () {
+      // Arrange
+      final body = mkBody([
+        'not-a-map',
+        {'title': '某某充电站'},
+      ]);
+
+      // Act & Assert
+      expect(nearestPoiTitle(body), '某某充电站');
+    });
+
+    test('无 pois / 空列表 / 结构缺失 / 空入参返回 null', () {
+      // Arrange & Act & Assert
+      expect(nearestPoiTitle(mkBody([])), isNull);
+      expect(nearestPoiTitle({'status': 0, 'result': {}}), isNull);
+      expect(nearestPoiTitle({'status': 0}), isNull);
+      expect(nearestPoiTitle(null), isNull);
+    });
+
+    test('GeocoderRegion 默认 poiTitle 为空串', () {
+      // Arrange & Act
+      final region = normalizeGeocoderResult({
+        'status': 0,
+        'result': {
+          'address': 'x',
+          'address_component': {'province': '广东省', 'city': '广州市'},
+        },
+      });
+
+      // Assert
+      expect(region, isNotNull);
+      expect(region!.poiTitle, '');
+    });
+  });
 }

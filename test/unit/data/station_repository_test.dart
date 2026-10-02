@@ -253,12 +253,16 @@ void main() {
   });
 
   group('StationRepository 逆地编码', () {
-    Map<String, dynamic> geocodeBody({String city = '广州市'}) => {
+    Map<String, dynamic> geocodeBody({
+      String city = '广州市',
+      List<dynamic>? pois,
+    }) => {
       'status': 0,
       'result': {
         'address': '天河路123号',
         'address_component': {'province': '广东省', 'city': city},
         'formatted_addresses': {'recommend': '广东省广州市天河区天河路123号'},
+        'pois': ?pois,
       },
     };
 
@@ -271,8 +275,30 @@ void main() {
 
       expect(captured, hasLength(1));
       expect(captured.first['location'], '$_originLat,$_originLng');
+      // 请求携带 get_poi=1 以获取周边 POI（地点名精度）
+      expect(captured.first['get_poi'], '1');
       expect(region.province, '广东省');
       expect(region.city, '广州市');
+      expect(region.address, '广东省广州市天河区天河路123号');
+      expect(region.poiTitle, '');
+    });
+
+    test('响应含 pois 时 poiTitle 取最近 POI 标题', () async {
+      final captured = <Map<String, dynamic>>[];
+      final dio = _buildDio(
+        captured: captured,
+        respond: (i) => geocodeBody(
+          pois: [
+            {'title': '小鹏超充站(南山店)', 'distance': 45},
+          ],
+        ),
+      );
+      final repo = _buildRepo(dio, FakeKeyValueStore());
+
+      final region = await repo.reverseGeocode(_originLat, _originLng);
+
+      expect(region.poiTitle, '小鹏超充站(南山店)');
+      // 推荐地址保留作为回退
       expect(region.address, '广东省广州市天河区天河路123号');
     });
 

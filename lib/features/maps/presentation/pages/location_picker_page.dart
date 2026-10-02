@@ -2,10 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:ev_tool_app/core/domain/charge_map.dart';
-import 'package:ev_tool_app/core/domain/charge_records.dart' show locationNameMaxLength;
+import 'package:ev_tool_app/core/domain/charge_records.dart'
+    show locationNameMaxLength;
 import 'package:ev_tool_app/core/domain/stations.dart' show GeocoderRegion;
 import 'package:ev_tool_app/core/extensions/context_extensions.dart';
 import 'package:ev_tool_app/core/theme/app_colors.dart';
+import 'package:ev_tool_app/core/utils/logger.dart';
 import 'package:ev_tool_app/features/maps/presentation/widgets/apple_map_view.dart';
 import 'package:ev_tool_app/features/stations/data/station_repository.dart';
 
@@ -36,7 +38,11 @@ const double _fallbackLongitude = 116.407;
 /// 未配置 Key / 请求失败时降级为本地最近城市匹配（不阻塞选点）。
 /// 注意：包含地图插件，不可在 flutter test 中 pump。
 class LocationPickerPage extends ConsumerStatefulWidget {
-  const LocationPickerPage({super.key, this.initialLatitude, this.initialLongitude});
+  const LocationPickerPage({
+    super.key,
+    this.initialLatitude,
+    this.initialLongitude,
+  });
 
   /// 初始视野（编辑记录时传当前点位）。
   final double? initialLatitude;
@@ -54,6 +60,10 @@ class _LocationPickerPageState extends ConsumerState<LocationPickerPage> {
   String? _resolving;
   PickedLocation? _resolved;
 
+  /// 逆地理失败（无 Key / 配额 / 网络）→ 降级本地城市匹配时置位，
+  /// 底部预览提示用户详细地址缺失，而非静默只回填城市。
+  bool _geocodeFailed = false;
+
   void _handleMapTap(double latitude, double longitude) {
     setState(() {
       _latitude = latitude;
@@ -66,22 +76,29 @@ class _LocationPickerPageState extends ConsumerState<LocationPickerPage> {
 
   Future<void> _resolveLocation(double latitude, double longitude) async {
     GeocoderRegion? region;
+    var geocodeFailed = false;
     try {
       region = await ref
           .read(stationRepositoryProvider)
           .reverseGeocode(latitude, longitude);
-    } on Exception {
+    } on Exception catch (e) {
       region = null; // 无 Key / 网络失败 → 本地降级
+      geocodeFailed = true;
+      appLogger.w('逆地理解析失败，降级本地城市匹配', error: e);
     }
     if (!mounted || _latitude != latitude || _longitude != longitude) return;
     setState(() {
+      _geocodeFailed = geocodeFailed;
       if (region != null && region.province.isNotEmpty) {
         _resolved = PickedLocation(
           latitude: latitude,
           longitude: longitude,
           province: region.province,
           city: region.city.isNotEmpty ? region.city : null,
-          locationName: _truncateLocation(region.address),
+          // POI 标题优先（get_poi=1），缺失时回退推荐地址
+          locationName: _truncateLocation(
+            region.poiTitle.isNotEmpty ? region.poiTitle : region.address,
+          ),
         );
       } else {
         final nearest = findNearestCity(latitude, longitude);
@@ -184,9 +201,7 @@ class _LocationPickerPageState extends ConsumerState<LocationPickerPage> {
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
                       fontSize: 13,
-                      color: hasPicked
-                          ? palette.onSurface
-                          : palette.textHint,
+                      color: hasPicked ? palette.onSurface : palette.textHint,
                     ),
                   ),
                   const SizedBox(height: 10),
@@ -211,13 +226,12 @@ class _LocationPickerPageState extends ConsumerState<LocationPickerPage> {
     if (resolved != null) {
       final parts = [
         if (resolved.city != null || resolved.province != null)
-          [resolved.province, resolved.city]
-              .whereType<String>()
-              .join(' · '),
+          [resolved.province, resolved.city].whereType<String>().join(' · '),
         if (resolved.locationName != null) resolved.locationName,
       ];
       final text = parts.join('　');
-      return text.isEmpty ? '已选择位置' : text;
+      if (text.isEmpty) return '已选择位置';
+      return _geocodeFailed ? '$text（未获取到详细地址，仅保存城市）' : text;
     }
     return '尚未选择位置';
   }

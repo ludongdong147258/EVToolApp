@@ -162,11 +162,16 @@ class GeocoderRegion {
     required this.province,
     required this.city,
     required this.address,
+    this.poiTitle = '',
   });
 
   final String province;
   final String city;
   final String address;
+
+  /// 最近 POI 标题（geocoder 携带 get_poi=1 时返回，按距离升序）；
+  /// 空串表示响应未包含 POI，调用方应回退 [address]。
+  final String poiTitle;
 }
 
 /// JS `Number()` 语义：null → NaN（Number(null) === 0 的场景由调用方处理），
@@ -405,6 +410,32 @@ GeocoderRegion? normalizeGeocoderResult(Map<String, dynamic>? body) {
       ? '$rawAddress'
       : '';
   return GeocoderRegion(province: province, city: city, address: address);
+}
+
+/// geocoder/v1（携带 get_poi=1）响应 → 最近 POI 标题。
+///
+/// 腾讯侧 `result.pois` 按距离升序，取首个有效 `title`；
+/// 结构缺失 / 空 / 非法输入返回 null（纯函数不抛异常）。
+String? nearestPoiTitle(Map<String, dynamic>? body) {
+  if (body == null) {
+    return null;
+  }
+  final result = body['result'];
+  if (result is! Map) {
+    return null;
+  }
+  final pois = result['pois'];
+  if (pois is! List) {
+    return null;
+  }
+  for (final poi in pois) {
+    if (poi is! Map) continue;
+    final title = poi['title'];
+    if (_isTruthy(title)) {
+      return '$title';
+    }
+  }
+  return null;
 }
 
 /// JS truthiness：null / 空串视为假

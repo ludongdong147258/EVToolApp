@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
@@ -282,17 +284,31 @@ class StationRepository {
   }
 
   /// 用指定 Key 请求一次 geocoder 接口并归一化。
+  ///
+  /// 携带 get_poi=1：响应附带按距离升序的周边 POI，
+  /// 地点名优先取 POI 标题（对齐小程序 chooseLocation 的 res.name 精度）。
   Future<GeocoderRegion> _geocodeOnce(LatLng coord, String key) async {
     final body = await _getJson(
       '/ws/geocoder/v1',
       queryParameters: <String, dynamic>{
         'location': '${coord.latitude},${coord.longitude}',
         'key': key,
+        'get_poi': '1',
+        'poi_options': 'radius=1000',
       },
     );
     final result = normalizeGeocoderResult(body);
     if (result != null) {
-      return result;
+      final poiTitle = nearestPoiTitle(body);
+      if (poiTitle == null) {
+        return result;
+      }
+      return GeocoderRegion(
+        province: result.province,
+        city: result.city,
+        address: result.address,
+        poiTitle: poiTitle,
+      );
     }
     _throwForBusinessStatus(body);
     // status 为 0 但 result 结构缺失
@@ -315,6 +331,18 @@ class StationRepository {
       }
       if (data is Map) {
         return data.cast<String, dynamic>();
+      }
+      // Content-Type 非 JSON 时 dio 不解码（String 原样返回），
+      // 对齐 Taro.request 无论 Content-Type 都 JSON 解析的行为
+      if (data is String && data.trim().isNotEmpty) {
+        try {
+          final decoded = jsonDecode(data);
+          if (decoded is Map) {
+            return decoded.cast<String, dynamic>();
+          }
+        } on FormatException {
+          // 非 JSON 字符串 → 走空 Map，由业务状态检查统一报错
+        }
       }
       return const <String, dynamic>{};
     } on DioException catch (e) {
