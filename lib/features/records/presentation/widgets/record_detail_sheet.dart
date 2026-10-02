@@ -3,9 +3,11 @@ import 'package:flutter/material.dart';
 import 'package:ev_tool_app/core/domain/charge_records.dart';
 import 'package:ev_tool_app/core/domain/numbers.dart';
 import 'package:ev_tool_app/core/extensions/context_extensions.dart';
+import 'package:ev_tool_app/core/theme/app_colors.dart';
 import 'package:ev_tool_app/core/widgets/app_sheet.dart';
 
-/// 充电记录详情弹层（移植小程序 RecordDetailSheet）。
+/// 充电记录详情弹层（样式对齐小程序 RecordDetailSheet：
+/// 居中头部图标/金额/类型 chip + 右对齐行式信息 + 软按钮操作区）。
 Future<void> showRecordDetailSheet(
   BuildContext context, {
   required ChargeRecord record,
@@ -18,76 +20,77 @@ Future<void> showRecordDetailSheet(
   final avgPower = record.durationMinutes != null && record.durationMinutes! > 0
       ? record.energy / (record.durationMinutes! / 60)
       : null;
+  final durationFormatted = formatDuration(record.durationMinutes);
+  final durationText = durationFormatted.isEmpty ? '未记录' : durationFormatted;
 
   return showAppSheet(
     context: context,
-    title: '充电详情',
+    title: '记录详情',
     builder: (context) => AppSheetScrollBody(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const SizedBox(height: 4),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.center,
+          const SizedBox(height: 8),
+          // 头部：类型图标 → 金额 → 类型 chip（居中纵向）
+          Column(
             children: [
               Container(
-                width: 44,
-                height: 44,
+                width: 48,
+                height: 48,
                 decoration: BoxDecoration(
-                  color: isHome
-                      ? palette.secondaryContainer
-                      : palette.primaryContainer,
+                  color: isHome ? palette.secondary : palette.primary,
                   shape: BoxShape.circle,
                 ),
                 child: Icon(
                   isHome ? Icons.home_rounded : Icons.bolt_rounded,
-                  color: isHome ? palette.onSecondaryContainer : Colors.white,
+                  color: Colors.white,
+                  size: 26,
                 ),
               ),
-              const SizedBox(width: 12),
-              Column(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Text(
-                    '¥${formatYuan(record.cost)}',
-                    style: context.textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.w700,
-                    ),
+              const SizedBox(height: 8),
+              Text(
+                '¥${formatYuan(record.cost)}',
+                style: TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.w700,
+                  color: palette.onSurface,
+                ),
+              ),
+              const SizedBox(height: 6),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 2,
+                ),
+                decoration: BoxDecoration(
+                  color: palette.secondaryContainer,
+                  borderRadius: BorderRadius.circular(AppColors.radiusXl),
+                ),
+                child: Text(
+                  typeDefaultTitles[record.type] ?? record.type,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: palette.onSecondaryContainer,
                   ),
-                  const SizedBox(height: 2),
-                  Text(
-                    typeDefaultTitles[record.type] ?? record.type,
-                    style: TextStyle(
-                      fontSize: 12,
-                      color: palette.textSecondary,
-                    ),
-                  ),
-                ],
+                ),
               ),
             ],
           ),
           const SizedBox(height: 16),
-          _SheetRow(label: '日期', value: record.date),
+          // 行式信息：label 左 / value 右对齐，末行（备注）无分割线
+          _SheetRow(label: '充电日期', value: formatRecordDate(record.date)),
+          if (record.vehicleName?.isNotEmpty == true)
+            _SheetRow(label: '车辆', value: record.vehicleName!),
+          _SheetRow(label: '充电电量', value: '${formatYuan(record.energy)} kWh'),
           _SheetRow(
-            label: '车辆',
-            value: record.vehicleName?.isNotEmpty == true
-                ? record.vehicleName!
-                : '未关联',
+            label: '度电单价',
+            value: costPerKwh == null ? '--' : '¥${formatYuan(costPerKwh)}/kWh',
           ),
-          _SheetRow(label: '电量', value: '${formatYuan(record.energy)} kWh'),
+          _SheetRow(label: '充电时长', value: durationText),
           _SheetRow(
-            label: '度电成本',
-            value: costPerKwh == null
-                ? '--'
-                : '${formatYuan(costPerKwh)} 元/kWh',
+            label: '平均功率',
+            value: avgPower == null ? '—' : '${formatYuan(avgPower)} kW',
           ),
-          if (record.durationMinutes != null)
-            _SheetRow(
-              label: '充电时长',
-              value: formatDuration(record.durationMinutes),
-            ),
-          if (avgPower != null)
-            _SheetRow(label: '平均功率', value: '${formatYuan(avgPower)} kW'),
           if (record.locationName?.isNotEmpty == true)
             _SheetRow(
               label: '地点',
@@ -96,39 +99,40 @@ Future<void> showRecordDetailSheet(
                 record.locationName,
               ].whereType<String>().join(' · '),
             ),
-          if (record.note.isNotEmpty)
-            _SheetRow(label: '备注', value: record.note),
-          const SizedBox(height: 16),
+          _SheetRow(
+            label: '备注',
+            value: record.note.isNotEmpty ? record.note : '—',
+            isLast: true,
+          ),
+          const SizedBox(height: 24),
+          // 操作区：中性编辑 + 危险删除软按钮（等宽）
           Row(
             children: [
               Expanded(
-                child: FilledButton.icon(
-                  onPressed: () {
+                child: _SheetAction(
+                  icon: Icons.edit_outlined,
+                  label: '编辑这条记录',
+                  iconColor: palette.textSecondary,
+                  textColor: palette.onSurface,
+                  background: palette.surfaceContainerLow,
+                  onTap: () {
                     Navigator.of(context).pop();
                     onEdit();
                   },
-                  icon: const Icon(Icons.edit_outlined, size: 18),
-                  label: const Text('编辑'),
                 ),
               ),
-              const SizedBox(width: 12),
+              const SizedBox(width: 8),
               Expanded(
-                child: OutlinedButton.icon(
-                  style: OutlinedButton.styleFrom(
-                    foregroundColor: palette.error,
-                    minimumSize: const Size.fromHeight(50),
-                    side: BorderSide(color: palette.errorContainer),
-                  ),
-                  onPressed: () {
+                child: _SheetAction(
+                  icon: Icons.delete_outline_rounded,
+                  label: '删除这条记录',
+                  iconColor: palette.error,
+                  textColor: palette.onErrorContainer,
+                  background: palette.errorContainer,
+                  onTap: () {
                     Navigator.of(context).pop();
                     onDelete();
                   },
-                  icon: Icon(
-                    Icons.delete_outline_rounded,
-                    size: 18,
-                    color: palette.error,
-                  ),
-                  label: const Text('删除'),
                 ),
               ),
             ],
@@ -140,40 +144,96 @@ Future<void> showRecordDetailSheet(
 }
 
 class _SheetRow extends StatelessWidget {
-  const _SheetRow({required this.label, required this.value});
+  const _SheetRow({
+    required this.label,
+    required this.value,
+    this.isLast = false,
+  });
 
   final String label;
   final String value;
+  final bool isLast;
 
   @override
   Widget build(BuildContext context) {
     final palette = context.palette;
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 12),
-      decoration: BoxDecoration(
-        border: Border(bottom: BorderSide(color: palette.divider, width: 0.5)),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 88,
-            child: Text(
-              label,
-              style: TextStyle(fontSize: 13, color: palette.textHint),
+      decoration: isLast
+          ? null
+          : BoxDecoration(
+              border: Border(
+                bottom: BorderSide(color: palette.divider, width: 0.5),
+              ),
             ),
+      child: Row(
+        children: [
+          Text(
+            label,
+            style: TextStyle(fontSize: 14, color: palette.textSecondary),
           ),
+          const SizedBox(width: 16),
           Expanded(
             child: Text(
               value,
+              textAlign: TextAlign.right,
               style: TextStyle(
                 fontSize: 14,
                 color: palette.onSurface,
-                fontWeight: FontWeight.w500,
+                fontWeight: FontWeight.w600,
               ),
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// 操作软按钮：圆角底色 + 居中图标/文字（对齐小程序 rc-detail-edit/delete）。
+class _SheetAction extends StatelessWidget {
+  const _SheetAction({
+    required this.icon,
+    required this.label,
+    required this.iconColor,
+    required this.textColor,
+    required this.background,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String label;
+  final Color iconColor;
+  final Color textColor;
+  final Color background;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(AppColors.radiusLg),
+      onTap: onTap,
+      child: Container(
+        height: 44,
+        decoration: BoxDecoration(
+          color: background,
+          borderRadius: BorderRadius.circular(AppColors.radiusLg),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 18, color: iconColor),
+            const SizedBox(width: 8),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: textColor,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
