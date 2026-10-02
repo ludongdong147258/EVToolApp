@@ -36,7 +36,7 @@ class GradientHeroCard extends StatelessWidget {
   }
 }
 
-/// hero 卡内三列统计（半透明分隔线），移植 .hero-stats。
+/// hero 卡内三列统计（半透明分隔线，两侧留白），移植 .hero-stats。
 class HeroStatsRow extends StatelessWidget {
   const HeroStatsRow({super.key, required this.items});
 
@@ -44,22 +44,19 @@ class HeroStatsRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return IntrinsicHeight(
-      child: Row(
-        children: [
-          for (var i = 0; i < items.length; i++) ...[
-            if (i > 0)
-              const VerticalDivider(
-                width: 1,
-                thickness: 1,
-                color: AppColors.onPrimaryA28,
-                indent: 4,
-                endIndent: 4,
-              ),
-            Expanded(child: items[i]),
-          ],
+    return Row(
+      children: [
+        for (var i = 0; i < items.length; i++) ...[
+          if (i > 0)
+            Container(
+              width: 1,
+              height: 28,
+              margin: const EdgeInsets.symmetric(horizontal: 16),
+              color: AppColors.onPrimaryA28,
+            ),
+          Expanded(child: items[i]),
         ],
-      ),
+      ],
     );
   }
 }
@@ -76,40 +73,50 @@ class HeroStatItem extends StatelessWidget {
   final String value;
   final String? unit;
 
+  /// 数值字号按长度自适应（对齐小程序 stat-col-value 变体：
+  /// ≤6 字 --lg 22 / ≤9 字默认 18 / 更长 --sm 14，防长数字溢出列宽）。
+  static const int _largeValueMaxLength = 6;
+  static const int _mediumValueMaxLength = 9;
+
+  double get _valueFontSize {
+    if (value.length <= _largeValueMaxLength) {
+      return 22;
+    }
+    if (value.length <= _mediumValueMaxLength) {
+      return 18;
+    }
+    return 14;
+  }
+
   @override
   Widget build(BuildContext context) {
+    // 标签 / 数值 / 单位三行纵排
     return Column(
       mainAxisSize: MainAxisSize.min,
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           label,
-          style: const TextStyle(fontSize: 12, color: AppColors.onPrimaryA85),
+          style: const TextStyle(fontSize: 14, color: AppColors.onPrimaryA85),
         ),
-        const SizedBox(height: 6),
-        RichText(
+        const SizedBox(height: 4),
+        Text(
+          value,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
-          text: TextSpan(
-            children: [
-              TextSpan(
-                text: value,
-                style: const TextStyle(
-                  fontSize: 22,
-                  fontWeight: FontWeight.w700,
-                  color: Colors.white,
-                ),
-              ),
-              if (unit != null)
-                TextSpan(
-                  text: ' $unit',
-                  style: const TextStyle(
-                    fontSize: 11,
-                    color: AppColors.onPrimaryA85,
-                  ),
-                ),
-            ],
+          style: TextStyle(
+            fontSize: _valueFontSize,
+            fontWeight: FontWeight.w700,
+            color: Colors.white,
           ),
         ),
+        if (unit != null) ...[
+          const SizedBox(height: 2),
+          Text(
+            unit!,
+            style: const TextStyle(fontSize: 12, color: AppColors.onPrimaryA85),
+          ),
+        ],
       ],
     );
   }
@@ -124,29 +131,20 @@ class HeroValue extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    const valueStyle = TextStyle(
+      fontSize: 32,
+      fontWeight: FontWeight.w700,
+      color: Colors.white,
+      height: 1.2,
+    );
     return RichText(
       maxLines: 1,
       overflow: TextOverflow.ellipsis,
       text: TextSpan(
         children: [
-          if (unit != null)
-            TextSpan(
-              text: '$unit ',
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.w600,
-                color: AppColors.onPrimaryA85,
-              ),
-            ),
-          TextSpan(
-            text: value,
-            style: const TextStyle(
-              fontSize: 32,
-              fontWeight: FontWeight.w700,
-              color: Colors.white,
-              height: 1.2,
-            ),
-          ),
+          // ¥ 等前缀与数值同段同尺寸（对齐小程序 .hero-value 单一文本）
+          if (unit != null) TextSpan(text: unit, style: valueStyle),
+          TextSpan(text: value, style: valueStyle),
         ],
       ),
     );

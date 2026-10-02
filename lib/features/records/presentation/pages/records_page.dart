@@ -166,10 +166,10 @@ class _RecordsPageState extends ConsumerState<RecordsPage> {
                       Expanded(
                         child: Text(
                           '$monthLabel · 本月',
+                          // hero-label--strong：纯白 14px（对齐小程序）
                           style: const TextStyle(
-                            fontSize: 13,
-                            color: AppColors.onPrimaryA85,
-                            fontWeight: FontWeight.w600,
+                            fontSize: 14,
+                            color: Colors.white,
                           ),
                         ),
                       ),
@@ -181,7 +181,7 @@ class _RecordsPageState extends ConsumerState<RecordsPage> {
                   ),
                   const SizedBox(height: 8),
                   HeroValue(value: formatYuan(summary.totalCost), unit: '¥'),
-                  const SizedBox(height: 16),
+                  const SizedBox(height: 20),
                   HeroStatsRow(
                     items: [
                       HeroStatItem(
