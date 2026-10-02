@@ -832,11 +832,7 @@ class _NumberField extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: TextStyle(fontSize: 12, color: context.palette.textSecondary),
-        ),
-        const SizedBox(height: 6),
+        _FieldLabel(label),
         TextField(
           controller: controller,
           keyboardType: isMultiline
