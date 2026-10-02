@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
@@ -11,25 +12,39 @@ import 'package:ev_tool_app/core/utils/logger.dart';
 import 'package:ev_tool_app/core/widgets/app_toast.dart';
 import 'package:ev_tool_app/features/ocr/data/ocr_repository.dart';
 
-/// 拍照识别小票入口卡（供 record-add 表单页嵌入）。
+/// 秒数计时 ≥2s 才显示（快请求不闪烁数字），对齐小程序 ELAPSED_VISIBLE_DELAY。
+const int _elapsedVisibleDelaySeconds = 2;
+
+/// 拍照识别小票入口（虚线拍照区块，样式对齐小程序 .ocr-zone）。
 ///
-/// - 相机 / 相册两个入口（image_picker），识别中禁用并显示 spinner
-/// - 成功：toast「识别成功 N 项」并回调 [onResult]（页面据此回填表单）
-/// - 失败：error toast 中文文案
+/// - 单击拉起「拍照 / 从相册选择」，识别中整块半透明禁用，标题变「正在识别小票…Ns」
+/// - 成功：回调 [onResult]（页面负责覆盖确认、回填与 toast）
+/// - 失败：[onError] 上抛中文文案（页面渲染行内错误 + 重试）；空串表示清除错误
 /// - 智谱 Key 未配置（[ocrAvailableProvider] false）时整体隐藏
 class OcrEntryCard extends ConsumerStatefulWidget {
-  const OcrEntryCard({super.key, this.onResult});
+  const OcrEntryCard({super.key, this.onResult, this.onError});
 
-  /// 识别成功回调（仅在有有效字段时触发）
+  /// 识别成功回调（仅在有有效字段时触发）。
   final void Function(ReceiptResult result)? onResult;
 
+  /// 错误文案回调（开始新识别时以空串清除）。
+  final ValueChanged<String>? onError;
+
   @override
-  ConsumerState<OcrEntryCard> createState() => _OcrEntryCardState();
+  ConsumerState<OcrEntryCard> createState() => OcrEntryCardState();
 }
 
-class _OcrEntryCardState extends ConsumerState<OcrEntryCard> {
+class OcrEntryCardState extends ConsumerState<OcrEntryCard> {
   final ImagePicker _picker = ImagePicker();
   bool _isRecognizing = false;
+  int _elapsedSeconds = 0;
+  Timer? _elapsedTimer;
+
+  @override
+  void dispose() {
+    _elapsedTimer?.cancel();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -38,55 +53,98 @@ class _OcrEntryCardState extends ConsumerState<OcrEntryCard> {
       return const SizedBox.shrink();
     }
     final palette = context.palette;
+    final title = _isRecognizing
+        ? '正在识别小票…'
+              '${_elapsedSeconds >= _elapsedVisibleDelaySeconds ? ' $_elapsedSeconds s' : ''}'
+        : '拍照识别小票';
 
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: palette.surfaceCard,
-        borderRadius: BorderRadius.circular(AppColors.radiusLg),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Icon(Icons.receipt_long_outlined, color: palette.primary),
-              const SizedBox(width: 8),
-              Text('拍照识别小票', style: context.textTheme.titleSmall),
-            ],
-          ),
-          const SizedBox(height: 4),
-          Text(
-            '拍摄充电小票，自动识别费用、电量、时长等信息',
-            style: context.textTheme.bodySmall?.copyWith(
-              color: palette.textHint,
+    return IgnorePointer(
+      ignoring: _isRecognizing,
+      child: Opacity(
+        opacity: _isRecognizing ? 0.6 : 1,
+        child: ClipRRect(
+          borderRadius: BorderRadius.circular(AppColors.radiusMd),
+          child: Material(
+            color: palette.inputBg,
+            child: InkWell(
+              onTap: () => unawaited(openPicker()),
+              child: CustomPaint(
+                foregroundPainter: _DashedBorderPainter(
+                  color: palette.primaryContainer,
+                  radius: AppColors.radiusMd,
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Row(
+                    children: [
+                      Icon(
+                        Icons.photo_camera_outlined,
+                        size: 26,
+                        color: palette.primaryContainer,
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              title,
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w700,
+                                color: palette.primaryContainer,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              '拍摄或选择充电小票，自动填充费用、电量、时长',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: palette.textHint,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
             ),
           ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              Expanded(
-                child: _PickButton(
-                  icon: Icons.camera_alt_outlined,
-                  label: '拍照识别',
-                  loading: _isRecognizing,
-                  onTap: () => unawaited(_pick(ImageSource.camera)),
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _PickButton(
-                  icon: Icons.photo_library_outlined,
-                  label: '相册识别',
-                  loading: _isRecognizing,
-                  onTap: () => unawaited(_pick(ImageSource.gallery)),
-                ),
-              ),
-            ],
-          ),
-        ],
+        ),
       ),
     );
+  }
+
+  /// 拉起来源选择（对齐小程序 chooseMedia 的 album/camera 双来源）。
+  ///
+  /// 公开给宿主页面：行内错误的「重试」按钮经 GlobalKey 重新调用。
+  Future<void> openPicker() async {
+    final source = await showModalBottomSheet<ImageSource>(
+      context: context,
+      builder: (sheetContext) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Icon(Icons.camera_alt_outlined),
+              title: const Text('拍照'),
+              onTap: () => Navigator.of(sheetContext).pop(ImageSource.camera),
+            ),
+            ListTile(
+              leading: const Icon(Icons.photo_library_outlined),
+              title: const Text('从相册选择'),
+              onTap: () => Navigator.of(sheetContext).pop(ImageSource.gallery),
+            ),
+          ],
+        ),
+      ),
+    );
+    if (source == null) {
+      return; // 用户取消不算错误
+    }
+    await _pick(source);
   }
 
   Future<void> _pick(ImageSource source) async {
@@ -112,7 +170,16 @@ class _OcrEntryCardState extends ConsumerState<OcrEntryCard> {
   }
 
   Future<void> _recognize(String imagePath) async {
-    setState(() => _isRecognizing = true);
+    widget.onError?.call(''); // 开始新识别，清除行内错误
+    setState(() {
+      _isRecognizing = true;
+      _elapsedSeconds = 0;
+    });
+    _elapsedTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (mounted) {
+        setState(() => _elapsedSeconds++);
+      }
+    });
     try {
       final result = await ref
           .read(ocrRepositoryProvider)
@@ -121,22 +188,23 @@ class _OcrEntryCardState extends ConsumerState<OcrEntryCard> {
         return;
       }
       if (result == null || result.filledFields.isEmpty) {
-        showAppToast(context, '未能识别出有效信息，请换一张更清晰的照片');
+        widget.onError?.call('未能识别出有效信息，请重试或手动填写');
         return;
       }
-      showAppToast(context, '识别成功 ${result.filledFields.length} 项');
       widget.onResult?.call(result);
     } on OcrException catch (e) {
       appLogger.w('小票识别失败：${e.message}');
       if (mounted) {
-        showErrorToast(context, e.message);
+        widget.onError?.call(e.message);
       }
     } on Exception catch (e) {
       appLogger.w('小票识别异常：$e');
       if (mounted) {
-        showErrorToast(context, '识别失败，请重试');
+        widget.onError?.call('识别失败，请重试');
       }
     } finally {
+      _elapsedTimer?.cancel();
+      _elapsedTimer = null;
       if (mounted) {
         setState(() => _isRecognizing = false);
       }
@@ -144,39 +212,38 @@ class _OcrEntryCardState extends ConsumerState<OcrEntryCard> {
   }
 }
 
-class _PickButton extends StatelessWidget {
-  const _PickButton({
-    required this.icon,
-    required this.label,
-    required this.loading,
-    required this.onTap,
-  });
+/// 圆角矩形虚线边框（Flutter 无原生 dashed border，用 path 度量逐段绘制）。
+class _DashedBorderPainter extends CustomPainter {
+  const _DashedBorderPainter({required this.color, required this.radius});
 
-  final IconData icon;
-  final String label;
-  final bool loading;
-  final VoidCallback onTap;
+  static const double _strokeWidth = 1.5;
+  static const double _dashLength = 4;
+  static const double _gap = 4;
+
+  final Color color;
+  final double radius;
 
   @override
-  Widget build(BuildContext context) {
-    final palette = context.palette;
-    return OutlinedButton.icon(
-      onPressed: loading ? null : onTap,
-      style: OutlinedButton.styleFrom(
-        minimumSize: const Size.fromHeight(44),
-        side: BorderSide(color: palette.outlineVariant),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppColors.radiusLg),
-        ),
-      ),
-      icon: loading
-          ? const SizedBox(
-              width: 16,
-              height: 16,
-              child: CircularProgressIndicator(strokeWidth: 2),
-            )
-          : Icon(icon, size: 18, color: palette.primary),
-      label: Text(loading ? '识别中…' : label),
-    );
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = color
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = _strokeWidth;
+    final path = Path()
+      ..addRRect(
+        RRect.fromRectAndRadius(Offset.zero & size, Radius.circular(radius)),
+      );
+    for (final metric in path.computeMetrics()) {
+      var distance = 0.0;
+      while (distance < metric.length) {
+        final next = math.min(distance + _dashLength, metric.length);
+        canvas.drawPath(metric.extractPath(distance, next), paint);
+        distance = next + _gap;
+      }
+    }
   }
+
+  @override
+  bool shouldRepaint(_DashedBorderPainter oldDelegate) =>
+      color != oldDelegate.color || radius != oldDelegate.radius;
 }

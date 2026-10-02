@@ -35,6 +35,7 @@ class RecordAddPage extends ConsumerStatefulWidget {
 
 class _RecordAddPageState extends ConsumerState<RecordAddPage> {
   final _formKey = GlobalKey<FormState>();
+  final _ocrKey = GlobalKey<OcrEntryCardState>();
   final _costController = TextEditingController();
   final _energyController = TextEditingController();
   final _hoursController = TextEditingController();
@@ -53,6 +54,9 @@ class _RecordAddPageState extends ConsumerState<RecordAddPage> {
   double? _longitude;
   Timer? _draftTimer;
   bool _initialized = false;
+
+  /// 小票识别行内错误文案（null = 无错误；重试入口随其显示）。
+  String? _ocrError;
 
   bool get _isEdit => widget.recordId != null;
 
@@ -166,16 +170,21 @@ class _RecordAddPageState extends ConsumerState<RecordAddPage> {
       _hoursController.text = (form.hours ?? '').toString();
       _minutesController.text = (form.minutes ?? '').toString();
       _noteController.text = (form.note ?? '').toString();
-      _vehicleId = form.vehicleId is String && (form.vehicleId as String).isNotEmpty
+      _vehicleId =
+          form.vehicleId is String && (form.vehicleId as String).isNotEmpty
           ? form.vehicleId as String
           : null;
-      _vehicleName = form.vehicleName is String ? form.vehicleName as String? : null;
+      _vehicleName = form.vehicleName is String
+          ? form.vehicleName as String?
+          : null;
       _province = form.province is String ? form.province as String? : null;
       _city = form.city is String ? form.city as String? : null;
       _locationName = form.locationName is String
           ? form.locationName as String?
           : null;
-      _latitude = form.latitude is num ? (form.latitude as num).toDouble() : null;
+      _latitude = form.latitude is num
+          ? (form.latitude as num).toDouble()
+          : null;
       _longitude = form.longitude is num
           ? (form.longitude as num).toDouble()
           : null;
@@ -205,20 +214,112 @@ class _RecordAddPageState extends ConsumerState<RecordAddPage> {
     }
   }
 
-  /// OCR 识别结果回填表单（覆盖式，值有效才填）。
-  void _applyReceiptResult(ReceiptResult result) {
-    setState(() {
-      if (result.cost.isNotEmpty) _costController.text = result.cost;
-      if (result.energy.isNotEmpty) _energyController.text = result.energy;
-      if (result.hours.isNotEmpty) _hoursController.text = result.hours;
-      if (result.minutes.isNotEmpty) _minutesController.text = result.minutes;
-      if (result.note.isNotEmpty) _noteController.text = result.note;
-      final date = DateTime.tryParse(result.date);
-      if (date != null && !date.isAfter(DateTime.now())) _date = date;
-      if (result.chargeType == 'fast' || result.chargeType == 'home') {
-        _type = result.chargeType;
+  /// OCR 识别结果回填表单（对齐小程序 applyReceiptResult：
+  /// 覆盖用户已填项前弹确认；备注只在为空时回填；成功 toast + 轻震动）。
+  Future<void> _applyReceiptResult(ReceiptResult result) async {
+    final filled = result.filledFields.toSet();
+    final parsedDate = DateTime.tryParse(result.date);
+    final hasDate = parsedDate != null && !parsedDate.isAfter(DateTime.now());
+    final hasDuration = result.hours.isNotEmpty || result.minutes.isNotEmpty;
+    final hasType = result.chargeType == 'fast' || result.chargeType == 'home';
+    final noteEmpty = _noteController.text.isEmpty && result.note.isNotEmpty;
+
+    // 统计将被覆盖的用户已填项
+    final now = DateTime.now();
+    final isToday =
+        _date.year == now.year &&
+        _date.month == now.month &&
+        _date.day == now.day;
+    var overwritten = 0;
+    if (filled.contains('cost') && _costController.text.trim().isNotEmpty) {
+      overwritten++;
+    }
+    if (filled.contains('energy') && _energyController.text.trim().isNotEmpty) {
+      overwritten++;
+    }
+    if (filled.contains('duration') &&
+        (_hoursController.text.trim().isNotEmpty ||
+            _minutesController.text.trim().isNotEmpty)) {
+      overwritten++;
+    }
+    if (filled.contains('date') && hasDate && !isToday) {
+      overwritten++;
+    }
+    if (filled.contains('chargeType') &&
+        hasType &&
+        _type != result.chargeType) {
+      overwritten++;
+    }
+    if (overwritten > 0) {
+      final proceed = await showDialog<bool>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: const Text('覆盖确认'),
+          content: Text('识别结果将覆盖已填写的 $overwritten 项内容，是否继续？'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: const Text('取消'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(true),
+              child: const Text('继续'),
+            ),
+          ],
+        ),
+      );
+      if (proceed != true) {
+        return; // 取消：丢弃识别结果，保留用户手填内容
       }
+    }
+
+    var count = 0;
+    setState(() {
+      if (result.cost.isNotEmpty) {
+        _costController.text = result.cost;
+        count++;
+      }
+      if (result.energy.isNotEmpty) {
+        _energyController.text = result.energy;
+        count++;
+      }
+      if (hasDuration) {
+        if (result.hours.isNotEmpty) _hoursController.text = result.hours;
+        if (result.minutes.isNotEmpty) {
+          _minutesController.text = result.minutes;
+        }
+        count++;
+      }
+      if (hasDate) {
+        _date = parsedDate;
+        count++;
+      }
+      if (hasType) {
+        _type = result.chargeType;
+        count++;
+      }
+      if (noteEmpty) {
+        _noteController.text = result.note;
+        count++;
+      }
+      _ocrError = null;
     });
+    if (count == 0 || !mounted) {
+      return;
+    }
+    unawaited(HapticFeedback.selectionClick());
+    const receiptFieldGroupCount = 6;
+    showAppToast(
+      context,
+      count < receiptFieldGroupCount
+          ? '已识别 $count 项，其余请手动补填'
+          : '已识别 $count 项，请核对',
+    );
+  }
+
+  /// 行内错误重试：重新拉起小票识别选图。
+  void _retryOcr() {
+    _ocrKey.currentState?.openPicker();
   }
 
   ChargeRecordForm _collectForm() => ChargeRecordForm(
@@ -393,12 +494,30 @@ class _RecordAddPageState extends ConsumerState<RecordAddPage> {
           controller: _scrollController,
           padding: const EdgeInsets.all(16),
           children: [
-            OcrEntryCard(onResult: _applyReceiptResult),
-            const SizedBox(height: 12),
             _FormCard(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // 小票识别入口（Key 缺失自隐藏；错误行内反馈 + 重试）
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 16),
+                    child: OcrEntryCard(
+                      key: _ocrKey,
+                      onResult: (result) =>
+                          unawaited(_applyReceiptResult(result)),
+                      onError: (message) => setState(
+                        () => _ocrError = message.isEmpty ? null : message,
+                      ),
+                    ),
+                  ),
+                  if (_ocrError != null) ...[
+                    const SizedBox(height: 4),
+                    _OcrErrorRow(
+                      message: _ocrError!,
+                      onRetry: () => _retryOcr(),
+                    ),
+                  ],
+                  if (_ocrError != null) const SizedBox(height: 16),
                   const _FieldLabel('充电类型'),
                   Row(
                     children: [
@@ -499,26 +618,33 @@ class _RecordAddPageState extends ConsumerState<RecordAddPage> {
                   const SizedBox(height: 16),
                   const _FieldLabel('充电地点（选填）'),
                   _PickerField(
-                    value: [
-                      _city,
-                      _locationName,
-                    ].whereType<String>().join(' · ').isNotEmpty
+                    value:
+                        [
+                          _city,
+                          _locationName,
+                        ].whereType<String>().join(' · ').isNotEmpty
                         ? [_city, _locationName].whereType<String>().join(' · ')
                         : '点击地图选择地点',
                     icon: Icons.place_rounded,
                     onTap: _pickLocation,
-                    trailing: (_city != null ||
+                    trailing:
+                        (_city != null ||
                             _locationName != null ||
                             _latitude != null)
-                        ? IconButton(
-                            icon: const Icon(Icons.close, size: 18),
-                            onPressed: () => setState(() {
+                        ? GestureDetector(
+                            behavior: HitTestBehavior.opaque,
+                            onTap: () => setState(() {
                               _province = null;
                               _city = null;
                               _locationName = null;
                               _latitude = null;
                               _longitude = null;
                             }),
+                            child: const SizedBox(
+                              width: 24,
+                              height: 20,
+                              child: Center(child: Icon(Icons.close, size: 16)),
+                            ),
                           )
                         : null,
                   ),
@@ -652,6 +778,7 @@ class _PickerField extends StatelessWidget {
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 13),
+        constraints: const BoxConstraints(minHeight: 48),
         decoration: BoxDecoration(
           color: palette.inputBg,
           borderRadius: BorderRadius.circular(AppColors.radiusMd),
@@ -663,6 +790,8 @@ class _PickerField extends StatelessWidget {
             Expanded(
               child: Text(
                 value,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
                 style: TextStyle(fontSize: 14, color: palette.onSurface),
               ),
             ),
@@ -715,21 +844,26 @@ class _NumberField extends StatelessWidget {
               : (allowDecimal
                     ? const TextInputType.numberWithOptions(decimal: true)
                     : TextInputType.number),
-          maxLength: maxDigits,
+          // 多行备注：文本无数字过滤，限 100 字（label 口径）；计数条已隐藏
+          maxLength: isMultiline ? 100 : maxDigits,
+          // 备注等宽：空态单行高度，输入增长最多 3 行
           maxLines: isMultiline ? 3 : 1,
+          minLines: 1,
           inputFormatters: [
-            FilteringTextInputFormatter.allow(
-              allowDecimal ? RegExp(r'[0-9.]') : RegExp(r'[0-9]'),
-            ),
+            if (!isMultiline)
+              FilteringTextInputFormatter.allow(
+                allowDecimal ? RegExp(r'[0-9.]') : RegExp(r'[0-9]'),
+              ),
           ],
-          // 单行数字输入（费用/电量/小时/分钟）收紧内边距降低高度
+          // 收紧内边距降低高度（多行与单行数字输入同口径）
           decoration: InputDecoration(
             counterText: '',
             isDense: true,
             hintText: hint,
-            contentPadding: isMultiline
-                ? null
-                : const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+            contentPadding: const EdgeInsets.symmetric(
+              horizontal: 16,
+              vertical: 10,
+            ),
           ),
         ),
       ],
@@ -774,6 +908,44 @@ class _VehicleChip extends StatelessWidget {
           ),
         ),
       ),
+    );
+  }
+}
+
+/// 小票识别行内错误行：红字文案 + 「重试」文字按钮（对齐小程序 .ocr-error-row）。
+class _OcrErrorRow extends StatelessWidget {
+  const _OcrErrorRow({required this.message, required this.onRetry});
+
+  final String message;
+  final VoidCallback onRetry;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = context.palette;
+    return Row(
+      children: [
+        Expanded(
+          child: Text(
+            message,
+            style: TextStyle(fontSize: 11, color: palette.error),
+          ),
+        ),
+        GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: onRetry,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+            child: Text(
+              '重试',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: palette.primaryContainer,
+              ),
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
