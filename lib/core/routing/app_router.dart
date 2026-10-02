@@ -9,6 +9,7 @@ import 'package:ev_tool_app/features/costs/presentation/pages/cost_add_page.dart
 import 'package:ev_tool_app/features/costs/presentation/pages/cost_report_page.dart';
 import 'package:ev_tool_app/features/equipment/presentation/pages/equipment_page.dart';
 import 'package:ev_tool_app/features/maps/presentation/pages/charge_map_page.dart';
+import 'package:ev_tool_app/features/maps/presentation/pages/location_picker_page.dart';
 import 'package:ev_tool_app/features/costs/presentation/pages/cost_list_page.dart';
 import 'package:ev_tool_app/features/handbooks/presentation/pages/modification_compliance_page.dart';
 import 'package:ev_tool_app/features/handbooks/presentation/pages/warranty_handbook_page.dart';
@@ -113,6 +114,18 @@ List<GoRoute> _subRoutes() {
       path: RouteNames.chargeMap,
       name: 'charge-map',
       builder: (context, state) => const ChargeMapPage(),
+    ),
+    GoRoute(
+      path: RouteNames.locationPicker,
+      name: 'location-picker',
+      builder: (context, state) {
+        final extra = state.extra;
+        final initial = extra is PickedLocation ? extra : null;
+        return LocationPickerPage(
+          initialLatitude: initial?.latitude,
+          initialLongitude: initial?.longitude,
+        );
+      },
     ),
     GoRoute(
       path: RouteNames.costAdd,

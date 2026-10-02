@@ -14,6 +14,7 @@ abstract final class RouteNames {
   static const String chargeStats = '/charge-stats';
   static const String annualReport = '/annual-report';
   static const String chargeMap = '/charge-map';
+  static const String locationPicker = '/location-picker';
 
   // --- 养车支出域 ---
   static const String costAdd = '/cost/add';

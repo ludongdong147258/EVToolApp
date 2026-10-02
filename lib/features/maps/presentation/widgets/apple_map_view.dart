@@ -57,7 +57,9 @@ class AppleMapView extends StatelessWidget {
 
   final MapViewCameraPosition initialCameraPosition;
   final List<MapViewMarker> markers;
-  final VoidCallback? onMapTapped;
+
+  /// 地图点击回调（返回点击处经纬度，页面层不感知插件 LatLng 类型）。
+  final void Function(double latitude, double longitude)? onMapTapped;
 
   @override
   Widget build(BuildContext context) {
@@ -86,7 +88,8 @@ class AppleMapView extends StatelessWidget {
       },
       onTap: onMapTapped == null
           ? null
-          : (LatLng position) => onMapTapped?.call(),
+          : (LatLng position) =>
+                onMapTapped?.call(position.latitude, position.longitude),
     );
   }
 }

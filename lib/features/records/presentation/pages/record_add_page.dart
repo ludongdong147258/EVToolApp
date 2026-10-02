@@ -3,17 +3,18 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 
 import 'package:ev_tool_app/core/domain/charge_records.dart';
-import 'package:ev_tool_app/core/domain/charge_map.dart';
-import 'package:ev_tool_app/core/domain/data/city_coords.dart';
 import 'package:ev_tool_app/core/domain/numbers.dart';
 import 'package:ev_tool_app/core/extensions/context_extensions.dart';
+import 'package:ev_tool_app/core/routing/route_names.dart';
 import 'package:ev_tool_app/core/theme/app_colors.dart';
 import 'package:ev_tool_app/core/widgets/app_primary_button.dart';
 import 'package:ev_tool_app/core/widgets/app_sheet.dart';
 import 'package:ev_tool_app/core/widgets/app_toast.dart' show showAppToast;
 import 'package:ev_tool_app/core/domain/ocr_receipt.dart';
+import 'package:ev_tool_app/features/maps/presentation/pages/location_picker_page.dart';
 import 'package:ev_tool_app/features/ocr/presentation/widgets/ocr_entry_card.dart';
 import 'package:ev_tool_app/features/records/data/repositories/draft_repository.dart';
 import 'package:ev_tool_app/features/records/presentation/providers/records_provider.dart';
@@ -48,6 +49,8 @@ class _RecordAddPageState extends ConsumerState<RecordAddPage> {
   String? _province;
   String? _city;
   String? _locationName;
+  double? _latitude;
+  double? _longitude;
   Timer? _draftTimer;
   bool _initialized = false;
 
@@ -119,6 +122,8 @@ class _RecordAddPageState extends ConsumerState<RecordAddPage> {
         _province = record.province;
         _city = record.city;
         _locationName = record.locationName;
+        _latitude = record.latitude;
+        _longitude = record.longitude;
       });
       return;
     }
@@ -161,6 +166,19 @@ class _RecordAddPageState extends ConsumerState<RecordAddPage> {
       _hoursController.text = (form.hours ?? '').toString();
       _minutesController.text = (form.minutes ?? '').toString();
       _noteController.text = (form.note ?? '').toString();
+      _vehicleId = form.vehicleId is String && (form.vehicleId as String).isNotEmpty
+          ? form.vehicleId as String
+          : null;
+      _vehicleName = form.vehicleName is String ? form.vehicleName as String? : null;
+      _province = form.province is String ? form.province as String? : null;
+      _city = form.city is String ? form.city as String? : null;
+      _locationName = form.locationName is String
+          ? form.locationName as String?
+          : null;
+      _latitude = form.latitude is num ? (form.latitude as num).toDouble() : null;
+      _longitude = form.longitude is num
+          ? (form.longitude as num).toDouble()
+          : null;
     });
   }
 
@@ -217,6 +235,8 @@ class _RecordAddPageState extends ConsumerState<RecordAddPage> {
     province: _province,
     city: _city,
     locationName: _locationName,
+    latitude: _latitude,
+    longitude: _longitude,
   );
 
   Future<void> _pickDate() async {
@@ -271,51 +291,21 @@ class _RecordAddPageState extends ConsumerState<RecordAddPage> {
     });
   }
 
-  /// 省市选择（两连弹层：省 → 市），城市归一到预设简称并回填坐标。
-  Future<void> _pickRegion() async {
-    final province = await showAppSheet<String>(
-      context: context,
-      title: '选择省份',
-      builder: (context) => AppSheetScrollBody(
-        child: Wrap(
-          spacing: 10,
-          runSpacing: 10,
-          children: [
-            for (final name in cityCoords.keys)
-              _VehicleChip(
-                label: name,
-                isSelected: _province == name,
-                onTap: () => Navigator.of(context).pop(name),
-              ),
-          ],
-        ),
-      ),
+  /// 地图选点：打开选点页，返回后回填省市/地点名/坐标。
+  Future<void> _pickLocation() async {
+    final picked = await context.push<PickedLocation>(
+      RouteNames.locationPicker,
+      extra: (_latitude != null && _longitude != null)
+          ? PickedLocation(latitude: _latitude!, longitude: _longitude!)
+          : null,
     );
-    if (province == null || !mounted) return;
-    final cities = cityCoords[province] ?? const <CityCoord>[];
-    final city = await showAppSheet<String>(
-      context: context,
-      title: '选择城市',
-      builder: (context) => AppSheetScrollBody(
-        child: Wrap(
-          spacing: 10,
-          runSpacing: 10,
-          children: [
-            for (final entry in cities)
-              _VehicleChip(
-                label: entry.name,
-                isSelected: _city == entry.name,
-                onTap: () => Navigator.of(context).pop(entry.name),
-              ),
-          ],
-        ),
-      ),
-    );
-    if (city == null || !mounted) return;
+    if (picked == null || !mounted) return;
     setState(() {
-      _province = province;
-      _city = matchCity(province, city) ?? city;
-      _locationName = null;
+      _province = picked.province;
+      _city = picked.city;
+      _locationName = picked.locationName;
+      _latitude = picked.latitude;
+      _longitude = picked.longitude;
     });
   }
 
@@ -509,22 +499,25 @@ class _RecordAddPageState extends ConsumerState<RecordAddPage> {
                   const SizedBox(height: 16),
                   const _FieldLabel('充电地点（选填）'),
                   _PickerField(
-                    value:
-                        [
-                          _city,
-                          _locationName,
-                        ].whereType<String>().join(' · ').isNotEmpty
+                    value: [
+                      _city,
+                      _locationName,
+                    ].whereType<String>().join(' · ').isNotEmpty
                         ? [_city, _locationName].whereType<String>().join(' · ')
-                        : '选择省市',
+                        : '点击地图选择地点',
                     icon: Icons.place_rounded,
-                    onTap: _pickRegion,
-                    trailing: (_city != null || _locationName != null)
+                    onTap: _pickLocation,
+                    trailing: (_city != null ||
+                            _locationName != null ||
+                            _latitude != null)
                         ? IconButton(
                             icon: const Icon(Icons.close, size: 18),
                             onPressed: () => setState(() {
                               _province = null;
                               _city = null;
                               _locationName = null;
+                              _latitude = null;
+                              _longitude = null;
                             }),
                           )
                         : null,
@@ -532,6 +525,7 @@ class _RecordAddPageState extends ConsumerState<RecordAddPage> {
                   const SizedBox(height: 16),
                   _NumberField(
                     label: '备注（选填，最多 100 字）',
+                    hint: '如：家充为主、夜间谷电',
                     controller: _noteController,
                     isMultiline: true,
                   ),
