@@ -8,6 +8,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:ev_tool_app/core/domain/vehicles.dart';
 import 'package:ev_tool_app/core/extensions/context_extensions.dart';
 import 'package:ev_tool_app/core/theme/app_colors.dart';
+import 'package:ev_tool_app/core/utils/logger.dart';
 import 'package:ev_tool_app/core/widgets/app_primary_button.dart';
 import 'package:ev_tool_app/core/widgets/app_sheet.dart';
 import 'package:ev_tool_app/core/widgets/app_toast.dart';
@@ -446,7 +447,8 @@ class _VehicleFormSheetState extends ConsumerState<_VehicleFormSheet> {
       );
       if (picked == null) return; // 用户取消不算错误
       setState(() => _photoDraft = picked.path);
-    } on Exception {
+    } on Exception catch (e) {
+      appLogger.e('选图失败(vehicle): $e');
       if (mounted) showAppToast(context, '选择图片失败，请重试');
     }
   }
@@ -567,6 +569,10 @@ class _VehicleFormSheetState extends ConsumerState<_VehicleFormSheet> {
                     counterText: '',
                     isDense: true,
                     hintText: '如：小白',
+                    contentPadding: EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 9,
+                    ),
                   ),
                   onChanged: (_) {
                     if (_nameError != null) {
@@ -587,6 +593,10 @@ class _VehicleFormSheetState extends ConsumerState<_VehicleFormSheet> {
                   decoration: const InputDecoration(
                     isDense: true,
                     hintText: '如 60',
+                    contentPadding: EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 9,
+                    ),
                   ),
                   onChanged: (_) {
                     if (_batteryError != null) {
@@ -606,6 +616,10 @@ class _VehicleFormSheetState extends ConsumerState<_VehicleFormSheet> {
                     counterText: '',
                     isDense: true,
                     hintText: '例如：家充为主、白色 Model 3',
+                    contentPadding: EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 9,
+                    ),
                   ),
                 ),
               ),

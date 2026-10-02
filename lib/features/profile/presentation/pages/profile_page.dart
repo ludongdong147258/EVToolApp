@@ -16,6 +16,7 @@ import 'package:ev_tool_app/core/domain/user_profile.dart'
 import 'package:ev_tool_app/core/routing/route_names.dart';
 import 'package:ev_tool_app/core/theme/app_colors.dart';
 import 'package:ev_tool_app/core/theme/theme_settings.dart';
+import 'package:ev_tool_app/core/utils/logger.dart';
 import 'package:ev_tool_app/core/widgets/app_primary_button.dart';
 import 'package:ev_tool_app/core/widgets/app_sheet.dart';
 import 'package:ev_tool_app/core/widgets/app_toast.dart';
@@ -419,7 +420,8 @@ class _ProfileEditorSheetState extends ConsumerState<_ProfileEditorSheet> {
       setState(() => _isSaving = true);
       await ref.read(userProfileProvider.notifier).saveAvatar(picked.path);
       if (mounted) showAppToast(context, '头像已更新');
-    } on Exception {
+    } on Exception catch (e) {
+      appLogger.e('选头像失败: $e');
       if (mounted) showAppToast(context, '头像保存失败');
     } finally {
       if (mounted) setState(() => _isSaving = false);
