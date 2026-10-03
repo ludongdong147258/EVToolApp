@@ -279,22 +279,54 @@ class _HeroBadge extends StatelessWidget {
 
 /// 用户头像：avatarUrl 为裸文件名，经头像存储解析渲染；
 /// 无头像 / 存储未就绪时回退人像图标。
+///
+/// hero 绿卡用半透明白回退（对齐小程序）；白底弹窗（编辑资料）
+/// 需传 [useBrandFallback] 用品牌渐变默认头像，否则白底白字不可见。
 class _ProfileAvatar extends ConsumerWidget {
-  const _ProfileAvatar({required this.avatarUrl});
+  const _ProfileAvatar({
+    required this.avatarUrl,
+    this.useBrandFallback = false,
+  });
 
   final String avatarUrl;
+  final bool useBrandFallback;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    Widget fallback() => Container(
-      width: 56,
-      height: 56,
-      decoration: const BoxDecoration(
-        color: AppColors.onPrimaryA22,
-        shape: BoxShape.circle,
-      ),
-      child: const Icon(Icons.person_rounded, size: 32, color: Colors.white),
-    );
+    Widget fallback() => useBrandFallback
+        ? Container(
+            width: 56,
+            height: 56,
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  context.palette.primary,
+                  context.palette.primaryContainer,
+                ],
+              ),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.person_rounded,
+              size: 32,
+              color: Colors.white,
+            ),
+          )
+        : Container(
+            width: 56,
+            height: 56,
+            decoration: const BoxDecoration(
+              color: AppColors.onPrimaryA22,
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.person_rounded,
+              size: 32,
+              color: Colors.white,
+            ),
+          );
     if (avatarUrl.isEmpty) {
       return fallback();
     }
@@ -469,7 +501,10 @@ class _ProfileEditorSheetState extends ConsumerState<_ProfileEditorSheet> {
               children: [
                 Stack(
                   children: [
-                    _ProfileAvatar(avatarUrl: profile.avatarUrl),
+                    _ProfileAvatar(
+                      avatarUrl: profile.avatarUrl,
+                      useBrandFallback: true,
+                    ),
                     Positioned(
                       right: 0,
                       bottom: 0,
