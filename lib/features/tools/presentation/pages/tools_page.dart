@@ -227,7 +227,7 @@ class _ToolGroup extends StatelessWidget {
           physics: const NeverScrollableScrollPhysics(),
           mainAxisSpacing: 10,
           crossAxisSpacing: 10,
-          childAspectRatio: 2.05,
+          childAspectRatio: 1.4,
           children: [
             for (final tool in tools)
               _ToolCard(tool: tool, onTap: () => onTap?.call(tool)),
@@ -267,7 +267,7 @@ class _ToolCard extends StatelessWidget {
               ),
               child: Icon(tool.icon, size: 16, color: palette.primaryContainer),
             ),
-            const Spacer(),
+            const SizedBox(height: 10),
             Text(
               tool.title,
               maxLines: 1,
@@ -278,7 +278,7 @@ class _ToolCard extends StatelessWidget {
             Expanded(
               child: Text(
                 tool.desc,
-                maxLines: 2,
+                maxLines: 3,
                 overflow: TextOverflow.ellipsis,
                 style: TextStyle(fontSize: 11, color: palette.textHint),
               ),
