@@ -51,6 +51,9 @@ dependencies:
   # Maps (Apple MapKit)
   apple_maps_flutter: ^1.2.0
 
+  # Location (充电记录进页自动定位)
+  geolocator: ^14.0.0
+
   # External links
   url_launcher: ^6.3.1
 

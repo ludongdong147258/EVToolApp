@@ -71,7 +71,8 @@ lib/
 └── features/
     ├── records/             # 充电记录 tab：RecordRepository(key chargeRecords) + DraftRepository(formDraft:*)
     │                        # + recordsProvider/vehiclesProvider/memoListProvider/memoReminderProvider
-    │                        # + records_page（月度 hero+最近记录+撤销）/record_add_page（表单+草稿+省市选择+OCR 入口）
+    │                        # + records_page（月度 hero+最近记录+撤销）/record_add_page（表单+草稿+省市选择+OCR 入口
+    │                        #   + 新增模式进页自动定位：geolocator WGS84→GCJ02 + 逆地理回填，失败静默降级手动选点）
     │                        # + widgets/（RecordCard、RecordDetailSheet）
     ├── vehicles/            # VehicleRepository（默认车不变式 + 改名/删除 → 记录&支出快照联动同步）+ PhotoStore
     │                        # + vehicles_page（车库 CRUD + 照片）+ VehicleAvatar
