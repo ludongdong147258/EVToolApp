@@ -100,14 +100,17 @@ class HeroStatItem extends StatelessWidget {
           style: const TextStyle(fontSize: 14, color: AppColors.onPrimaryA85),
         ),
         const SizedBox(height: 4),
-        Text(
-          value,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: TextStyle(
-            fontSize: _valueFontSize,
-            fontWeight: FontWeight.w700,
-            color: Colors.white,
+        // 数值放不下时整段等比缩小（如 4 列占比 "100%"），不出现省略号
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          alignment: Alignment.centerLeft,
+          child: Text(
+            value,
+            style: TextStyle(
+              fontSize: _valueFontSize,
+              fontWeight: FontWeight.w700,
+              color: Colors.white,
+            ),
           ),
         ),
         if (unit != null) ...[

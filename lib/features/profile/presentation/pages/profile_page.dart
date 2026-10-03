@@ -45,21 +45,32 @@ class ProfilePage extends ConsumerWidget {
           final accentId = sheetRef.watch(themeSettingsProvider).accentId;
           return Padding(
             padding: const EdgeInsets.only(top: 8),
-            child: Wrap(
-              spacing: 20,
-              runSpacing: 16,
+            // 一行固定 3 个（6 套 accent = 2 行），等宽分布
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
               children: [
-                for (final accent in accentThemes)
-                  AccentSwatch(
-                    accent: accent,
-                    isSelected: accent.id == accentId,
-                    onTap: () {
-                      sheetRef
-                          .read(themeSettingsProvider.notifier)
-                          .setAccentId(accent.id);
-                      showAppToast(context, '已切换');
-                    },
+                for (var i = 0; i < accentThemes.length; i += 3) ...[
+                  if (i > 0) const SizedBox(height: 16),
+                  Row(
+                    children: [
+                      for (final accent in accentThemes.skip(i).take(3))
+                        Expanded(
+                          child: Center(
+                            child: AccentSwatch(
+                              accent: accent,
+                              isSelected: accent.id == accentId,
+                              onTap: () {
+                                sheetRef
+                                    .read(themeSettingsProvider.notifier)
+                                    .setAccentId(accent.id);
+                                showAppToast(context, '已切换');
+                              },
+                            ),
+                          ),
+                        ),
+                    ],
                   ),
+                ],
               ],
             ),
           );

@@ -383,7 +383,7 @@ class _FilterLabel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.only(left: indent ? 12 : 4),
+      padding: EdgeInsets.only(left: indent ? 12 : 4, right: 8),
       child: Center(
         child: Text(
           text,
