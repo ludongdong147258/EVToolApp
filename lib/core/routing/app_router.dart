@@ -30,7 +30,6 @@ import 'package:ev_tool_app/features/stats/presentation/pages/annual_report_page
 import 'package:ev_tool_app/features/stats/presentation/pages/charge_stats_page.dart';
 import 'package:ev_tool_app/features/tools/presentation/pages/tools_page.dart';
 import 'package:ev_tool_app/features/vehicles/presentation/pages/vehicles_page.dart';
-import 'package:ev_tool_app/features/profile/presentation/pages/settings_page.dart';
 
 /// 全量本地应用，无登录守卫；auth 代码保留但未挂载（见 access_guard.dart）。
 final goRouterProvider = Provider<GoRouter>((ref) {
@@ -192,11 +191,6 @@ List<GoRoute> _subRoutes() {
       path: RouteNames.backupRestore,
       name: 'backup-restore',
       builder: (context, state) => const BackupRestorePage(),
-    ),
-    GoRoute(
-      path: RouteNames.settings,
-      name: 'settings',
-      builder: (context, state) => const SettingsPage(),
     ),
     GoRoute(
       path: RouteNames.about,

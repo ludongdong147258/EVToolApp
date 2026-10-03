@@ -1,12 +1,9 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:go_router/go_router.dart';
 
 import 'package:ev_tool_app/core/constants/app_constants.dart';
 import 'package:ev_tool_app/core/extensions/context_extensions.dart';
 import 'package:ev_tool_app/core/routing/route_names.dart';
-import 'package:ev_tool_app/core/widgets/app_toast.dart';
-import 'package:ev_tool_app/features/profile/presentation/legal_texts.dart';
 
 /// 应用描述（移植小程序 about 页 APP_DESCRIPTION）。
 const String _appDescription =
@@ -16,16 +13,6 @@ const String _appDescription =
 /// 关于页（子页）：品牌区 + 简介 + 信息列表。
 class AboutPage extends StatelessWidget {
   const AboutPage({super.key});
-
-  /// 复制联系邮箱到剪贴板。
-  Future<void> _copyEmail(BuildContext context) async {
-    try {
-      await Clipboard.setData(const ClipboardData(text: contactEmail));
-      if (context.mounted) showAppToast(context, '已复制');
-    } on Exception {
-      if (context.mounted) showAppToast(context, '复制失败');
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -100,18 +87,6 @@ class AboutPage extends StatelessWidget {
             margin: EdgeInsets.zero,
             child: Column(
               children: [
-                _InfoRow(
-                  icon: Icons.content_copy_rounded,
-                  text: '联系邮箱',
-                  value: contactEmail,
-                  onTap: () => _copyEmail(context),
-                ),
-                Divider(
-                  height: 1,
-                  indent: 16,
-                  endIndent: 16,
-                  color: palette.divider,
-                ),
                 _InfoRow(
                   icon: Icons.menu_book_rounded,
                   text: '用户协议',

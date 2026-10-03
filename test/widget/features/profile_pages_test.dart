@@ -111,7 +111,7 @@ void main() {
       expect(find.text('数据备份'), findsOneWidget);
       expect(find.text('关于应用'), findsOneWidget);
       expect(find.text('主题配色'), findsOneWidget);
-      expect(find.text('设置'), findsOneWidget);
+      expect(find.text('设置'), findsNothing);
       expect(find.text('关于'), findsOneWidget);
     });
 
@@ -214,8 +214,7 @@ void main() {
       await pumpTall(tester, const MaterialApp(home: AboutPage()));
 
       expect(find.text('EV Tool 电车工具'), findsOneWidget);
-      expect(find.text('联系邮箱'), findsOneWidget);
-      expect(find.text('fishspotradar@163.com'), findsOneWidget);
+      expect(find.text('联系邮箱'), findsNothing);
       expect(find.text('用户协议'), findsOneWidget);
       expect(find.text('隐私政策'), findsOneWidget);
       expect(find.text('版本'), findsOneWidget);

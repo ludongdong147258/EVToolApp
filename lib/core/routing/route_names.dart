@@ -37,7 +37,6 @@ abstract final class RouteNames {
   // --- 我的 ---
   static const String profileEdit = '/profile/edit';
   static const String backupRestore = '/backup-restore';
-  static const String settings = '/settings';
   static const String about = '/about';
   static const String agreement = '/agreement';
   static const String privacy = '/privacy';

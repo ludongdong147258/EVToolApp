@@ -228,11 +228,6 @@ class ProfilePage extends ConsumerWidget {
                 onTap: _openThemePicker,
               ),
               _MenuItem(
-                icon: Icons.settings_rounded,
-                text: '设置',
-                onTap: (context) => context.push(RouteNames.settings),
-              ),
-              _MenuItem(
                 icon: Icons.info_rounded,
                 text: '关于',
                 onTap: (context) => context.push(RouteNames.about),
