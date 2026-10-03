@@ -8,101 +8,53 @@ import 'package:ev_tool_app/core/domain/stations.dart';
 import 'package:ev_tool_app/core/storage/key_value_store.dart';
 import 'package:ev_tool_app/core/utils/logger.dart';
 
-/// 腾讯位置服务专用无鉴权 Dio（移植小程序 stationService 的
-/// createNoAuthRequest 约束：第三方接口不注入 Bearer token，15s 超时）。
+/// Open Charge Map 专用无鉴权 Dio（沿用小程序 createNoAuthRequest 约束：
+/// 第三方接口不注入 Bearer token，15s 超时）。
 ///
 /// 注意：绝不复用应用的 dioProvider（带鉴权拦截器与 401 刷新链路，
 /// 会把本站用户 token 发给第三方域）。
-final lbsDioProvider = Provider<Dio>((ref) {
+final stationsDioProvider = Provider<Dio>((ref) {
   return Dio(
     BaseOptions(
-      baseUrl: 'https://apis.map.qq.com',
+      baseUrl: 'https://api.openchargemap.org/v3',
       connectTimeout: const Duration(seconds: 15),
       receiveTimeout: const Duration(seconds: 15),
     ),
   );
 });
 
-/// 位置服务异常（页面据此渲染错误态；[isKeyMissing] 区分"Key 未配置"
-/// 的专用提示，对应小程序 LBS_KEY_MISSING_CODE）。
+/// 充电站服务异常（页面据此渲染错误态）。
 class StationServiceException implements Exception {
-  const StationServiceException(this.message, {this.isKeyMissing = false});
+  const StationServiceException(this.message);
 
   final String message;
-  final bool isKeyMissing;
 
   @override
   String toString() => message;
 }
 
-/// 配额类超限（120 每秒限流 / 121 每日配额）内部哨兵：
-/// 捕获后切换备用 Key 重试，不直接透出给页面。
-class _QuotaExceededException implements Exception {
-  const _QuotaExceededException(this.status);
-
-  final num status;
-}
-
-/// 逆地编码内存缓存条目（定位点属敏感信息，只存内存不落 storage）。
-class _GeocodeMemo {
-  const _GeocodeMemo({
-    required this.latCell,
-    required this.lngCell,
-    required this.result,
-    required this.savedAt,
-  });
-
-  final double latCell;
-  final double lngCell;
-  final GeocoderRegion result;
-  final int savedAt;
-}
-
-/// 附近充电桩仓储（移植小程序 src/services/stationService.js）。
+/// 附近充电桩仓储（数据源 Open Charge Map /v3/poi/）。
 ///
-/// 封装腾讯位置服务 WebService：
-/// - [searchNearbyStations]：place/search 关键词「充电桩」boundary=nearby，
-///   结果按坐标分格 + 30 分钟 TTL 缓存于 KeyValueStore，命中后按当前原点
-///   重算距离；
-/// - [reverseGeocode]：geocoder/v1 坐标 → 省市/地址，仅内存 10 分钟缓存。
-///
-/// 错误策略与项目其他仓储一致：log + throw [StationServiceException]，
-/// 由页面 catch 后渲染错误态。主 Key 配额超限（120/121）自动切换备用 Key。
+/// - 搜索半径 5km（海外桩密度低），maxresults 30；
+/// - 结果按坐标分格 + 30 分钟 TTL 缓存于 KeyValueStore，命中后按当前
+///   原点重算距离；
+/// - 无 key 可用（受限流约束），配置 OCM_API_KEY 可提高配额；
+/// - 错误策略与项目其他仓储一致：log + throw [StationServiceException]，
+///   由页面 catch 后渲染错误态。
 class StationRepository {
-  StationRepository({
-    required Dio dio,
-    required KeyValueStore kv,
-    String? primaryKey,
-    String? backupKey,
-  }) : _dio = dio,
-       _kv = kv,
-       _primaryKey = primaryKey ?? Env.lbsKey,
-       _backupKey = backupKey ?? Env.lbsKeyBackup;
+  StationRepository({required Dio dio, required KeyValueStore kv})
+    : _dio = dio,
+      _kv = kv;
 
-  /// 结果缓存在本机的 key（按坐标分格 + TTL，同位置复用省配额）。
+  /// 结果缓存在本机的 key（按坐标分格 + TTL，同位置复用）。
   static const String nearbyStationsCacheKey = 'nearbyStationsCache';
 
-  /// 搜索半径（米），boundary=nearby 的上限即 1000。
-  static const int _searchRadiusMeters = 1000;
-  static const int _pageSize = 20;
-
-  /// 逆地编码内存缓存有效期。
-  static const int _geocodeMemoTtlMs = 10 * 60 * 1000;
-
-  /// LBS 信封 status：每秒请求量超限 / 每日调用量超限。
-  static const num _statusRateLimit = 120;
-  static const num _statusDailyQuota = 121;
-
-  static const String _quotaExceededMessage =
-      'Location service daily quota reached. Please try again tomorrow or '
-      'raise the quota in the Tencent LBS console';
+  /// 搜索半径（km）——海外充电桩密度远低于国内，1km 常返回空。
+  static const int _searchRadiusKm = 5;
+  static const int _maxResults = 30;
 
   final Dio _dio;
   final KeyValueStore _kv;
-  final String _primaryKey;
-  final String _backupKey;
-
-  _GeocodeMemo? _geocodeMemo;
 
   /// 搜索坐标附近的充电桩（按距离升序）。
   ///
@@ -124,26 +76,6 @@ class StationRepository {
     final stations = await _fetchNearbyStations(origin);
     await _writeCache(cell, stations);
     return sortStationsByDistance(stations);
-  }
-
-  /// 逆地编码：坐标 → 省市/地址（充电记录自动填充地点用）。
-  ///
-  /// 同坐标分格（≈1.1km）10 分钟内复用内存缓存；定位点属敏感信息，
-  /// 缓存只存实例字段、不落 storage。主备 Key 配额切换与搜索同款。
-  Future<GeocoderRegion> reverseGeocode(double latitude, double longitude) {
-    final coord = LatLng(latitude: latitude, longitude: longitude);
-    final cell = getCacheCell(coord);
-    final now = DateTime.now().millisecondsSinceEpoch;
-    final memo = _geocodeMemo;
-    final isMemoFresh =
-        memo != null &&
-        memo.latCell == cell.latCell &&
-        memo.lngCell == cell.lngCell &&
-        now - memo.savedAt < _geocodeMemoTtlMs;
-    if (isMemoFresh) {
-      return Future<GeocoderRegion>.value(memo.result);
-    }
-    return _fetchReverseGeocode(coord, cell, now);
   }
 
   /// 读取可用的缓存（同 cell 且未过 TTL），脏数据一律视为未命中。
@@ -200,92 +132,24 @@ class StationRepository {
     }
   }
 
-  /// 请求 LBS 接口并归一化；按主 Key → 备用 Key 顺序尝试，
-  /// 仅配额类超限（120/121）才切换下一个 Key，其余错误直接抛出。
+  /// 请求 /poi/ 并归一化（保持接口返回序，排序由调用方决定）。
   Future<List<Station>> _fetchNearbyStations(LatLng origin) async {
-    final keys = _availableKeys();
-    if (keys.isEmpty) {
-      throw const StationServiceException(
-        'Map service key not configured',
-        isKeyMissing: true,
-      );
-    }
-    return _withKeyRotation(keys, (key) => _searchOnce(origin, key));
-  }
-
-  Future<GeocoderRegion> _fetchReverseGeocode(
-    LatLng coord,
-    CacheCell cell,
-    int now,
-  ) async {
-    final keys = _availableKeys();
-    if (keys.isEmpty) {
-      throw const StationServiceException(
-        'Map service key not configured',
-        isKeyMissing: true,
-      );
-    }
-    final result = await _withKeyRotation(
-      keys,
-      (key) => _geocodeOnce(coord, key),
-    );
-    _geocodeMemo = _GeocodeMemo(
-      latCell: cell.latCell,
-      lngCell: cell.lngCell,
-      result: result,
-      savedAt: now,
-    );
-    return result;
-  }
-
-  /// 主备 Key 依次尝试：配额超限且还有下一个 Key 时重试，否则抛出。
-  Future<T> _withKeyRotation<T>(
-    List<String> keys,
-    Future<T> Function(String key) action,
-  ) async {
-    for (var i = 0; i < keys.length; i++) {
-      try {
-        return await action(keys[i]);
-      } on _QuotaExceededException catch (e) {
-        final isLastKey = i == keys.length - 1;
-        if (isLastKey) {
-          throw const StationServiceException(_quotaExceededMessage);
-        }
-        appLogger.w(
-          'Location service key quota exceeded, retrying with backup key',
-          error: e,
-        );
-      }
-    }
-    // keys 非空时循环必 return / throw，此处仅为类型收口
-    throw const StationServiceException(_quotaExceededMessage);
-  }
-
-  List<String> _availableKeys() => [
-    for (final key in [_primaryKey, _backupKey])
-      if (key.isNotEmpty) key,
-  ];
-
-  /// 用指定 Key 请求一次搜索接口并归一化（保持接口返回序，排序由调用方决定）。
-  Future<List<Station>> _searchOnce(LatLng origin, String key) async {
-    final body = await _getJson(
-      '/ws/place/v1/search',
+    final body = await _getList(
+      '/poi/',
       queryParameters: <String, dynamic>{
-        'keyword': '充电桩',
-        'boundary':
-            'nearby(${origin.latitude},${origin.longitude},$_searchRadiusMeters)',
-        'key': key,
-        'orderby': '_distance',
-        'page_size': _pageSize,
+        'latitude': origin.latitude,
+        'longitude': origin.longitude,
+        'distance': _searchRadiusKm,
+        'distanceunit': 'KM',
+        'maxresults': _maxResults,
+        'compact': true,
+        'output': 'json',
+        // 可选 key：无 key 可用但受限流约束，配置后提高配额
+        if (Env.ocmKey.isNotEmpty) 'key': Env.ocmKey,
       },
     );
-    _throwForBusinessStatus(body);
-    final dynamic pois = body['data'];
-    if (pois is! List) {
-      return const <Station>[];
-    }
     final stations = <Station>[];
-    for (final poi in pois) {
+    for (final poi in body) {
       if (poi is! Map) continue;
       final station = normalizeStation(poi.cast<String, dynamic>(), origin);
       if (station != null) stations.add(station);
@@ -293,42 +157,9 @@ class StationRepository {
     return stations;
   }
 
-  /// 用指定 Key 请求一次 geocoder 接口并归一化。
-  ///
-  /// 携带 get_poi=1：响应附带按距离升序的周边 POI，
-  /// 地点名优先取 POI 标题（对齐小程序 chooseLocation 的 res.name 精度）。
-  Future<GeocoderRegion> _geocodeOnce(LatLng coord, String key) async {
-    final body = await _getJson(
-      '/ws/geocoder/v1',
-      queryParameters: <String, dynamic>{
-        'location': '${coord.latitude},${coord.longitude}',
-        'key': key,
-        'get_poi': '1',
-        'poi_options': 'radius=1000',
-      },
-    );
-    final result = normalizeGeocoderResult(body);
-    if (result != null) {
-      final poiTitle = nearestPoiTitle(body);
-      if (poiTitle == null) {
-        return result;
-      }
-      return GeocoderRegion(
-        province: result.province,
-        city: result.city,
-        address: result.address,
-        poiTitle: poiTitle,
-      );
-    }
-    _throwForBusinessStatus(body);
-    // status 为 0 但 result 结构缺失
-    throw const StationServiceException(
-      'Location service error: malformed response (code 0)',
-    );
-  }
-
-  /// 无鉴权 GET（LBS 接口专用）；网络失败归一化为中文 [StationServiceException]。
-  Future<Map<String, dynamic>> _getJson(
+  /// 无鉴权 GET（OCM 接口专用）；响应为 JSON 数组。
+  /// 网络失败 / 限流（403/429）归一化为 [StationServiceException]。
+  Future<List<dynamic>> _getList(
     String path, {
     Map<String, dynamic>? queryParameters,
   }) async {
@@ -338,53 +169,35 @@ class StationRepository {
         queryParameters: queryParameters,
       );
       final data = response.data;
-      if (data is Map<String, dynamic>) {
+      if (data is List) {
         return data;
       }
-      if (data is Map) {
-        return data.cast<String, dynamic>();
-      }
-      // Content-Type 非 JSON 时 dio 不解码（String 原样返回），
-      // 对齐 Taro.request 无论 Content-Type 都 JSON 解析的行为
+      // Content-Type 非 JSON 时 dio 不解码（String 原样返回），手动解析
       if (data is String && data.trim().isNotEmpty) {
         try {
           final decoded = jsonDecode(data);
-          if (decoded is Map) {
-            return decoded.cast<String, dynamic>();
+          if (decoded is List) {
+            return decoded;
           }
         } on FormatException {
-          // 非 JSON 字符串 → 走空 Map，由业务状态检查统一报错
+          // 非 JSON 字符串 → 走空 List，由调用方按空结果处理
         }
       }
-      return const <String, dynamic>{};
+      return const <dynamic>[];
     } on DioException catch (e) {
-      appLogger.e('Location service request failed', error: e);
+      final statusCode = e.response?.statusCode;
+      final isRateLimited = statusCode == 403 || statusCode == 429;
+      if (isRateLimited) {
+        appLogger.w('Charging station service rate limited', error: e);
+        throw const StationServiceException(
+          'Charging station service is busy, please try again later',
+        );
+      }
+      appLogger.e('Charging station request failed', error: e);
       throw const StationServiceException(
-        'Location service request failed, please check your network and retry',
+        'Failed to load charging stations, please check your network and retry',
       );
     }
-  }
-
-  /// LBS 信封：HTTP 200 但 status !== 0 仍是业务错误
-  /// （如 key 无效 110、配额超限 120/121）。
-  void _throwForBusinessStatus(Map<String, dynamic> body) {
-    final dynamic status = body['status'];
-    if (status is num && status == 0) {
-      return;
-    }
-    if (status is num &&
-        (status == _statusRateLimit || status == _statusDailyQuota)) {
-      appLogger.w(
-        'Location service returned a business error',
-        error: {'status': status, 'message': body['message']},
-      );
-      throw _QuotaExceededException(status);
-    }
-    final dynamic message = body['message'];
-    throw StationServiceException(
-      'Location service error: ${_orText(message, 'Unknown error')} '
-      '(code ${_orText(status, 'no response')})',
-    );
   }
 
   Map<String, dynamic> _stationToJson(Station station) => <String, dynamic>{
@@ -451,7 +264,7 @@ int? _toInt(dynamic value) {
 
 final stationRepositoryProvider = Provider<StationRepository>((ref) {
   return StationRepository(
-    dio: ref.watch(lbsDioProvider),
+    dio: ref.watch(stationsDioProvider),
     kv: ref.watch(keyValueStoreProvider),
   );
 });

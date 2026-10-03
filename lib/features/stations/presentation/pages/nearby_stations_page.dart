@@ -3,29 +3,25 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:url_launcher/url_launcher.dart';
 
-import 'package:ev_tool_app/core/constants/env.dart';
+import 'package:ev_tool_app/core/domain/charge_map.dart'
+    show mapFallbackLatitude, mapFallbackLongitude;
 import 'package:ev_tool_app/core/domain/stations.dart';
 import 'package:ev_tool_app/core/extensions/context_extensions.dart';
 import 'package:ev_tool_app/core/theme/app_colors.dart';
-import 'package:ev_tool_app/core/utils/coord_convert.dart';
 import 'package:ev_tool_app/core/widgets/app_toast.dart';
 import 'package:ev_tool_app/core/widgets/empty_state.dart';
 import 'package:ev_tool_app/features/maps/presentation/widgets/apple_map_view.dart';
 import 'package:ev_tool_app/features/stations/data/station_repository.dart';
 
-/// 定位失败/未授权时的兜底坐标（北京），同时展示顶部提示条。
-const double _defaultLatitude = 39.90923;
-const double _defaultLongitude = 116.397428;
-
-/// 默认地图缩放级别（1km 半径搜索结果可视）。
-const double _mapZoom = 14;
+/// 默认地图缩放级别（5km 半径搜索结果可视）。
+const double _mapZoom = 12;
 
 /// 地图区占屏比例。
 const double _mapHeightRatio = 0.4;
 
-/// 附近充电桩（移植小程序 nearby-stations）。
+/// 附近充电桩（移植小程序 nearby-stations，数据源改为 Open Charge Map）。
 ///
-/// 地图 + 周边充电桩列表（腾讯位置服务 place/search），marker/列表联动选中，
+/// 地图 + 周边充电桩列表，marker/列表联动选中，
 /// 导航/电话咨询内嵌条目（选中展开），导航唤起系统 Apple 地图。
 class NearbyStationsPage extends ConsumerStatefulWidget {
   const NearbyStationsPage({super.key});
@@ -39,8 +35,8 @@ class _NearbyStationsPageState extends ConsumerState<NearbyStationsPage> {
   String? _selectedId;
   bool _loading = true;
   StationServiceException? _error;
-  double _latitude = _defaultLatitude;
-  double _longitude = _defaultLongitude;
+  double _latitude = mapFallbackLatitude;
+  double _longitude = mapFallbackLongitude;
 
   /// 仍在使用兜底坐标（未定位成功）时展示提示条。
   bool _isDefaultLocation = true;
@@ -54,18 +50,10 @@ class _NearbyStationsPageState extends ConsumerState<NearbyStationsPage> {
   @override
   void initState() {
     super.initState();
-    if (Env.hasLbsKey) {
-      _locateThenLoad();
-    } else {
-      _loading = false;
-      _error = const StationServiceException(
-        'Map service key not configured',
-        isKeyMissing: true,
-      );
-    }
+    _locateThenLoad();
   }
 
-  /// 进页自动定位当前位置后搜索；定位失败/拒绝则用北京兜底照常搜索。
+  /// 进页自动定位当前位置后搜索；定位失败/拒绝则用默认坐标兜底照常搜索。
   Future<void> _locateThenLoad() async {
     try {
       var permission = await Geolocator.checkPermission();
@@ -77,18 +65,16 @@ class _NearbyStationsPageState extends ConsumerState<NearbyStationsPage> {
           permission == LocationPermission.always;
       if (granted) {
         final position = await Geolocator.getCurrentPosition();
-        // iOS 返回 WGS-84，地图与腾讯 LBS 均为 GCJ-02
-        final gcj = wgs84ToGcj02(position.latitude, position.longitude);
         if (mounted) {
           setState(() {
-            _latitude = gcj.latitude;
-            _longitude = gcj.longitude;
+            _latitude = position.latitude;
+            _longitude = position.longitude;
             _isDefaultLocation = false;
           });
         }
       }
     } on Exception {
-      // 定位不可用（模拟器/未授权）→ 保持北京兜底
+      // 定位不可用（模拟器/未授权）→ 保持默认坐标兜底
     }
     await _loadStations();
   }
@@ -279,18 +265,13 @@ class _NearbyStationsPageState extends ConsumerState<NearbyStationsPage> {
     }
     final error = _error;
     if (error != null) {
-      final isKeyMissing = error.isKeyMissing;
       return SingleChildScrollView(
         child: EmptyState(
           icon: Icons.ev_station_outlined,
-          title: isKeyMissing
-              ? 'Location service not configured'
-              : 'Failed to load',
-          subtitle: isKeyMissing
-              ? 'Set TENCENT_LBS_KEY (Tencent LBS key) in .env and restart the app'
-              : error.message,
-          ctaText: isKeyMissing ? null : 'Retry',
-          onCta: isKeyMissing ? null : () => _loadStations(force: true),
+          title: 'Failed to load',
+          subtitle: error.message,
+          ctaText: 'Retry',
+          onCta: () => _loadStations(force: true),
         ),
       );
     }
@@ -341,7 +322,7 @@ class _DefaultLocationBar extends StatelessWidget {
           const SizedBox(width: 6),
           Expanded(
             child: Text(
-              'Location unavailable — showing the default area (Beijing)',
+              'Location unavailable — showing the default area',
               style: context.textTheme.bodySmall?.copyWith(
                 color: palette.textHint,
               ),
@@ -530,7 +511,7 @@ class _CallButton extends StatelessWidget {
   }
 }
 
-/// 分类标签（LBS POI category，如「充电桩」）。
+/// 分类标签（由充电功率推导，如 DC 150kW / AC 11kW）。
 class _CategoryTag extends StatelessWidget {
   const _CategoryTag(this.text);
 

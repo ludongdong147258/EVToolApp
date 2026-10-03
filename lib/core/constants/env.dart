@@ -4,22 +4,15 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 ///
 /// 对应小程序 src/services/apiConfig.js。
 abstract final class Env {
-  static const String _lbsKey = 'TENCENT_LBS_KEY';
-  static const String _lbsKeyBackup = 'TENCENT_LBS_KEY_BACKUP';
+  static const String _ocmKey = 'OCM_API_KEY';
   static const String _zhipuKey = 'ZHIPU_API_KEY';
   static const String _goodsBase = 'GOODS_API_BASE';
 
   static String _get(String name) =>
       dotenv.isInitialized ? (dotenv.env[name] ?? '') : '';
 
-  /// 腾讯位置服务主 key；空串表示未配置。
-  static String get lbsKey => _get(_lbsKey);
-
-  /// 腾讯位置服务备份 key（主 key 限流 120 / 配额 121 时切换）。
-  static String get lbsKeyBackup => _get(_lbsKeyBackup);
-
-  /// 是否配置了任一可用的 LBS key。
-  static bool get hasLbsKey => lbsKey.isNotEmpty || lbsKeyBackup.isNotEmpty;
+  /// Open Charge Map key（附近充电站）；可选，空串表示匿名调用（受限流约束）。
+  static String get ocmKey => _get(_ocmKey);
 
   /// 智谱 AI key（GLM-4V 小票 OCR）；空串表示未配置。
   static String get zhipuKey => _get(_zhipuKey);

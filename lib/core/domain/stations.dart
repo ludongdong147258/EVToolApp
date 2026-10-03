@@ -1,9 +1,10 @@
 /// Pure functions for nearby charging stations (no Flutter dependency,
 /// testable).
 ///
-/// Ported from the EVTool mini-program src/lib/stations.js.
-/// Data flow: Tencent LBS place/search POI → [normalizeStation] → Station
-/// → [sortStationsByDistance] → [buildMapMarkers] (map markers).
+/// Data source: Open Charge Map /v3/poi/ (WGS-84):
+/// POI → [normalizeStation] → Station → [sortStationsByDistance] → page
+/// markers. (Historically ported from the mini-program src/lib/stations.js
+/// with Tencent LBS; deliberately diverged for the overseas build.)
 library;
 
 import 'dart:math' as math;
@@ -18,16 +19,9 @@ const int _kmThreshold = 1000;
 /// result for 30 minutes.
 const int cacheTtlMs = 30 * 60 * 1000;
 
-/// Coordinate cell precision: 2 decimals ≈ 1.1km, matching the 1km
-/// search radius.
+/// Coordinate cell precision: 2 decimals ≈ 1.1km (cache granularity;
+/// hits rebase distances to the current origin).
 const int _cacheCellDecimals = 2;
-
-/// Brand-selected callout background color (aligned with the original
-/// project constants.js COLORS.PRIMARY_CONTAINER).
-const String _primaryContainerColor = '#059669';
-
-/// Callout text/border white (aligned with constants.js COLORS.WHITE).
-const String _whiteColor = '#FFFFFF';
 
 /// A latitude/longitude coordinate point.
 class LatLng {
@@ -74,62 +68,8 @@ class Station {
   );
 }
 
-/// A map marker callout (brand-styled always-on bubble for the selected
-/// station).
-class MarkerCallout {
-  const MarkerCallout({
-    required this.content,
-    required this.display,
-    required this.bgColor,
-    required this.color,
-    required this.fontSize,
-    required this.borderRadius,
-    required this.padding,
-    required this.borderWidth,
-    required this.borderColor,
-    required this.textAlign,
-  });
-
-  final String content;
-  final String display;
-  final String bgColor;
-  final String color;
-  final int fontSize;
-  final int borderRadius;
-  final int padding;
-  final int borderWidth;
-  final String borderColor;
-  final String textAlign;
-}
-
-/// A map marker (the array index is the marker id; the page looks the
-/// station back up by index).
-class StationMarker {
-  const StationMarker({
-    required this.id,
-    required this.latitude,
-    required this.longitude,
-    required this.iconPath,
-    required this.width,
-    required this.height,
-    required this.anchorX,
-    required this.anchorY,
-    this.callout,
-  });
-
-  final int id;
-  final double latitude;
-  final double longitude;
-  final String iconPath;
-  final int width;
-  final int height;
-
-  /// Circular badge anchor centered so the pin sits exactly on the
-  /// coordinate.
-  final double anchorX;
-  final double anchorY;
-  final MarkerCallout? callout;
-}
+/// Fast-charging threshold (kW): at or above this the category shows DC.
+const double _dcPowerKwThreshold = 50;
 
 /// A coordinate cell (same cell means same position; cache hit condition).
 class CacheCell {
@@ -176,9 +116,9 @@ class GeocoderRegion {
   final String city;
   final String address;
 
-  /// Nearest POI title (returned when the geocoder call carries get_poi=1,
-  /// sorted by distance ascending); empty string means the response had no
-  /// POI and the caller should fall back to [address].
+  /// Nearest POI / place name (from CLPlacemark.name); empty string means
+  /// the geocoder returned no name and the caller should fall back to
+  /// [address].
   final String poiTitle;
 }
 
@@ -205,7 +145,6 @@ double _toNumber(dynamic value) {
 }
 
 /// Spherical distance (Haversine formula), in meters.
-/// Both sides use gcj02; error is negligible for display and sorting.
 double haversineDistance(double lat1, double lng1, double lat2, double lng2) {
   final radLat1 = (lat1 * math.pi) / 180;
   final radLat2 = (lat2 * math.pi) / 180;
@@ -230,47 +169,75 @@ String formatDistance(num? meters) {
   return '${(value / _kmThreshold).toStringAsFixed(1)}km';
 }
 
-/// Tencent LBS POI → [Station].
-/// [poi] is a point returned by place/search
-/// (id/title/address/tel/location/_distance/category);
-/// [origin] is the distance origin (recomputed as a fallback when
-/// `_distance` is missing). Returns null for invalid points.
+/// Open Charge Map POI → [Station].
+///
+/// [poi] is one entry of the /v3/poi/ response: AddressInfo carries the
+/// name/coordinates, Connections carry power (kW); [origin] is the distance
+/// origin (compact responses carry no distance field, always recomputed).
+/// Returns null for invalid points; never throws.
 Station? normalizeStation(Map<String, dynamic>? poi, LatLng origin) {
-  final location = poi?['location'];
-  if (poi == null || location is! Map) {
+  final addressInfo = poi?['AddressInfo'];
+  if (poi == null || addressInfo is! Map) {
     return null;
   }
-  final latitude = _toNumber(location['lat']);
-  final longitude = _toNumber(location['lng']);
+  final latitude = _toNumber(addressInfo['Latitude']);
+  final longitude = _toNumber(addressInfo['Longitude']);
   if (latitude.isNaN || longitude.isNaN) {
     return null;
   }
-  final rawDistance = _toNumber(poi['_distance']);
-  final distance = rawDistance.isFinite
-      ? rawDistance
-      : haversineDistance(
-          origin.latitude,
-          origin.longitude,
-          latitude,
-          longitude,
-        );
+  final addressParts = [
+    addressInfo['AddressLine1'],
+    addressInfo['Town'],
+    addressInfo['StateOrProvince'],
+  ].where(_isNonEmptyText).map((part) => '$part'.trim());
   return Station(
-    id: '${poi['id']}',
-    name: _orDefault(poi['title'], 'Unnamed station'),
-    address: _orDefault(poi['address'], ''),
-    tel: _orDefault(poi['tel'], ''),
+    id: _text(poi['ID'], ''),
+    name: _text(addressInfo['Title'], 'Unnamed station'),
+    address: addressParts.join(', '),
+    tel: _text(poi['ContactTelephone1'], ''),
     latitude: latitude,
     longitude: longitude,
-    distance: distance,
-    category: _orDefault(poi['category'], ''),
+    distance: haversineDistance(
+      origin.latitude,
+      origin.longitude,
+      latitude,
+      longitude,
+    ),
+    category: _stationCategory(poi['Connections']),
   );
 }
 
-/// JS `poi.title || fallback` semantics: empty string/null both take the
-/// fallback.
-String _orDefault(dynamic value, String fallback) {
-  if (value is String && value.isNotEmpty) {
-    return value;
+/// Category from the strongest connection: DC at/above
+/// [_dcPowerKwThreshold], otherwise AC; unknown power → empty.
+String _stationCategory(dynamic connections) {
+  if (connections is! List) {
+    return '';
+  }
+  double? maxKw;
+  for (final connection in connections) {
+    if (connection is! Map) {
+      continue;
+    }
+    final powerKw = _toNumber(connection['PowerKW']);
+    if (!powerKw.isNaN && (maxKw == null || powerKw > maxKw)) {
+      maxKw = powerKw;
+    }
+  }
+  if (maxKw == null) {
+    return '';
+  }
+  final rounded = maxKw.round();
+  return maxKw >= _dcPowerKwThreshold ? 'DC ${rounded}kW' : 'AC ${rounded}kW';
+}
+
+/// `value || fallback` semantics: null/blank string takes the fallback.
+bool _isNonEmptyText(dynamic value) {
+  return value is String && value.trim().isNotEmpty;
+}
+
+String _text(dynamic value, String fallback) {
+  if (_isNonEmptyText(value)) {
+    return value.trim();
   }
   if (value != null && value is! String) {
     return value.toString();
@@ -303,53 +270,6 @@ List<Station> sortStationsByDistance(List<Station>? stations) {
     return order != 0 ? order : a.compareTo(b);
   });
   return [for (final index in indices) stations[index]];
-}
-
-/// Build map markers.
-///
-/// The map component requires numeric marker ids while LBS POI ids are
-/// strings, so the array index is the marker id; the page looks the station
-/// up by index on tap. [calloutBgColor] is the selected-station callout
-/// background (brand color, passed by the caller per the current theme;
-/// the default brand green keeps backward compatibility).
-List<StationMarker> buildMapMarkers(
-  List<Station>? stations, {
-  String? selectedId,
-  String iconPath = '',
-  String activeIconPath = '',
-  String calloutBgColor = _primaryContainerColor,
-}) {
-  if (stations == null) {
-    return [];
-  }
-  return List.generate(stations.length, (index) {
-    final station = stations[index];
-    final isSelected = station.id == selectedId;
-    return StationMarker(
-      id: index,
-      latitude: station.latitude,
-      longitude: station.longitude,
-      iconPath: isSelected ? activeIconPath : iconPath,
-      width: isSelected ? 44 : 32,
-      height: isSelected ? 44 : 32,
-      anchorX: 0.5,
-      anchorY: 0.5,
-      callout: isSelected
-          ? MarkerCallout(
-              content: station.name,
-              display: 'ALWAYS',
-              bgColor: calloutBgColor,
-              color: _whiteColor,
-              fontSize: 12,
-              borderRadius: 16,
-              padding: 8,
-              borderWidth: 2,
-              borderColor: _whiteColor,
-              textAlign: 'center',
-            )
-          : null,
-    );
-  });
 }
 
 /// Round coordinates to cell precision; same cell means same position
@@ -391,79 +311,4 @@ List<Station> rebaseStationDistances(List<Station>? stations, LatLng origin) {
         ),
       ),
   ];
-}
-
-/// Tencent LBS geocoder/v1 response → [GeocoderRegion] (for charging
-/// location auto-fill).
-///
-/// [body] is the geocoder response (status 0 means success);
-/// province/city come from result.address_component; address takes the
-/// recommended address (formatted_addresses.recommend) with result.address
-/// as fallback, used as the default location name; non-zero status /
-/// missing structure / empty municipality city filled with province all
-/// invalid → null.
-GeocoderRegion? normalizeGeocoderResult(Map<String, dynamic>? body) {
-  if (body == null) {
-    return null;
-  }
-  final result = body['result'];
-  final component = result is Map ? result['address_component'] : null;
-  final status = body['status'];
-  // JS semantics: body.status !== 0 (string "0", undefined are all non-zero).
-  if (status is! num || status != 0) {
-    return null;
-  }
-  if (component is! Map || !_isTruthy(component['province'])) {
-    return null;
-  }
-  final province = '${component['province']}';
-  // Municipality geocoder city may be an empty string; fill with province.
-  final city = _isTruthy(component['city']) ? '${component['city']}' : province;
-  final formatted = result is Map ? result['formatted_addresses'] : null;
-  final recommend = formatted is Map ? formatted['recommend'] : null;
-  final rawAddress = result is Map ? result['address'] : null;
-  final address = _isTruthy(recommend)
-      ? '$recommend'
-      : _isTruthy(rawAddress)
-      ? '$rawAddress'
-      : '';
-  return GeocoderRegion(province: province, city: city, address: address);
-}
-
-/// geocoder/v1 (with get_poi=1) response → nearest POI title.
-///
-/// Tencent returns `result.pois` sorted by distance ascending; take the
-/// first valid `title`; missing structure / empty / invalid input → null
-/// (pure functions never throw).
-String? nearestPoiTitle(Map<String, dynamic>? body) {
-  if (body == null) {
-    return null;
-  }
-  final result = body['result'];
-  if (result is! Map) {
-    return null;
-  }
-  final pois = result['pois'];
-  if (pois is! List) {
-    return null;
-  }
-  for (final poi in pois) {
-    if (poi is! Map) continue;
-    final title = poi['title'];
-    if (_isTruthy(title)) {
-      return '$title';
-    }
-  }
-  return null;
-}
-
-/// JS truthiness: null / empty string are falsy.
-bool _isTruthy(dynamic value) {
-  if (value == null) {
-    return false;
-  }
-  if (value is String) {
-    return value.isNotEmpty;
-  }
-  return true;
 }

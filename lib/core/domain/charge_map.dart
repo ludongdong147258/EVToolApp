@@ -19,6 +19,10 @@ const List<String> _cityNameSuffixes = ['自治州', '地区', '盟', '市'];
 /// (no concrete location name).
 const String cityPointName = 'City charging point';
 
+/// 地图兜底视野（无定位权限 / 无记录时）：Cupertino。
+const double mapFallbackLatitude = 37.3230;
+const double mapFallbackLongitude = -122.0322;
+
 /// Scatter radius for coincident points (degrees): about 1.1km.
 const double scatterRadiusDeg = 0.01;
 
