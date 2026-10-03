@@ -155,9 +155,9 @@ void main() {
       expect(find.text('Copy Backup Text'), findsNothing);
       expect(find.text('Import Backup'), findsNWidgets(2));
       expect(find.textContaining('2 charging records'), findsOneWidget);
-      expect(find.textContaining('1 vehicles'), findsOneWidget);
-      expect(find.textContaining('0 expenses'), findsOneWidget);
-      expect(find.textContaining('0 inspection memos'), findsOneWidget);
+      expect(find.textContaining('1 vehicle(s)'), findsOneWidget);
+      expect(find.textContaining('0 expense(s)'), findsOneWidget);
+      expect(find.textContaining('0 inspection memo(s)'), findsOneWidget);
     });
   });
 

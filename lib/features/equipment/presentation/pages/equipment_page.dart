@@ -233,11 +233,15 @@ class _EquipmentPageState extends ConsumerState<EquipmentPage> {
         color: palette.surfaceCard,
         border: Border(bottom: BorderSide(color: palette.divider, width: 0.5)),
       ),
-      child: Row(
-        children: [
-          for (var i = 0; i < equipmentCategories.length; i++)
-            _buildTab(context, equipmentCategories[i], i),
-        ],
+      // 英文标题较长，6 等分会全部截断——改为横向滚动，tab 宽度随内容
+      child: SingleChildScrollView(
+        scrollDirection: Axis.horizontal,
+        child: Row(
+          children: [
+            for (var i = 0; i < equipmentCategories.length; i++)
+              _buildTab(context, equipmentCategories[i], i),
+          ],
+        ),
       ),
     );
   }
@@ -249,30 +253,28 @@ class _EquipmentPageState extends ConsumerState<EquipmentPage> {
   ) {
     final palette = context.palette;
     final isActive = index == _currentTab;
-    return Expanded(
-      child: InkWell(
-        onTap: () => _handleTabClick(index),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Padding(
-              padding: const EdgeInsets.symmetric(vertical: 10),
-              child: Text(
-                category.title,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: context.textTheme.bodyMedium?.copyWith(
-                  color: isActive ? palette.primary : palette.textHint,
-                  fontWeight: isActive ? FontWeight.w700 : FontWeight.w400,
-                ),
+    return InkWell(
+      onTap: () => _handleTabClick(index),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 14),
+            child: Text(
+              category.title,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: context.textTheme.bodyMedium?.copyWith(
+                color: isActive ? palette.primary : palette.textHint,
+                fontWeight: isActive ? FontWeight.w700 : FontWeight.w400,
               ),
             ),
-            Container(
-              height: 2,
-              color: isActive ? palette.primary : Colors.transparent,
-            ),
-          ],
-        ),
+          ),
+          Container(
+            height: 2,
+            color: isActive ? palette.primary : Colors.transparent,
+          ),
+        ],
       ),
     );
   }

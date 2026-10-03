@@ -84,6 +84,12 @@ void main() {
       expect(getCityCoord('Zhejiang', '杭州市')!.name, 'Hangzhou');
     });
 
+    test('英文城市名（存量值回读）同样命中，保持幂等', () {
+      expect(matchCity('Guangdong', 'Guangzhou'), 'Guangzhou');
+      expect(matchCity('广东省', 'Guangzhou'), 'Guangzhou');
+      expect(getCityCoord('Zhejiang', 'Hangzhou')!.name, 'Hangzhou');
+    });
+
     test('旧记录中的中文简称城市名仍能命中', () {
       expect(matchCity('浙江省', '杭州'), 'Hangzhou');
       expect(getCityCoord('新疆维吾尔自治区', '乌鲁木齐')!.name, 'Urumqi');
@@ -166,6 +172,32 @@ void main() {
       final groups = groupRecordsByLocation(records);
       expect(groups, hasLength(1));
       expect(groups.first.locationName, cityPointName);
+    });
+
+    test('旧中文城市与新英文城市（同城同地点）归一为一组', () {
+      // Arrange：旧记录存中文（腾讯逆地理），新记录存英文（findNearestCity 回填）
+      final records = [
+        _record({
+          'id': 'old',
+          'province': '浙江省',
+          'city': '杭州市',
+          'locationName': '服务区快充',
+        }),
+        _record({
+          'id': 'new',
+          'province': 'Zhejiang',
+          'city': 'Hangzhou',
+          'locationName': '服务区快充',
+        }),
+      ];
+
+      // Act
+      final groups = groupRecordsByLocation(records);
+
+      // Assert
+      expect(groups, hasLength(1));
+      expect(groups.first.city, 'Hangzhou');
+      expect(groups.first.count, 2);
     });
 
     test('无经纬度的记录被忽略', () {
@@ -318,6 +350,20 @@ void main() {
         ], 3),
         isEmpty,
       );
+    });
+
+    test('同城中英文混存合并计数（归一键）', () {
+      // Arrange
+      final records = [
+        _record({'province': '浙江省', 'city': '杭州市'}),
+        _record({'province': 'Zhejiang', 'city': 'Hangzhou'}),
+        _record({'province': 'Zhejiang', 'city': 'Hangzhou'}),
+      ];
+
+      // Act & Assert
+      final top = calcCityTop(records, 3);
+      expect(top.first.city, 'Hangzhou');
+      expect(top.first.count, 3);
     });
   });
 

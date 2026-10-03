@@ -220,7 +220,7 @@ PosterModel buildPosterModel(AnnualReport? report, Object? totalRecordCount) {
     bestItems: _buildBestItems(source),
     // 底部身份文案：徽标（充电达人等）+ 固定 slogan。
     sloganText: '${resolveBadgeLabel(totalRecordCount)} · A year in EV life',
-    footerText: 'EVTool · EV Charging Log',
+    footerText: 'VoltMate · EV Charging Log',
   );
 }
 

@@ -76,7 +76,12 @@ class _ToneBadge extends StatelessWidget {
         color: color.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(AppColors.radiusSm),
       ),
-      child: Text(text, style: TextStyle(fontSize: 11, color: color)),
+      child: Text(
+        text,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: TextStyle(fontSize: 11, color: color),
+      ),
     );
   }
 }

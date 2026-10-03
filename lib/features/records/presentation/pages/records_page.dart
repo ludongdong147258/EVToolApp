@@ -184,7 +184,7 @@ class _RecordsPageState extends ConsumerState<RecordsPage> {
                     ],
                   ),
                   const SizedBox(height: 8),
-                  HeroValue(value: formatYuan(summary.totalCost), unit: '\$'),
+                  HeroValue(value: formatMoney(summary.totalCost)),
                   const SizedBox(height: 20),
                   HeroStatsRow(
                     items: [
@@ -198,8 +198,8 @@ class _RecordsPageState extends ConsumerState<RecordsPage> {
                         label: 'Avg Cost',
                         value: summary.costPerKwh == null
                             ? '--'
-                            : formatYuan(summary.costPerKwh!),
-                        unit: '\$/kWh',
+                            : formatMoney(summary.costPerKwh!),
+                        unit: '/kWh',
                       ),
                     ],
                   ),

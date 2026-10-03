@@ -129,7 +129,7 @@ void main() {
     test('formatMonthLabel → "Aug 2026"', () {
       expect(formatMonthLabel('2026-08'), 'Aug 2026');
       expect(formatMonthLabel('2026-12'), 'Dec 2026');
-      expect(formatMonthLabel('whatever'), 'whatever');
+      expect(formatMonthLabel('whatever'), '');
       expect(formatMonthLabel(null), '');
     });
   });

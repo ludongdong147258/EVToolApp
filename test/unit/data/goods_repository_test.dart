@@ -206,8 +206,13 @@ void main() {
       expect(mk('1.2万').salesTip, '12k sold');
       expect(mk('8500').salesTip, '8.5k sold');
       expect(mk('999').salesTip, '999 sold');
-      // 无法解析的文案回退到数值 sales
+      // 带中文尾缀的销量文案（前缀匹配）
+      expect(mk('1.2万人已拼').salesTip, '12k sold');
+      expect(mk('10万+件').salesTip, '100k+ sold');
+      // 无法解析的文案回退到数值 sales；0 销量不显示（避免虚构 "0 sold"）
       expect(mk('n/a', 3000).salesTip, '3k sold');
+      expect(mk('n/a').salesTip, '');
+      expect(mk('10万+', 0).salesTip, '100k+ sold');
     });
 
     test('非 2xx 抛中文 GoodsException', () async {

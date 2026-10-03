@@ -69,7 +69,7 @@ Future<void> _pumpPage(WidgetTester tester, ProviderContainer container) async {
 
 void main() {
   final tabTitles = [
-    'Charging gun',
+    'Connectors',
     'Travel charger',
     'Home charging station',
     'Car accessories',
@@ -111,6 +111,12 @@ void main() {
     await tester.pumpAndSettle();
     expect(fake.callCount, 1);
 
+    // tab 行横向滚动，先滚到目标 tab 可见再点击
+    await tester.scrollUntilVisible(
+      find.text('Jump starters'),
+      100,
+      scrollable: find.byType(Scrollable).first,
+    );
     await tester.tap(find.text('Jump starters'));
     await tester.pumpAndSettle();
 

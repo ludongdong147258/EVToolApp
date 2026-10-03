@@ -89,26 +89,28 @@ class GoodsItem {
   int get couponPrice =>
       hasCoupon ? originalPrice - couponAmount : originalPrice;
 
-  /// 销量文案：优先接口 sales_tip（中文 "10万+" 折 k）；缺失时按数值兜底
+  /// 销量文案：优先接口 sales_tip（中文 "10万+" / "1.2万人已拼" 折 k）；
+  /// 数值兜底，0 销量不显示（避免虚构 "0 sold"）
   String get salesTip {
     if (salesTipRaw.isNotEmpty) {
       final count = parseSalesTipCount(salesTipRaw);
       if (count != null) {
-        final plus = salesTipRaw.trim().endsWith('+') ? '+' : '';
+        final plus = salesTipRaw.contains('+') ? '+' : '';
         return '${formatSalesCount(count)}$plus sold';
       }
     }
-    if (sales >= 10000) {
-      return '${formatSalesCount(sales)}+ sold';
+    if (sales > 0) {
+      final plus = sales >= 10000 ? '+' : '';
+      return '${formatSalesCount(sales)}$plus sold';
     }
-    return '${formatSalesCount(sales)} sold';
+    return '';
   }
 }
 
-/// 中文销量文案（"10万+" / "1.2万" / "8500"）→ 数值（万 = ×10,000）。
-/// 无法解析时返回 null。
+/// 中文销量文案（"10万+" / "1.2万人已拼" / "8500"）→ 数值（万 = ×10,000）。
+/// 前缀匹配，忽略中文尾缀；无法解析时返回 null。
 int? parseSalesTipCount(String raw) {
-  final match = RegExp(r'^(\d+(?:\.\d+)?)(万)?\+?$').firstMatch(raw.trim());
+  final match = RegExp(r'^(\d+(?:\.\d+)?)(万)?').firstMatch(raw.trim());
   if (match == null) {
     return null;
   }

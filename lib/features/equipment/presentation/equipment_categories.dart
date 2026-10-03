@@ -15,7 +15,7 @@ class EquipmentCategory {
 
 /// 充电装备分类 Tab（6 类，与小程序一致）
 const List<EquipmentCategory> equipmentCategories = [
-  EquipmentCategory(id: 'charger-gun', title: 'Charging gun', keyword: '充电枪'),
+  EquipmentCategory(id: 'charger-gun', title: 'Connectors', keyword: '充电枪'),
   EquipmentCategory(id: 'portable', title: 'Travel charger', keyword: '随车充'),
   EquipmentCategory(
     id: 'home-pile',

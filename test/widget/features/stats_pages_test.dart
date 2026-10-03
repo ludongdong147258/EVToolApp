@@ -5,10 +5,14 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:ev_tool_app/core/storage/key_value_store.dart';
 import 'package:ev_tool_app/core/storage/local_storage.dart';
+import 'package:ev_tool_app/core/theme/app_theme.dart';
 import 'package:ev_tool_app/core/widgets/month_bar_chart.dart';
+import 'package:ev_tool_app/core/domain/poster.dart';
+import 'package:ev_tool_app/core/domain/theme_colors.dart';
 import 'package:ev_tool_app/features/costs/presentation/pages/cost_report_page.dart';
 import 'package:ev_tool_app/features/stats/presentation/pages/annual_report_page.dart';
 import 'package:ev_tool_app/features/stats/presentation/pages/charge_stats_page.dart';
+import 'package:ev_tool_app/features/stats/presentation/widgets/annual_poster.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -239,6 +243,43 @@ void main() {
       expect(find.text('Monthly trend'), findsOneWidget);
       expect(find.byType(MonthBarChart), findsOneWidget);
       expect(find.textContaining('This year'), findsOneWidget);
+    });
+  });
+
+  group('annual_poster 海报色随 accent', () {
+    testWidgets('非默认 accent 下快充分割条使用该 accent 主色', (tester) async {
+      // Arrange：直接构造最小 PosterModel（快充 100%）
+      const model = PosterModel(
+        titleText: '2025 Annual Charging Report',
+        heroCostText: '\$660.00',
+        statLines: [PosterStatLine(label: 'Charges', value: '12', unit: '')],
+        barItems: [PosterBar(value: 10, hasRecords: true)],
+        fastPercent: 100,
+        homePercent: 0,
+        bestItems: [],
+        sloganText: 'Rookie Owner · A year in EV life',
+        footerText: 'VoltMate · EV Charging Log',
+      );
+      final blueAccent = getAccentById('blue');
+
+      // Act：蓝色 accent 的浅色主题下渲染海报
+      await tester.pumpWidget(
+        MaterialApp(
+          theme: AppTheme.light(blueAccent),
+          home: const AnnualPoster(model: model),
+        ),
+      );
+
+      // Assert：分割条为蓝色主色，而非默认绿色
+      final coloredBoxes = tester
+          .widgetList<ColoredBox>(find.byType(ColoredBox))
+          .toList();
+      expect(
+        coloredBoxes.any((b) => b.color == Color(blueAccent.primary)),
+        isTrue,
+      );
+      const defaultGreen = Color(0xFF10B981);
+      expect(coloredBoxes.any((b) => b.color == defaultGreen), isFalse);
     });
   });
 }

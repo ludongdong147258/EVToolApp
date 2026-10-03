@@ -97,6 +97,8 @@ class HeroStatItem extends StatelessWidget {
       children: [
         Text(
           label,
+          maxLines: 1,
+          overflow: TextOverflow.ellipsis,
           style: const TextStyle(fontSize: 14, color: AppColors.onPrimaryA85),
         ),
         const SizedBox(height: 4),

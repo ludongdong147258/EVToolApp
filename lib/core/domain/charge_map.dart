@@ -125,7 +125,7 @@ String? matchCity(String province, String city) {
   final cities = _provinceCities(province);
   if (cities == null) return null;
   for (final entry in cities) {
-    if (_matchCityName(entry.zh, city)) return entry.name;
+    if (_matchesCity(entry, city)) return entry.name;
   }
   return null;
 }
@@ -135,9 +135,16 @@ CityCoord? getCityCoord(String province, String city) {
   final cities = _provinceCities(province);
   if (cities == null) return null;
   for (final entry in cities) {
-    if (_matchCityName(entry.zh, city)) return entry;
+    if (_matchesCity(entry, city)) return entry;
   }
   return null;
+}
+
+/// 城市匹配：中文 zh 键（含行政后缀剥离）或英文 name 精确相等。
+/// 英文名也必须认——matchCity/findNearestCity 返回并落盘的就是英文名，
+/// 存量值回读（幂等）不能解析失败。
+bool _matchesCity(CityCoord entry, String city) {
+  return _matchCityName(entry.zh, city) || entry.name == city;
 }
 
 /// Coordinates → nearest city (used to fill province/city after map picking).
@@ -206,6 +213,16 @@ bool _hasLocation(ChargeRecord record) =>
     record.latitude!.isFinite &&
     record.longitude!.isFinite;
 
+/// 城市显示/聚合键归一：旧记录可能存中文（腾讯逆地理），新记录存英文，
+/// 同城统一解析为英文名；解析不到原样保留。
+String _normalizeCityKey(ChargeRecord record) {
+  final city = record.city;
+  if (city == null || city.isEmpty) return city ?? '';
+  final province = record.province;
+  if (province == null || province.isEmpty) return city;
+  return matchCity(province, city) ?? city;
+}
+
 /// Aggregate records by location (data source for the map page scatter).
 ///
 /// Aggregation key: city + location name (records without a location name
@@ -216,7 +233,7 @@ List<LocationGroup> groupRecordsByLocation(List<ChargeRecord> records) {
   for (final record in records) {
     if (!_hasLocation(record)) continue;
     final city = (record.city?.isNotEmpty ?? false)
-        ? record.city!
+        ? _normalizeCityKey(record)
         : 'Unknown city';
     final locationName = (record.locationName?.isNotEmpty ?? false)
         ? record.locationName!
@@ -355,7 +372,8 @@ List<({String city, int count})> calcCityTop(
   for (final record in records) {
     final city = record.city;
     if (city == null || city.isEmpty) continue;
-    counts[city] = (counts[city] ?? 0) + 1;
+    final key = _normalizeCityKey(record);
+    counts[key] = (counts[key] ?? 0) + 1;
   }
   final entries = counts.entries
       .map((e) => (city: e.key, count: e.value))

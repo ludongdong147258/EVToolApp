@@ -218,7 +218,7 @@ void main() {
     test('slogan 带徽标身份文案，footer 为产品名落款', () {
       final model = buildPosterModel(buildReport(), null);
       expect(model.sloganText, 'Rookie Owner · A year in EV life');
-      expect(model.footerText, 'EVTool · EV Charging Log');
+      expect(model.footerText, 'VoltMate · EV Charging Log');
     });
 
     test('slogan 徽标随累计记录条数晋级', () {

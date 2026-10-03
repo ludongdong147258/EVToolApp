@@ -51,12 +51,13 @@ class GoodsCard extends StatelessWidget {
                   const SizedBox(height: 6),
                   _PriceRow(item: item),
                   const SizedBox(height: 4),
-                  Text(
-                    item.salesTip,
-                    style: context.textTheme.bodySmall?.copyWith(
-                      color: palette.textSecondary,
+                  if (item.salesTip.isNotEmpty)
+                    Text(
+                      item.salesTip,
+                      style: context.textTheme.bodySmall?.copyWith(
+                        color: palette.textSecondary,
+                      ),
                     ),
-                  ),
                 ],
               ),
             ),

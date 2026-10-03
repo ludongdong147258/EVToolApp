@@ -95,12 +95,13 @@ class GoodsDetailSheet extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 4),
-          Text(
-            item.salesTip,
-            style: context.textTheme.bodySmall?.copyWith(
-              color: palette.textHint,
+          if (item.salesTip.isNotEmpty)
+            Text(
+              item.salesTip,
+              style: context.textTheme.bodySmall?.copyWith(
+                color: palette.textHint,
+              ),
             ),
-          ),
           const SizedBox(height: 16),
           FilledButton(
             onPressed: () => unawaited(_buy(context)),

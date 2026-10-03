@@ -93,10 +93,10 @@ String formatFullDate(dynamic dateStr) {
   return '${formatMonthDay(dateStr)}, $year';
 }
 
-/// 月份 key → "Aug 2026"（图表/导航标签）；格式非法返回原值
+/// 月份 key → "Aug 2026"（图表/导航标签）；格式非法返回 ""
 String formatMonthLabel(dynamic monthKey) {
   if (monthKey is! String || !monthKeyRe.hasMatch(monthKey)) {
-    return monthKey?.toString() ?? '';
+    return '';
   }
   final month = int.parse(monthKey.substring(5, 7));
   return '${monthShortNames[month - 1]} ${monthKey.substring(0, 4)}';

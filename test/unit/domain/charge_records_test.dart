@@ -924,8 +924,8 @@ void main() {
       expect(formatMonthLabel('2026-11'), 'Nov 2026');
     });
 
-    test('非法输入：格式不符原样返回，null 返回空串（date_utils 契约）', () {
-      expect(formatMonthLabel('2026-8'), '2026-8');
+    test('非法输入返回空串', () {
+      expect(formatMonthLabel('2026-8'), '');
       expect(formatMonthLabel(null), '');
     });
   });

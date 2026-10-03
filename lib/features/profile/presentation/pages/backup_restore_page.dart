@@ -89,8 +89,8 @@ class BackupRestorePage extends ConsumerWidget {
                 Text('Export Data', style: context.textTheme.titleSmall),
                 const SizedBox(height: 8),
                 Text(
-                  '${payload.recordCount} charging records, ${payload.vehicleCount} vehicles, '
-                  '${payload.expenseCount} expenses, and ${payload.memoCount} inspection memos, '
+                  '${payload.recordCount} charging records, ${payload.vehicleCount} vehicle(s), '
+                  '${payload.expenseCount} expense(s), and ${payload.memoCount} inspection memo(s), '
                   'about ${payload.size} in total (vehicle photos are not included).',
                   style: TextStyle(fontSize: 13, color: palette.textSecondary),
                 ),
@@ -207,8 +207,8 @@ class BackupRestorePage extends ConsumerWidget {
         title: const Text('Import Backup'),
         content: Text(
           'This will import ${parsed.records.length} charging records, '
-          '${parsed.vehicles.length} vehicles, ${parsed.expenses.length} expenses, '
-          'and ${parsed.memos.length} inspection memos, merged with your existing '
+          '${parsed.vehicles.length} vehicle(s), ${parsed.expenses.length} expense(s), '
+          'and ${parsed.memos.length} inspection memo(s), merged with your existing '
           'data (duplicates are skipped automatically).',
         ),
         actions: [
