@@ -512,6 +512,11 @@ class _ProfileEditorSheetState extends ConsumerState<_ProfileEditorSheet> {
                 decoration: const InputDecoration(
                   counterText: '',
                   isDense: true,
+                  // 收紧内边距降低高度（与表单数字输入同口径）
+                  contentPadding: EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 10,
+                  ),
                   hintText: '点击输入昵称',
                 ),
               ),
