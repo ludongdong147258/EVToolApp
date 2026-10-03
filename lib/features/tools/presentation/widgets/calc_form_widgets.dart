@@ -170,7 +170,7 @@ class CalcTextField extends StatelessWidget {
   }
 }
 
-/// 选项 chip（工况选择 / 预设值），可选副文本（系数 ×f）。
+/// 选项 chip（工况选择 / 预设值，胶囊样式对齐小程序 .chip），可选副文本（系数 ×f）。
 class CalcChip extends StatelessWidget {
   const CalcChip({
     super.key,
@@ -189,33 +189,37 @@ class CalcChip extends StatelessWidget {
   Widget build(BuildContext context) {
     final palette = context.palette;
     return InkWell(
-      borderRadius: BorderRadius.circular(AppColors.radiusLg),
+      borderRadius: BorderRadius.circular(20),
       onTap: onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
           color: isSelected ? palette.secondaryContainer : palette.inputBg,
-          borderRadius: BorderRadius.circular(AppColors.radiusLg),
+          borderRadius: BorderRadius.circular(20),
           border: Border.all(
             color: isSelected ? palette.primaryContainer : Colors.transparent,
-            width: 1.5,
           ),
         ),
-        child: Column(
+        // 名称与系数同行（对齐小程序 .chip flex row），单行不换行
+        child: Row(
           mainAxisSize: MainAxisSize.min,
           children: [
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
-                color: isSelected
-                    ? palette.onSecondaryContainer
-                    : palette.onSurfaceVariant,
+            Flexible(
+              child: Text(
+                label,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                  color: isSelected
+                      ? palette.onSecondaryContainer
+                      : palette.onSurfaceVariant,
+                ),
               ),
             ),
             if (sublabel != null) ...[
-              const SizedBox(height: 2),
+              const SizedBox(width: 4),
               Text(
                 sublabel!,
                 style: TextStyle(
@@ -233,7 +237,7 @@ class CalcChip extends StatelessWidget {
   }
 }
 
-/// 品牌色滑块（activeColor 取 palette.primaryContainer）。
+/// 品牌色滑块（activeColor 取品牌主色，对齐小程序 accent PRIMARY）。
 class CalcSlider extends StatelessWidget {
   const CalcSlider({
     super.key,
@@ -256,6 +260,8 @@ class CalcSlider extends StatelessWidget {
     return SliderTheme(
       data: SliderTheme.of(context).copyWith(
         trackHeight: 4,
+        // 去掉轨道两侧默认留白，滑块贴齐内容区
+        padding: EdgeInsets.zero,
         overlayShape: const RoundSliderOverlayShape(overlayRadius: 18),
       ),
       child: Slider(
@@ -263,7 +269,7 @@ class CalcSlider extends StatelessWidget {
         min: min,
         max: max,
         divisions: divisions,
-        activeColor: palette.primaryContainer,
+        activeColor: palette.primary,
         inactiveColor: palette.surfaceContainerHighest,
         onChanged: onChanged,
       ),
@@ -304,6 +310,7 @@ class CalcDisclaimer extends StatelessWidget {
       padding: const EdgeInsets.only(top: 4),
       child: Text(
         text,
+        textAlign: TextAlign.center,
         style: TextStyle(fontSize: 11, color: palette.textHint, height: 1.5),
       ),
     );

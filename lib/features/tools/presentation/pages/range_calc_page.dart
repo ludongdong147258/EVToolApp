@@ -128,21 +128,21 @@ class _RangeCalcPageState extends ConsumerState<RangeCalcPage> {
                     Text(
                       '预估续航',
                       style: TextStyle(
-                        fontSize: 13,
+                        fontSize: 16,
                         color: AppColors.onPrimaryA85,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 6),
+                const SizedBox(height: 8),
                 RichText(
                   text: TextSpan(
                     children: [
                       TextSpan(
                         text: formatPlainNumber(result?.estimatedRange ?? 0),
                         style: const TextStyle(
-                          fontSize: 36,
+                          fontSize: 32,
                           fontWeight: FontWeight.w700,
                           color: Colors.white,
                           height: 1.2,
@@ -151,14 +151,17 @@ class _RangeCalcPageState extends ConsumerState<RangeCalcPage> {
                       const TextSpan(
                         text: ' km',
                         style: TextStyle(
-                          fontSize: 14,
+                          fontSize: 16,
                           color: AppColors.onPrimaryA85,
                         ),
                       ),
                     ],
                   ),
                 ),
-                const SizedBox(height: 12),
+                const SizedBox(height: 16),
+                // 明细列表顶部分隔线（对齐小程序 .re-detail-list）
+                Container(height: 1, color: AppColors.onPrimaryA28),
+                const SizedBox(height: 8),
                 _HeroDetailLine(
                   icon: Icons.bolt_rounded,
                   label: '可用电量',
@@ -170,9 +173,15 @@ class _RangeCalcPageState extends ConsumerState<RangeCalcPage> {
                   label: '基准续航',
                   value: '${formatPlainNumber(result?.baseRange ?? 0)} km',
                 ),
-                for (final item in breakdown?.items ?? const <FactorItem>[])
+                // 工况系数行图标按序对应 温度/路况/空调
+                for (final (index, item)
+                    in (breakdown?.items ?? const <FactorItem>[]).indexed)
                   _HeroDetailLine(
-                    icon: Icons.thermostat,
+                    icon: switch (index) {
+                      0 => Icons.thermostat,
+                      1 => Icons.directions_car_rounded,
+                      _ => Icons.eco_rounded,
+                    },
                     label: item.label,
                     value: '×${item.factor}',
                   ),
@@ -191,8 +200,8 @@ class _RangeCalcPageState extends ConsumerState<RangeCalcPage> {
             iconColor: palette.primary,
             child: Column(
               children: [
+                // 电池容量通栏行 + 底部分割线（对齐小程序 .re-battery-row）
                 InkWell(
-                  borderRadius: BorderRadius.circular(AppColors.radiusMd),
                   onTap: () => showBatteryOptionsSheet(
                     context,
                     current: _parseNumber(_battery) ?? 0,
@@ -202,34 +211,53 @@ class _RangeCalcPageState extends ConsumerState<RangeCalcPage> {
                     ),
                   ),
                   child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 10,
-                    ),
+                    padding: const EdgeInsets.only(bottom: 12),
                     decoration: BoxDecoration(
-                      color: palette.inputBg,
-                      borderRadius: BorderRadius.circular(AppColors.radiusMd),
+                      border: Border(
+                        bottom: BorderSide(color: palette.divider, width: 0.5),
+                      ),
                     ),
                     child: Row(
-                      mainAxisSize: MainAxisSize.min,
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          '电池容量：$_battery 度',
+                          '电池容量 (kWh)',
                           style: TextStyle(
-                            fontSize: 13,
+                            fontSize: 14,
                             color: palette.onSurface,
                           ),
                         ),
-                        Icon(
-                          Icons.expand_more_rounded,
-                          size: 16,
-                          color: palette.textHint,
+                        Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              _battery,
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                                color: palette.onSurface,
+                              ),
+                            ),
+                            const SizedBox(width: 2),
+                            Text(
+                              '度',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: palette.textSecondary,
+                              ),
+                            ),
+                            Icon(
+                              Icons.expand_more_rounded,
+                              size: 16,
+                              color: palette.textHint,
+                            ),
+                          ],
                         ),
                       ],
                     ),
                   ),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 12),
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
@@ -240,12 +268,13 @@ class _RangeCalcPageState extends ConsumerState<RangeCalcPage> {
                         color: palette.textSecondary,
                       ),
                     ),
+                    // 数值用品牌色（对齐小程序 .re-target-value）
                     Text(
                       '$_soc%',
                       style: TextStyle(
-                        fontSize: 14,
+                        fontSize: 18,
                         fontWeight: FontWeight.w600,
-                        color: palette.onSurface,
+                        color: palette.primary,
                       ),
                     ),
                   ],
@@ -312,6 +341,7 @@ class _RangeCalcPageState extends ConsumerState<RangeCalcPage> {
                 const SizedBox(height: 12),
                 _ConditionChips(
                   label: '路况',
+                  inline: true,
                   options: roadOptions,
                   current: _road,
                   onSelect: (value) => _setStateWithResult(() => _road = value),
@@ -319,6 +349,7 @@ class _RangeCalcPageState extends ConsumerState<RangeCalcPage> {
                 const SizedBox(height: 12),
                 _ConditionChips(
                   label: '空调',
+                  inline: true,
                   options: acOptions,
                   current: _ac,
                   onSelect: (value) => _setStateWithResult(() => _ac = value),
@@ -336,44 +367,56 @@ class _RangeCalcPageState extends ConsumerState<RangeCalcPage> {
   }
 }
 
-/// 工况单选 chips（温度 / 路况 / 空调共用），chip 内显示系数小字。
+/// 工况单选 chips（温度 / 路况 / 空调共用），chip 内显示系数小字；
+/// [inline] 时 label 与 chips 同行（对齐小程序 路况/空调 布局）。
 class _ConditionChips extends StatelessWidget {
   const _ConditionChips({
     required this.label,
     required this.options,
     required this.current,
     required this.onSelect,
+    this.inline = false,
   });
 
   final String label;
   final List<WorkConditionOption> options;
   final String current;
   final ValueChanged<String> onSelect;
+  final bool inline;
 
   @override
   Widget build(BuildContext context) {
     final palette = context.palette;
+    final labelWidget = Text(
+      label,
+      style: TextStyle(fontSize: 12, color: palette.textSecondary),
+    );
+    final chips = [
+      for (final option in options)
+        CalcChip(
+          label: option.label,
+          sublabel: '×${option.factor}',
+          isSelected: current == option.value,
+          onTap: () => onSelect(option.value),
+        ),
+    ];
+    if (inline) {
+      return Wrap(
+        spacing: 8,
+        runSpacing: 8,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        children: [
+          Padding(padding: const EdgeInsets.only(right: 4), child: labelWidget),
+          ...chips,
+        ],
+      );
+    }
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: TextStyle(fontSize: 12, color: palette.textSecondary),
-        ),
+        labelWidget,
         const SizedBox(height: 6),
-        Wrap(
-          spacing: 8,
-          runSpacing: 8,
-          children: [
-            for (final option in options)
-              CalcChip(
-                label: option.label,
-                sublabel: '×${option.factor}',
-                isSelected: current == option.value,
-                onTap: () => onSelect(option.value),
-              ),
-          ],
-        ),
+        Wrap(spacing: 8, runSpacing: 8, children: chips),
       ],
     );
   }
@@ -394,7 +437,7 @@ class _HeroDetailLine extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 3),
+      padding: const EdgeInsets.symmetric(vertical: 4),
       child: Row(
         children: [
           Icon(icon, size: 14, color: AppColors.onPrimaryA85),
@@ -411,8 +454,8 @@ class _HeroDetailLine extends StatelessWidget {
           Text(
             value,
             style: const TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
+              fontSize: 14,
+              fontWeight: FontWeight.w700,
               color: Colors.white,
             ),
           ),
