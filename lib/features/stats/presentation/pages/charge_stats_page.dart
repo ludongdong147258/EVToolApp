@@ -312,7 +312,7 @@ class _ChargeStatsPageState extends ConsumerState<ChargeStatsPage> {
                   items: [
                     HeroStatItem(label: 'Sessions', value: '${total.count}'),
                     HeroStatItem(
-                      label: 'Total Energy',
+                      label: 'Energy',
                       value: formatYuan(total.totalEnergy),
                       unit: 'kWh',
                     ),

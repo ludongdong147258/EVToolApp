@@ -95,11 +95,15 @@ class HeroStatItem extends StatelessWidget {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-          style: const TextStyle(fontSize: 14, color: AppColors.onPrimaryA85),
+        // 标签放不下时等比缩小（同数值行策略），不出现省略号
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          alignment: Alignment.centerLeft,
+          child: Text(
+            label,
+            maxLines: 1,
+            style: const TextStyle(fontSize: 14, color: AppColors.onPrimaryA85),
+          ),
         ),
         const SizedBox(height: 4),
         // 数值放不下时整段等比缩小（如 4 列占比 "100%"），不出现省略号

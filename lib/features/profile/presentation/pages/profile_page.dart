@@ -144,30 +144,26 @@ class ProfilePage extends ConsumerWidget {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Row(
+                            // 昵称独占一行（徽章较长的语言环境下不再挤压截断）
+                            Text(
+                              displayName,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.w700,
+                                color: Colors.white,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            // 徽章独立成行，窄屏自动换行
+                            Wrap(
+                              spacing: 6,
+                              runSpacing: 4,
                               children: [
-                                Flexible(
-                                  child: Text(
-                                    displayName,
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
-                                    style: const TextStyle(
-                                      fontSize: 18,
-                                      fontWeight: FontWeight.w700,
-                                      color: Colors.white,
-                                    ),
-                                  ),
-                                ),
-                                const SizedBox(width: 8),
-                                Flexible(child: _HeroBadge(label: badgeLabel)),
-                                if (recordDays > 0) ...[
-                                  const SizedBox(width: 4),
-                                  Flexible(
-                                    child: _HeroBadge(
-                                      label: '$recordDays days logged',
-                                    ),
-                                  ),
-                                ],
+                                if (recordDays > 0)
+                                  _HeroBadge(label: '$recordDays days logged'),
+                                _HeroBadge(label: badgeLabel),
                               ],
                             ),
                             const SizedBox(height: 4),
@@ -187,13 +183,10 @@ class ProfilePage extends ConsumerWidget {
                 const SizedBox(height: 16),
                 HeroStatsRow(
                   items: [
-                    HeroStatItem(
-                      label: 'Charge Records',
-                      value: '${total.count}',
-                    ),
+                    HeroStatItem(label: 'Records', value: '${total.count}'),
                     HeroStatItem(label: 'This Month', value: '${month.count}'),
                     HeroStatItem(
-                      label: 'Total Energy',
+                      label: 'Energy',
                       value: formatYuan(total.totalEnergy),
                       unit: 'kWh',
                     ),

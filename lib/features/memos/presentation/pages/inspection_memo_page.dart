@@ -554,7 +554,7 @@ class _NextInspectionHero extends StatelessWidget {
           HeroStatsRow(
             items: [
               HeroStatItem(
-                label: 'Next inspection date',
+                label: 'Next inspection',
                 value: formatCnDate(next.dueDate),
               ),
               HeroStatItem(label: 'Milestone type', value: next.typeLabel),

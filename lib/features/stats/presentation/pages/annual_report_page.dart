@@ -190,12 +190,12 @@ class _AnnualReportPageState extends ConsumerState<AnnualReportPage> {
                   items: [
                     HeroStatItem(label: 'Sessions', value: '${report.count}'),
                     HeroStatItem(
-                      label: 'Total Energy',
+                      label: 'Energy',
                       value: formatYuan(report.totalEnergy),
                       unit: 'kWh',
                     ),
                     HeroStatItem(
-                      label: 'Avg Cost per kWh',
+                      label: 'Avg Cost',
                       value: report.costPerKwh == null
                           ? '--'
                           : formatMoney(report.costPerKwh!),

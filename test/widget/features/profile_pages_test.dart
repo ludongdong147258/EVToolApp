@@ -99,9 +99,9 @@ void main() {
       expect(find.text(r'Total spent $45.00'), findsOneWidget);
 
       // 三列统计
-      expect(find.text('Charge Records'), findsOneWidget);
+      expect(find.text('Records'), findsOneWidget);
       expect(find.text('This Month'), findsOneWidget);
-      expect(find.text('Total Energy'), findsOneWidget);
+      expect(find.text('Energy'), findsOneWidget);
 
       // 菜单
       expect(find.text('My Services'), findsOneWidget);
