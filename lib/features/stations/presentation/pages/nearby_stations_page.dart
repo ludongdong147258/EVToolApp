@@ -1,19 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import 'package:ev_tool_app/core/constants/env.dart';
 import 'package:ev_tool_app/core/domain/stations.dart';
 import 'package:ev_tool_app/core/extensions/context_extensions.dart';
 import 'package:ev_tool_app/core/theme/app_colors.dart';
-import 'package:ev_tool_app/core/widgets/app_sheet.dart';
+import 'package:ev_tool_app/core/utils/coord_convert.dart';
 import 'package:ev_tool_app/core/widgets/app_toast.dart';
 import 'package:ev_tool_app/core/widgets/empty_state.dart';
 import 'package:ev_tool_app/features/maps/presentation/widgets/apple_map_view.dart';
 import 'package:ev_tool_app/features/stations/data/station_repository.dart';
 
-/// 定位兜底（北京）。当前版本未接入定位 SDK（geolocator 未在依赖中），
-/// 首次进入固定使用默认城市并展示提示条。
+/// 定位失败/未授权时的兜底坐标（北京），同时展示顶部提示条。
 const double _defaultLatitude = 39.90923;
 const double _defaultLongitude = 116.397428;
 
@@ -26,7 +26,7 @@ const double _mapHeightRatio = 0.4;
 /// 附近充电桩（移植小程序 nearby-stations）。
 ///
 /// 地图 + 周边充电桩列表（腾讯位置服务 place/search），marker/列表联动选中，
-/// 导航经腾讯地图 routeplan 网页链接由 url_launcher 外部打开。
+/// 导航/电话咨询内嵌条目（选中展开），导航唤起系统 Apple 地图。
 class NearbyStationsPage extends ConsumerStatefulWidget {
   const NearbyStationsPage({super.key});
 
@@ -39,16 +39,55 @@ class _NearbyStationsPageState extends ConsumerState<NearbyStationsPage> {
   String? _selectedId;
   bool _loading = true;
   StationServiceException? _error;
+  double _latitude = _defaultLatitude;
+  double _longitude = _defaultLongitude;
+
+  /// 仍在使用兜底坐标（未定位成功）时展示提示条。
+  bool _isDefaultLocation = true;
+
+  /// 列表条目 key：marker 点击联动滚动用（数据刷新时清空）。
+  final Map<String, GlobalKey> _tileKeys = <String, GlobalKey>{};
+
+  /// 列表滚动控制器（条目未构建时的估算兜底用）。
+  final ScrollController _listController = ScrollController();
 
   @override
   void initState() {
     super.initState();
     if (Env.hasLbsKey) {
-      _loadStations();
+      _locateThenLoad();
     } else {
       _loading = false;
       _error = const StationServiceException('未配置地图服务 Key', isKeyMissing: true);
     }
+  }
+
+  /// 进页自动定位当前位置后搜索；定位失败/拒绝则用北京兜底照常搜索。
+  Future<void> _locateThenLoad() async {
+    try {
+      var permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+      }
+      final granted =
+          permission == LocationPermission.whileInUse ||
+          permission == LocationPermission.always;
+      if (granted) {
+        final position = await Geolocator.getCurrentPosition();
+        // iOS 返回 WGS-84，地图与腾讯 LBS 均为 GCJ-02
+        final gcj = wgs84ToGcj02(position.latitude, position.longitude);
+        if (mounted) {
+          setState(() {
+            _latitude = gcj.latitude;
+            _longitude = gcj.longitude;
+            _isDefaultLocation = false;
+          });
+        }
+      }
+    } on Exception {
+      // 定位不可用（模拟器/未授权）→ 保持北京兜底
+    }
+    await _loadStations();
   }
 
   /// 搜索充电桩（同位置 30 分钟内走缓存；[force] 手动刷新绕过）。
@@ -61,12 +100,9 @@ class _NearbyStationsPageState extends ConsumerState<NearbyStationsPage> {
     try {
       final stations = await ref
           .read(stationRepositoryProvider)
-          .searchNearbyStations(
-            _defaultLatitude,
-            _defaultLongitude,
-            force: force,
-          );
+          .searchNearbyStations(_latitude, _longitude, force: force);
       if (!mounted) return;
+      _tileKeys.clear();
       setState(() {
         _loading = false;
         _stations = stations;
@@ -80,17 +116,73 @@ class _NearbyStationsPageState extends ConsumerState<NearbyStationsPage> {
     }
   }
 
-  /// marker 点击 → 联动选中列表项。
+  /// marker 点击 → 联动选中列表项并滚动到位（对齐小程序 scrollIntoView）。
   void _selectStation(String stationId) {
     setState(() => _selectedId = stationId);
+    WidgetsBinding.instance.addPostFrameCallback(
+      (_) => _scrollToStation(stationId),
+    );
   }
 
-  /// 唤起腾讯地图导航（外部浏览器打开 routeplan 链接）。
+  /// 列表平滑滚动到选中条目（视口上部 20% 处，展开操作行后仍可见）。
+  void _scrollToStation(String stationId) {
+    if (!mounted) return;
+    final tileContext = _tileKeys[stationId]?.currentContext;
+    if (tileContext != null) {
+      Scrollable.ensureVisible(
+        tileContext,
+        duration: const Duration(milliseconds: 250),
+        alignment: 0.2,
+      );
+      return;
+    }
+    // 条目在屏外未被 builder 构建：按平均条目高估算近似位置
+    final index = _stations.indexWhere((station) => station.id == stationId);
+    if (index < 0 || !_listController.hasClients) return;
+    final position = _listController.position;
+    if (!position.hasContentDimensions) return;
+    final target =
+        (index * _approxTileHeight - position.viewportDimension * 0.2).clamp(
+          0.0,
+          position.maxScrollExtent,
+        );
+    position.animateTo(
+      target,
+      duration: const Duration(milliseconds: 250),
+      curve: Curves.easeOutCubic,
+    );
+  }
+
+  /// 列表条目估算高度（未选中态 ~72 + 间距 8）。
+  static const double _approxTileHeight = 80;
+
+  /// 列表项点击 → 选中展开操作行；再点已选中项收起。
+  void _toggleStation(String stationId) {
+    setState(() => _selectedId = _selectedId == stationId ? null : stationId);
+  }
+
+  /// 拨打站点电话（无电话按钮不展示，此处 tel 必非空）。
+  Future<void> _callStation(Station station) async {
+    try {
+      final launched = await launchUrl(
+        Uri(scheme: 'tel', path: station.tel),
+        mode: LaunchMode.externalApplication,
+      );
+      if (!launched && mounted) {
+        showAppToast(context, '拨号失败');
+      }
+    } on Exception {
+      if (mounted) {
+        showAppToast(context, '拨号失败');
+      }
+    }
+  }
+
+  /// 唤起系统自带 Apple 地图导航。
   Future<void> _navigateTo(Station station) async {
-    final url = Uri.https('apis.map.qq.com', '/uri/v1/routeplan', {
-      'type': 'drive',
-      'to': station.name,
-      'tocoord': '${station.latitude},${station.longitude}',
+    final url = Uri.https('maps.apple.com', '/', {
+      'daddr': '${station.latitude},${station.longitude}',
+      'q': station.name,
     });
     try {
       final launched = await launchUrl(
@@ -105,6 +197,12 @@ class _NearbyStationsPageState extends ConsumerState<NearbyStationsPage> {
         showAppToast(context, '唤起导航失败');
       }
     }
+  }
+
+  @override
+  void dispose() {
+    _listController.dispose();
+    super.dispose();
   }
 
   @override
@@ -123,7 +221,7 @@ class _NearbyStationsPageState extends ConsumerState<NearbyStationsPage> {
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const _DefaultLocationBar(),
+          if (_isDefaultLocation) const _DefaultLocationBar(),
           SizedBox(
             height: context.screenHeight * _mapHeightRatio,
             child: _buildMap(),
@@ -137,9 +235,11 @@ class _NearbyStationsPageState extends ConsumerState<NearbyStationsPage> {
   Widget _buildMap() {
     final palette = context.palette;
     return AppleMapView(
-      initialCameraPosition: const MapViewCameraPosition(
-        latitude: _defaultLatitude,
-        longitude: _defaultLongitude,
+      // 插件只认 initial camera：定位后靠 key 重建地图落到新视野
+      key: ValueKey('$_latitude,$_longitude'),
+      initialCameraPosition: MapViewCameraPosition(
+        latitude: _latitude,
+        longitude: _longitude,
         zoom: _mapZoom,
       ),
       markers: [
@@ -199,66 +299,21 @@ class _NearbyStationsPageState extends ConsumerState<NearbyStationsPage> {
       );
     }
     return ListView.builder(
+      controller: _listController,
       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       itemCount: _stations.length,
       itemBuilder: (context, index) {
         final station = _stations[index];
         final isSelected = station.id == _selectedId;
         return _StationTile(
+          key: _tileKeys.putIfAbsent(station.id, GlobalKey.new),
           station: station,
           isSelected: isSelected,
-          onTap: () => _openStationSheet(station),
+          onTap: () => _toggleStation(station.id),
+          onNavigate: () => _navigateTo(station),
+          onCall: station.tel.isEmpty ? null : () => _callStation(station),
         );
       },
-    );
-  }
-
-  /// 列表项点击 → 选中并弹出站点详情 + 导航入口。
-  Future<void> _openStationSheet(Station station) async {
-    _selectStation(station.id);
-    await showAppSheet(
-      context: context,
-      title: station.name,
-      builder: (_) => AppSheetScrollBody(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            if (station.address.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 8),
-                child: Text(
-                  station.address,
-                  style: context.textTheme.bodySmall?.copyWith(
-                    color: context.palette.textSecondary,
-                  ),
-                ),
-              ),
-            if (station.distance != null)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 8),
-                child: Text(
-                  '距离 ${formatDistance(station.distance)}',
-                  style: context.textTheme.bodySmall?.copyWith(
-                    color: context.palette.textSecondary,
-                  ),
-                ),
-              ),
-            if (station.category.isNotEmpty)
-              Padding(
-                padding: const EdgeInsets.only(bottom: 16),
-                child: Align(
-                  alignment: Alignment.centerLeft,
-                  child: _CategoryTag(station.category),
-                ),
-              ),
-            FilledButton.icon(
-              onPressed: () => _navigateTo(station),
-              icon: const Icon(Icons.navigation_outlined, size: 18),
-              label: const Text('打开导航'),
-            ),
-          ],
-        ),
-      ),
     );
   }
 }
@@ -292,17 +347,23 @@ class _DefaultLocationBar extends StatelessWidget {
   }
 }
 
-/// 站点列表条目：图标 + 名称 + 距离 + 地址 + 分类标签。
+/// 站点列表条目：图标 + 名称 + 距离 + 地址 + 分类标签；
+/// 选中态展开操作行（导航 / 电话咨询，对齐小程序 .nbs-item-actions）。
 class _StationTile extends StatelessWidget {
   const _StationTile({
+    super.key,
     required this.station,
     required this.isSelected,
     required this.onTap,
+    required this.onNavigate,
+    this.onCall,
   });
 
   final Station station;
   final bool isSelected;
   final VoidCallback onTap;
+  final VoidCallback onNavigate;
+  final VoidCallback? onCall;
 
   @override
   Widget build(BuildContext context) {
@@ -369,11 +430,93 @@ class _StationTile extends StatelessWidget {
                         const SizedBox(height: 6),
                         _CategoryTag(station.category),
                       ],
+                      if (isSelected) ...[
+                        const SizedBox(height: 8),
+                        Row(
+                          children: [
+                            _NavButton(onTap: onNavigate),
+                            if (onCall != null) ...[
+                              const SizedBox(width: 8),
+                              _CallButton(tel: station.tel, onTap: onCall!),
+                            ],
+                          ],
+                        ),
+                      ],
                     ],
                   ),
                 ),
               ],
             ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// 导航小按钮（对齐小程序 .btn-primary 口径的紧凑版）。
+class _NavButton extends StatelessWidget {
+  const _NavButton({required this.onTap});
+
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = context.palette;
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(AppColors.radiusMd),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          color: palette.primaryContainer,
+          borderRadius: BorderRadius.circular(AppColors.radiusMd),
+        ),
+        child: const Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.arrow_forward_rounded, size: 14, color: Colors.white),
+            SizedBox(width: 4),
+            Text(
+              '导航',
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: Colors.white,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+/// 电话咨询描边按钮（对齐小程序 .btn-outline）。
+class _CallButton extends StatelessWidget {
+  const _CallButton({required this.tel, required this.onTap});
+
+  final String tel;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    final palette = context.palette;
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(AppColors.radiusMd),
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+        decoration: BoxDecoration(
+          border: Border.all(color: palette.primaryContainer),
+          borderRadius: BorderRadius.circular(AppColors.radiusMd),
+        ),
+        child: Text(
+          '$tel 咨询',
+          style: TextStyle(
+            fontSize: 14,
+            fontWeight: FontWeight.w600,
+            color: palette.primaryContainer,
           ),
         ),
       ),
