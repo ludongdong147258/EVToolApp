@@ -152,7 +152,7 @@ void main() {
 
       // 分区标题与按钮同名，各出现两次
       expect(find.text('导出数据'), findsNWidgets(2));
-      expect(find.text('复制备份文本'), findsOneWidget);
+      expect(find.text('复制备份文本'), findsNothing);
       expect(find.text('导入恢复'), findsNWidgets(2));
       expect(find.textContaining('2 条充电记录'), findsOneWidget);
       expect(find.textContaining('1 辆车'), findsOneWidget);

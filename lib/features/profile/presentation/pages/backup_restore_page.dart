@@ -3,7 +3,6 @@ import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
@@ -96,14 +95,6 @@ class BackupRestorePage extends ConsumerWidget {
                   style: TextStyle(fontSize: 13, color: palette.textSecondary),
                 ),
                 const SizedBox(height: 16),
-                SizedBox(
-                  height: 44,
-                  child: OutlinedButton(
-                    onPressed: () => _copyPayload(context, ref),
-                    child: const Text('复制备份文本'),
-                  ),
-                ),
-                const SizedBox(height: 10),
                 AppPrimaryButton(
                   text: '导出数据',
                   height: 44,
@@ -128,8 +119,6 @@ class BackupRestorePage extends ConsumerWidget {
                 AppPrimaryButton(
                   text: '导入恢复',
                   height: 44,
-                  backgroundColor: palette.surfaceContainerHighest,
-                  textColor: palette.onSurface,
                   onTap: () => _pickAndImport(context, ref),
                 ),
               ],
@@ -138,18 +127,6 @@ class BackupRestorePage extends ConsumerWidget {
         ],
       ),
     );
-  }
-
-  /// 复制备份文本到剪贴板（粘贴到备忘录等处自行保存）。
-  Future<void> _copyPayload(BuildContext context, WidgetRef ref) async {
-    final payload = ref.read(backupPayloadProvider);
-    try {
-      await Clipboard.setData(ClipboardData(text: payload.text));
-      if (context.mounted) showAppToast(context, '已复制备份文本');
-    } on Exception catch (e) {
-      appLogger.e('复制备份文本失败', error: e);
-      if (context.mounted) showAppToast(context, '复制失败，请重试');
-    }
   }
 
   /// 导出：备份 JSON 写临时文件 `EVTool备份-YYYY-MM-DD.json` 后拉起分享。
