@@ -18,7 +18,7 @@ class LegalDocPage extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(title: Text(title)),
       body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
         children: [
           Card(
             margin: EdgeInsets.zero,

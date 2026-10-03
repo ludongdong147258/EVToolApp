@@ -287,7 +287,7 @@ class _ChargeStatsPageState extends ConsumerState<ChargeStatsPage> {
     return Scaffold(
       appBar: AppBar(title: const Text('充电统计')),
       body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 4, 16, 32),
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
         children: [
           // 累计概览卡（渐变 hero，白字数据区）
           GradientHeroCard(

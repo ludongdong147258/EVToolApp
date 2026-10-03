@@ -92,7 +92,7 @@ class _FuelEvCalcPageState extends State<FuelEvCalcPage> {
     return Scaffold(
       appBar: AppBar(title: const Text('油电成本对比')),
       body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 4, 16, 32),
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
         children: [
           Text(
             '对比燃油车与电动车的年度用车成本',

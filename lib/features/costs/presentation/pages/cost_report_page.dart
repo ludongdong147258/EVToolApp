@@ -159,7 +159,7 @@ class _CostReportPageState extends ConsumerState<CostReportPage> {
       return Scaffold(
         appBar: AppBar(title: const Text('综合费用统计')),
         body: ListView(
-          padding: const EdgeInsets.fromLTRB(16, 4, 16, 32),
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
           children: [
             EmptyState(
               icon: Icons.bar_chart_rounded,
@@ -218,7 +218,7 @@ class _CostReportPageState extends ConsumerState<CostReportPage> {
     return Scaffold(
       appBar: AppBar(title: const Text('综合费用统计')),
       body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 4, 16, 32),
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
         children: [
           // 周期概览卡
           GradientHeroCard(

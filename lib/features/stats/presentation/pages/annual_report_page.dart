@@ -125,7 +125,7 @@ class _AnnualReportPageState extends ConsumerState<AnnualReportPage> {
       return Scaffold(
         appBar: AppBar(title: const Text('充电年度报告')),
         body: ListView(
-          padding: const EdgeInsets.fromLTRB(16, 4, 16, 32),
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
           children: [
             EmptyState(
               icon: Icons.insights_rounded,
@@ -147,7 +147,7 @@ class _AnnualReportPageState extends ConsumerState<AnnualReportPage> {
     return Scaffold(
       appBar: AppBar(title: const Text('充电年度报告')),
       body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 4, 16, 32),
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
         children: [
           // 年份切换（仅有记录的年份）
           Wrap(

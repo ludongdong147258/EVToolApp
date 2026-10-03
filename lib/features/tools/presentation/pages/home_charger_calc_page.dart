@@ -163,7 +163,7 @@ class _HomeChargerCalcPageState extends ConsumerState<HomeChargerCalcPage> {
     return Scaffold(
       appBar: AppBar(title: const Text('私桩安装测算')),
       body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 4, 16, 32),
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
         children: [
           ProgressCard(step: _step),
           if (estimates.isNotEmpty) ...[

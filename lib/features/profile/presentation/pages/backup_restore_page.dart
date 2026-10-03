@@ -81,7 +81,7 @@ class BackupRestorePage extends ConsumerWidget {
     return Scaffold(
       appBar: AppBar(title: const Text('数据备份')),
       body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
         children: [
           _SectionCard(
             child: Column(

@@ -44,7 +44,7 @@ class VehiclesPage extends ConsumerWidget {
               ],
             )
           : ListView(
-              padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
               children: [
                 for (final vehicle in vehicles)
                   _VehicleCard(

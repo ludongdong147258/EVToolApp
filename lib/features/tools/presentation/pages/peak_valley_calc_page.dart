@@ -228,7 +228,7 @@ class _PeakValleyCalcPageState extends ConsumerState<PeakValleyCalcPage> {
     return Scaffold(
       appBar: AppBar(title: const Text('峰谷电价优化')),
       body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 4, 16, 32),
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
         children: [
           Text(
             '智能规划充电时间，优化用电成本。',

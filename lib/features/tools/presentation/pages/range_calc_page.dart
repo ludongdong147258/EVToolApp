@@ -106,7 +106,7 @@ class _RangeCalcPageState extends ConsumerState<RangeCalcPage> {
     return Scaffold(
       appBar: AppBar(title: const Text('续航静态估算')),
       body: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 4, 16, 32),
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
         children: [
           Text(
             '基于电池容量与电耗，预估当前电量可行驶里程。',

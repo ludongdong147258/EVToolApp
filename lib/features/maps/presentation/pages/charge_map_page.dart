@@ -93,7 +93,7 @@ class _ChargeMapPageState extends ConsumerState<ChargeMapPage> {
     return Scaffold(
       appBar: AppBar(title: const Text('充电点位地图')),
       body: SingleChildScrollView(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
