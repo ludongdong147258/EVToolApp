@@ -44,15 +44,22 @@ class AppTheme {
       scaffoldBackgroundColor: palette.backgroundPale,
       extensions: [palette],
       textTheme: isDark ? AppTypography.dark : AppTypography.light,
+      // 对齐小程序 TopBar：品牌色底 + 居中白色标题（18/w700）
       appBarTheme: AppBarTheme(
         elevation: 0,
         scrolledUnderElevation: 0,
         centerTitle: true,
-        backgroundColor: palette.backgroundPale,
-        foregroundColor: palette.onSurface,
+        backgroundColor: palette.primary,
+        foregroundColor: Colors.white,
         titleTextStyle: (isDark ? AppTypography.dark : AppTypography.light)
             .titleLarge
-            ?.copyWith(color: palette.onSurface),
+            ?.copyWith(
+              color: Colors.white,
+              fontSize: 18,
+              fontWeight: FontWeight.w700,
+            ),
+        iconTheme: const IconThemeData(color: Colors.white),
+        actionsIconTheme: const IconThemeData(color: Colors.white),
       ),
       cardTheme: CardThemeData(
         elevation: 0,
