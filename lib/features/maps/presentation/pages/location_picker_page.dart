@@ -1,15 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:ev_tool_app/core/domain/charge_map.dart';
 import 'package:ev_tool_app/core/domain/charge_records.dart'
     show locationNameMaxLength;
-import 'package:ev_tool_app/core/domain/stations.dart' show GeocoderRegion;
 import 'package:ev_tool_app/core/extensions/context_extensions.dart';
 import 'package:ev_tool_app/core/theme/app_colors.dart';
-import 'package:ev_tool_app/core/utils/logger.dart';
 import 'package:ev_tool_app/features/maps/presentation/widgets/apple_map_view.dart';
-import 'package:ev_tool_app/features/stations/data/station_repository.dart';
+import 'package:ev_tool_app/features/records/data/geocoding_repository.dart';
 
 /// 地图选点结果（充电记录表单回填用）。
 class PickedLocation {
@@ -34,8 +31,8 @@ const double _fallbackLongitude = 116.407;
 
 /// 地图选点页：点击地图放置 marker，逆地理补全省市/地点名。
 ///
-/// 逆地理走腾讯 LBS（StationRepository，含 10 分钟内存缓存）；
-/// 未配置 Key / 请求失败时降级为本地最近城市匹配（不阻塞选点）。
+/// 逆地理走 CLGeocoder（GeocodingRepository，设备端 Apple 服务）；
+/// 失败（无网/无结果）时降级为只保存坐标（不阻塞选点）。
 /// 注意：包含地图插件，不可在 flutter test 中 pump。
 class LocationPickerPage extends ConsumerStatefulWidget {
   const LocationPickerPage({
@@ -60,8 +57,8 @@ class _LocationPickerPageState extends ConsumerState<LocationPickerPage> {
   String? _resolving;
   PickedLocation? _resolved;
 
-  /// 逆地理失败（无 Key / 配额 / 网络）→ 降级本地城市匹配时置位，
-  /// 底部预览提示用户详细地址缺失，而非静默只回填城市。
+  /// 逆地理失败（无网/无结果）→ 只回填坐标时置位，
+  /// 底部预览提示用户详细地址缺失。
   bool _geocodeFailed = false;
 
   void _handleMapTap(double latitude, double longitude) {
@@ -75,43 +72,26 @@ class _LocationPickerPageState extends ConsumerState<LocationPickerPage> {
   }
 
   Future<void> _resolveLocation(double latitude, double longitude) async {
-    GeocoderRegion? region;
-    var geocodeFailed = false;
-    try {
-      region = await ref
-          .read(stationRepositoryProvider)
-          .reverseGeocode(latitude, longitude);
-    } on Exception catch (e) {
-      region = null; // 无 Key / 网络失败 → 本地降级
-      geocodeFailed = true;
-      appLogger.w(
-        'Reverse geocode failed, falling back to local city match',
-        error: e,
-      );
-    }
+    // CLGeocoder 逆地理；失败返回 null → 只保存坐标
+    final region = await ref
+        .read(geocodingRepositoryProvider)
+        .reverseGeocode(latitude, longitude);
     if (!mounted || _latitude != latitude || _longitude != longitude) return;
     setState(() {
-      _geocodeFailed = geocodeFailed;
+      _geocodeFailed = region == null;
       if (region != null && region.province.isNotEmpty) {
         _resolved = PickedLocation(
           latitude: latitude,
           longitude: longitude,
           province: region.province,
           city: region.city.isNotEmpty ? region.city : null,
-          // POI 标题优先（get_poi=1），缺失时回退推荐地址
+          // POI 标题优先，缺失时回退街道地址
           locationName: _truncateLocation(
             region.poiTitle.isNotEmpty ? region.poiTitle : region.address,
           ),
         );
       } else {
-        final nearest = findNearestCity(latitude, longitude);
-        _resolved = PickedLocation(
-          latitude: latitude,
-          longitude: longitude,
-          province: nearest?.province,
-          city: nearest?.city,
-          locationName: null,
-        );
+        _resolved = PickedLocation(latitude: latitude, longitude: longitude);
       }
       _resolving = null;
     });
@@ -237,7 +217,7 @@ class _LocationPickerPageState extends ConsumerState<LocationPickerPage> {
       final text = parts.join(' ');
       if (text.isEmpty) return 'Location selected';
       return _geocodeFailed
-          ? '$text (no detailed address found; only the city will be saved)'
+          ? '$text (no detailed address found; location name may be incomplete)'
           : text;
     }
     return 'No location selected yet';

@@ -54,6 +54,9 @@ dependencies:
   # Location (充电记录进页自动定位)
   geolocator: ^14.0.0
 
+  # Geocoding (CLGeocoder 逆地理，坐标→省市/地点名)
+  geocoding: ^5.0.0
+
   # External links
   url_launcher: ^6.3.1
 

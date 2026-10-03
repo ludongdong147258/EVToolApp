@@ -6,22 +6,20 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:go_router/go_router.dart';
 
-import 'package:ev_tool_app/core/domain/charge_map.dart' show findNearestCity;
 import 'package:ev_tool_app/core/domain/charge_records.dart';
 import 'package:ev_tool_app/core/domain/numbers.dart';
+import 'package:ev_tool_app/core/domain/ocr_receipt.dart';
 import 'package:ev_tool_app/core/extensions/context_extensions.dart';
 import 'package:ev_tool_app/core/routing/route_names.dart';
 import 'package:ev_tool_app/core/theme/app_colors.dart';
-import 'package:ev_tool_app/core/utils/coord_convert.dart';
 import 'package:ev_tool_app/core/widgets/app_primary_button.dart';
 import 'package:ev_tool_app/core/widgets/app_sheet.dart';
 import 'package:ev_tool_app/core/widgets/app_toast.dart' show showAppToast;
-import 'package:ev_tool_app/core/domain/ocr_receipt.dart';
 import 'package:ev_tool_app/features/maps/presentation/pages/location_picker_page.dart';
 import 'package:ev_tool_app/features/ocr/presentation/widgets/ocr_entry_card.dart';
+import 'package:ev_tool_app/features/records/data/geocoding_repository.dart';
 import 'package:ev_tool_app/features/records/data/repositories/draft_repository.dart';
 import 'package:ev_tool_app/features/records/presentation/providers/records_provider.dart';
-import 'package:ev_tool_app/features/stations/data/station_repository.dart';
 
 /// 添加/编辑充电记录页（移植小程序 record-add，OCR 入口 Phase 8 接入）。
 class RecordAddPage extends ConsumerStatefulWidget {
@@ -212,41 +210,31 @@ class _RecordAddPageState extends ConsumerState<RecordAddPage> {
       if (!granted || !mounted) return;
 
       final position = await Geolocator.getCurrentPosition();
-      // iOS 返回 WGS-84，地图与逆地理均为 GCJ-02，需转换
-      final gcj = wgs84ToGcj02(position.latitude, position.longitude);
       if (!mounted) return;
 
       // 竞态守卫：用户已手动选点（或恢复了含地点的草稿）则不覆盖
       if (_latitude != null || _city != null) return;
 
-      String? province;
-      String? city;
-      String? locationName;
-      try {
-        final region = await ref
-            .read(stationRepositoryProvider)
-            .reverseGeocode(gcj.latitude, gcj.longitude);
-        province = region.province;
-        city = region.city.isNotEmpty ? region.city : null;
-        final title = region.poiTitle.isNotEmpty
-            ? region.poiTitle
-            : region.address;
-        locationName = title.length > locationNameMaxLength
-            ? title.substring(0, locationNameMaxLength)
-            : (title.isEmpty ? null : title);
-      } on Exception {
-        // 逆地理失败降级：本地城市坐标库取最近城市
-        final nearest = findNearestCity(gcj.latitude, gcj.longitude);
-        province = nearest?.province;
-        city = nearest?.city;
-      }
+      // CLGeocoder 逆地理（WGS-84）；失败返回 null → 字段留空静默降级
+      final region = await ref
+          .read(geocodingRepositoryProvider)
+          .reverseGeocode(position.latitude, position.longitude);
       if (!mounted) return;
+      final title = region == null
+          ? ''
+          : (region.poiTitle.isNotEmpty ? region.poiTitle : region.address);
       setState(() {
-        _province = province;
-        _city = city;
-        _locationName = locationName;
-        _latitude = gcj.latitude;
-        _longitude = gcj.longitude;
+        _province = region != null && region.province.isNotEmpty
+            ? region.province
+            : null;
+        _city = region != null && region.city.isNotEmpty ? region.city : null;
+        _locationName = title.isEmpty
+            ? null
+            : (title.length > locationNameMaxLength
+                  ? title.substring(0, locationNameMaxLength)
+                  : title);
+        _latitude = position.latitude;
+        _longitude = position.longitude;
       });
     } on Exception {
       // 定位不可用（模拟器/未授权/插件异常）静默跳过
