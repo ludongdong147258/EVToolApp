@@ -288,12 +288,11 @@ class _ChargeMapPageState extends ConsumerState<ChargeMapPage> {
     }
   }
 
-  /// 唤起腾讯地图网页导航（group 坐标为用户录入的真实点位坐标）。
+  /// 唤起系统自带 Apple 地图导航（group 坐标为用户录入的真实点位坐标）。
   Future<void> _navigateTo(LocationGroup group) async {
-    final url = Uri.https('apis.map.qq.com', '/uri/v1/routeplan', {
-      'type': 'drive',
-      'to': group.locationName,
-      'tocoord': '${group.latitude},${group.longitude}',
+    final url = Uri.https('maps.apple.com', '/', {
+      'daddr': '${group.latitude},${group.longitude}',
+      'q': group.locationName,
     });
     try {
       final launched = await launchUrl(
