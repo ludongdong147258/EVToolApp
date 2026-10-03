@@ -27,7 +27,7 @@ flutter test test/path/to/test.dart
 # 格式化
 dart format .
 
-# 运行应用（.env 复制自 .env.example，按需填 TENCENT_LBS_KEY / ZHIPU_API_KEY）
+# 运行应用（.env 复制自 .env.example，按需填 OCM_API_KEY / ZHIPU_API_KEY）
 flutter run
 ```
 
@@ -37,7 +37,7 @@ PUB_HOSTED_URL=https://pub.flutter-io.cn
 FLUTTER_STORAGE_BASE_URL=https://storage.flutter-io.cn
 ```
 
-**环境变量**（`.env`，gitignored）：`TENCENT_LBS_KEY(_BACKUP)` 附近充电站/逆地理（缺失优雅降级）、`ZHIPU_API_KEY` 小票 OCR（缺失隐藏入口）、`GOODS_API_BASE` 装备导购 API。
+**环境变量**（`.env`，gitignored）：`OCM_API_KEY` 附近充电站（Open Charge Map，可选，缺失匿名调用受限流约束）、`ZHIPU_API_KEY` 小票 OCR（缺失隐藏入口）、`GOODS_API_BASE` 装备导购 API。逆地理用系统 CLGeocoder（geocoding 包），无需 key。
 
 ## 架构
 
@@ -54,7 +54,8 @@ lib/
 │   │                        #   fuel_ev_calc/peak_valley_calc/home_charger_calc/range_estimate/
 │   │                        #   inspection_memo_calc/memo_reminder/export_data/backup_file/user_badges/
 │   │                        #   user_profile/recent_tools/stations/charge_map/ocr_receipt/poster/theme_colors
-│   │                        #   + data/（warranty_policy 11 品牌 / modification_compliance 10 项 / city_coords ~351 城）
+│   │                        #   + data/（warranty_policy 11 品牌 / modification_compliance 10 项）
+│   │                        #   ★ stations/charge_map 已因海外化偏离小程序一一对应铁律（数据源/坐标系不同）
 │   ├── extensions/          # context.theme/textTheme/colorScheme/palette/screenWidth/pop()
 │   ├── network/             # 休眠：dioProvider + ApiResult 信封 + 401 互斥刷新拦截器（待后端接入）
 │   ├── routing/             # goRouterProvider：StatefulShellRoute 4 分支（'/','/costs','/tools','/profile'）
@@ -72,7 +73,8 @@ lib/
     ├── records/             # 充电记录 tab：RecordRepository(key chargeRecords) + DraftRepository(formDraft:*)
     │                        # + recordsProvider/vehiclesProvider/memoListProvider/memoReminderProvider
     │                        # + records_page（月度 hero+最近记录+撤销）/record_add_page（表单+草稿+省市选择+OCR 入口
-    │                        #   + 新增模式进页自动定位：geolocator WGS84→GCJ02 + 逆地理回填，失败静默降级手动选点）
+    │                        #   + 新增模式进页自动定位：geolocator WGS-84 + CLGeocoder 逆地理回填
+    │                        #     （features/records/data/geocoding_repository.dart），失败静默降级手动选点）
     │                        # + widgets/（RecordCard、RecordDetailSheet）
     ├── vehicles/            # VehicleRepository（默认车不变式 + 改名/删除 → 记录&支出快照联动同步）+ PhotoStore
     │                        # + vehicles_page（车库 CRUD + 照片）+ VehicleAvatar
@@ -87,8 +89,8 @@ lib/
     ├── handbooks/           # modification_compliance_page + warranty_handbook_page（静态）
     ├── maps/                # apple_map_view.dart（★ apple_maps_flutter 唯一 import，插件隔离层）
     │                        # + charge_map_page（个人点位散点）
-    ├── stations/            # StationRepository（腾讯 LBS：主备 key 轮换 120/121、cell 缓存 30min、
-    │                        # 逆地理 10min 内存缓存）+ nearby_stations_page
+    ├── stations/            # StationRepository（Open Charge Map /v3/poi/：5km 半径、可选 key、
+    │                        # cell 缓存 30min、403/429→服务繁忙）+ nearby_stations_page
     ├── equipment/           # GoodsRepository（拼多多商品+推广短链）+ equipment_page（6 类瀑布流+免责声明）
     ├── ocr/                 # OcrRepository（智谱 GLM-4V，1305 退避 + 模型回退）+ OcrEntryCard（key 缺失自隐藏）
     └── profile/             # profile_page（用户卡+菜单+主题色）/backup_restore_page（JSON 导出导入去重）/
@@ -101,12 +103,12 @@ lib/
 |------|------|
 | 存储契约 | 存储key 与 JSON 字段名与小程序完全一致（`chargeRecords`/`maintenanceCosts`/`vehicles`/`inspectionMemos`/`homeChargerEstimate`/`userProfile`/`themePreference`/`toolsRecentUse`/`formDraft:<page>`/`equipment_tip_dismissed`/`nearbyStationsCache`）；备份 JSON v1 双向兼容（`buildExportJson`/`parseExportJson`，photoPath 导出剥离） |
 | 纯函数域层 | `core/domain/` 永不抛异常（非法输入返回 null/空）、无 Flutter 依赖；仓储（repositories）读→normalize→排序、写→校验→持久化，失败抛 `StorageException` 由页面 toast |
-| 第三方隔离 | LBS / 智谱 / 拼多多各用独立**无鉴权 Dio**（`lbsDioProvider`/`ocrDioProvider`/`goodsDioProvider`），绝不带 token/401 拦截器 |
+| 第三方隔离 | OCM 充电站 / 智谱 / 拼多多各用独立**无鉴权 Dio**（`stationsDioProvider`/`ocrDioProvider`/`goodsDioProvider`），绝不带 token/401 拦截器；`nearbyStationsCache` 结构不变但坐标基准已改 WGS-84 |
 | 主题 | `themeSettingsProvider`（模式 + accentId 持久化）→ MaterialApp 重建换肤；品牌色经 `EvPalette` ThemeExtension 下发（`context.palette`），6 套 accent（green 默认/blue/orange/purple/pink/cyan）+ 深浅色 |
 | 跨页联动 | 备忘到期 → `memoReminderProvider`（记录页提醒条 + 底栏工具 tab 红点，保存后 invalidate `memoListProvider`）；车辆改名/删除 → repository 级联同步记录+支出快照；报表图例点击 → `costFilterIntentProvider` + `context.go(costs)` |
 | 撤销删除 | `showUndoBar`（SnackBar + action，5s）+ Notifier `remove`/`restoreAll`，连续删除累计批量恢复 |
 | 照片 | `PhotoStore`：压缩存 `<appDocs>/vehicle_photos|avatars/`，模型只存**裸文件名**，读取时 existsSync 守卫回退图标 |
-| 地图 | 坐标系 GCJ-02；Apple MapKit 用法全部隔离在 `apple_map_view.dart`（可替换 flutter_map 而页面不动） |
+| 地图 | 坐标系 WGS-84（海外版；历史 GCJ-02 记录未迁移，点位可能偏移）；Apple MapKit 用法全部隔离在 `apple_map_view.dart`（可替换 flutter_map 而页面不动） |
 
 ## 编程风格（Karpathy 原则）
 
