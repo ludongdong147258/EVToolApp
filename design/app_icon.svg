@@ -1,0 +1,112 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <!-- EV Tool App Icon：轿车 + 电池 + 闪电，深色极光绿渐变
+       注意：本机渲染管线（qlmanage/magick）不支持 filter，光晕全部用渐变形状叠加 -->
+
+  <defs>
+    <!-- 背景 135° 对角渐变：左上深墨绿 → 右下极光绿 -->
+    <linearGradient id="bgGradient" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#064E3B"/>
+      <stop offset="0.55" stop-color="#0C9268"/>
+      <stop offset="1" stop-color="#10B981"/>
+    </linearGradient>
+
+    <!-- 右下极光光晕：提亮电池区 -->
+    <radialGradient id="glowBR" cx="0.72" cy="0.68" r="0.52">
+      <stop offset="0" stop-color="#10B981" stop-opacity="0.50"/>
+      <stop offset="0.55" stop-color="#10B981" stop-opacity="0.22"/>
+      <stop offset="1" stop-color="#10B981" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- 左上微光：轿车后侧冷色 sheen -->
+    <radialGradient id="glowTL" cx="0.26" cy="0.24" r="0.42">
+      <stop offset="0" stop-color="#6EE7B7" stop-opacity="0.14"/>
+      <stop offset="1" stop-color="#6EE7B7" stop-opacity="0"/>
+    </radialGradient>
+
+    <!-- 暗角：中心透明 → 四角深墨绿（不用滤镜的深度感） -->
+    <radialGradient id="vignette" cx="0.5" cy="0.5" r="0.75">
+      <stop offset="0" stop-color="#022C22" stop-opacity="0"/>
+      <stop offset="0.65" stop-color="#022C22" stop-opacity="0"/>
+      <stop offset="1" stop-color="#022C22" stop-opacity="0.38"/>
+    </radialGradient>
+
+    <!-- 闪电：浅极光绿 → 纯白，近垂直 -->
+    <linearGradient id="boltGradient" x1="0.4" y1="0" x2="0.6" y2="1">
+      <stop offset="0" stop-color="#FFFFFF"/>
+      <stop offset="1" stop-color="#A7F3D0"/>
+    </linearGradient>
+
+    <!-- 电池内填充：透出背景的深色半透明 -->
+    <linearGradient id="batteryFill" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#022C22" stop-opacity="0.45"/>
+      <stop offset="1" stop-color="#022C22" stop-opacity="0.65"/>
+    </linearGradient>
+  </defs>
+
+  <!-- 1. 背景与光晕层 -->
+  <rect x="0" y="0" width="1024" height="1024" fill="url(#bgGradient)"/>
+  <rect x="0" y="0" width="1024" height="1024" fill="url(#glowBR)"/>
+  <rect x="0" y="0" width="1024" height="1024" fill="url(#glowTL)"/>
+
+  <!-- 2. 轿车剪影（骑在电池上沿，y≈170–520） -->
+  <g>
+    <!-- 车身：引擎盖 / 斜挡风 / 车顶 / 快背行李厢，底部两轮拱缺口 -->
+    <path d="M 208 500
+             C 208 452, 216 420, 240 392
+             L 300 322
+             C 330 288, 372 270, 418 270
+             L 606 270
+             C 652 270, 694 288, 724 322
+             L 784 392
+             C 808 420, 816 452, 816 500
+             L 740 500
+             A 66 66 0 0 0 608 500
+             L 416 500
+             A 66 66 0 0 0 284 500
+             Z"
+          fill="#D1FAE5"/>
+    <!-- 车顶高光细线 -->
+    <path d="M 316 336 C 342 306, 380 290, 420 290 L 604 290 C 644 290, 682 306, 708 336"
+          fill="none" stroke="#6EE7B7" stroke-width="14" stroke-linecap="round" opacity="0.55"/>
+    <!-- 车窗分隔：挡风斜线 + 后窗斜线，用背景色挖出 -->
+    <path d="M 400 286 L 336 384" stroke="#064E3B" stroke-width="22" stroke-linecap="round"/>
+    <path d="M 624 286 L 688 384" stroke="#064E3B" stroke-width="22" stroke-linecap="round"/>
+    <!-- 车轮（落在电池上沿 y=530 上方，圆心 y=500） -->
+    <circle cx="330" cy="500" r="62" fill="#04291F" stroke="#D1FAE5" stroke-width="0"/>
+    <circle cx="330" cy="500" r="62" fill="#0A3A2C"/>
+    <circle cx="330" cy="500" r="60" fill="none" stroke="#D1FAE5" stroke-width="18"/>
+    <circle cx="330" cy="500" r="24" fill="#D1FAE5"/>
+    <circle cx="694" cy="500" r="62" fill="#0A3A2C"/>
+    <circle cx="694" cy="500" r="60" fill="none" stroke="#D1FAE5" stroke-width="18"/>
+    <circle cx="694" cy="500" r="24" fill="#D1FAE5"/>
+  </g>
+
+  <!-- 3. 电池主体（x≈192 y=530 w=540 h=300 rx=64，正极帽在右） -->
+  <g>
+    <!-- 正极帽 -->
+    <rect x="748" y="626" width="46" height="144" rx="22" fill="#6EE7B7"/>
+    <!-- 电池壳 -->
+    <rect x="192" y="548" width="540" height="300" rx="64"
+          fill="url(#batteryFill)" stroke="#D1FAE5" stroke-width="30"/>
+    <!-- 壳体顶部高光：浅绿细线增强体积 -->
+    <path d="M 248 584 L 676 584" stroke="#6EE7B7" stroke-width="12"
+          stroke-linecap="round" opacity="0.45"/>
+  </g>
+
+  <!-- 4. 闪电（电池内居中，双层辉光 + 主体） -->
+  <g>
+    <!-- 辉光外层 -->
+    <path d="M 468 590 L 398 720 L 456 720 L 424 810 L 552 678 L 492 678 L 532 590 Z"
+          fill="#6EE7B7" opacity="0.10" transform="translate(462 700) scale(1.22) translate(-462 -700)"/>
+    <!-- 辉光内层 -->
+    <path d="M 468 590 L 398 720 L 456 720 L 424 810 L 552 678 L 492 678 L 532 590 Z"
+          fill="#6EE7B7" opacity="0.20" transform="translate(462 700) scale(1.10) translate(-462 -700)"/>
+    <!-- 主体 bolt -->
+    <path d="M 468 590 L 398 720 L 456 720 L 424 810 L 552 678 L 492 678 L 532 590 Z"
+          fill="url(#boltGradient)" stroke="#D1FAE5" stroke-width="8"
+          stroke-linejoin="round"/>
+  </g>
+
+  <!-- 5. 暗角（最后叠压，统一收拢层次） -->
+  <rect x="0" y="0" width="1024" height="1024" fill="url(#vignette)"/>
+</svg>
