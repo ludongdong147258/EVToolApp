@@ -8,9 +8,8 @@ import 'package:ev_tool_app/core/widgets/app_sheet.dart';
 
 import 'cost_card.dart' show expenseTypeIcon;
 
-/// 养车支出详情弹层（移植小程序 CostDetailSheet）。
-///
-/// 头部：类型色图标 + 金额 + 类型标签；行式信息 + 编辑/删除操作。
+/// 养车支出详情弹层（样式对齐小程序 CostDetailSheet：
+/// 居中头部类型色图标/金额/类型 chip + 右对齐行式信息 + 软按钮操作区）。
 Future<void> showCostDetailSheet(
   BuildContext context, {
   required Expense expense,
@@ -28,12 +27,13 @@ Future<void> showCostDetailSheet(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const SizedBox(height: 4),
-          Row(
+          const SizedBox(height: 8),
+          // 头部：类型色图标 → 金额 → 类型 chip（居中纵向）
+          Column(
             children: [
               Container(
-                width: 44,
-                height: 44,
+                width: 48,
+                height: 48,
                 decoration: BoxDecoration(
                   color: typeColor,
                   shape: BoxShape.circle,
@@ -41,41 +41,40 @@ Future<void> showCostDetailSheet(
                 child: Icon(
                   expenseTypeIcon(expense.type),
                   color: Colors.white,
-                  size: 24,
+                  size: 26,
                 ),
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      '¥${formatYuan(expense.amount)}',
-                      style: context.textTheme.headlineSmall?.copyWith(
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    const SizedBox(height: 2),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 8,
-                        vertical: 2,
-                      ),
-                      decoration: BoxDecoration(
-                        color: typeColor.withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(AppColors.radiusSm),
-                      ),
-                      child: Text(
-                        meta.label,
-                        style: TextStyle(fontSize: 12, color: typeColor),
-                      ),
-                    ),
-                  ],
+              const SizedBox(height: 8),
+              Text(
+                '¥${formatYuan(expense.amount)}',
+                style: TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.w700,
+                  color: palette.onSurface,
+                ),
+              ),
+              const SizedBox(height: 6),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 2,
+                ),
+                decoration: BoxDecoration(
+                  color: palette.secondaryContainer,
+                  borderRadius: BorderRadius.circular(AppColors.radiusXl),
+                ),
+                child: Text(
+                  meta.label,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: palette.onSecondaryContainer,
+                  ),
                 ),
               ),
             ],
           ),
           const SizedBox(height: 16),
+          // 行式信息：label 左 / value 右对齐，末行（备注）无分割线
           _SheetRow(label: '支出日期', value: formatDateCn(expense.date)),
           _SheetRow(
             label: '车辆',
@@ -86,33 +85,40 @@ Future<void> showCostDetailSheet(
           _SheetRow(
             label: '备注',
             value: expense.note.isEmpty ? '—' : expense.note,
+            isLast: true,
           ),
-          const SizedBox(height: 16),
-          FilledButton.icon(
-            onPressed: () {
-              Navigator.of(context).pop();
-              onEdit();
-            },
-            icon: const Icon(Icons.edit_outlined, size: 18),
-            label: const Text('编辑这条支出'),
-          ),
-          const SizedBox(height: 8),
-          OutlinedButton.icon(
-            style: OutlinedButton.styleFrom(
-              foregroundColor: palette.error,
-              minimumSize: const Size.fromHeight(50),
-              side: BorderSide(color: palette.errorContainer),
-            ),
-            onPressed: () {
-              Navigator.of(context).pop();
-              onDelete();
-            },
-            icon: Icon(
-              Icons.delete_outline_rounded,
-              size: 18,
-              color: palette.error,
-            ),
-            label: const Text('删除这条支出'),
+          const SizedBox(height: 24),
+          // 操作区：中性编辑 + 危险删除软按钮（等宽）
+          Row(
+            children: [
+              Expanded(
+                child: _SheetAction(
+                  icon: Icons.edit_outlined,
+                  label: '编辑这条支出',
+                  iconColor: palette.textSecondary,
+                  textColor: palette.onSurface,
+                  background: palette.surfaceContainerLow,
+                  onTap: () {
+                    Navigator.of(context).pop();
+                    onEdit();
+                  },
+                ),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: _SheetAction(
+                  icon: Icons.delete_outline_rounded,
+                  label: '删除这条支出',
+                  iconColor: palette.error,
+                  textColor: palette.onErrorContainer,
+                  background: palette.errorContainer,
+                  onTap: () {
+                    Navigator.of(context).pop();
+                    onDelete();
+                  },
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -121,40 +127,96 @@ Future<void> showCostDetailSheet(
 }
 
 class _SheetRow extends StatelessWidget {
-  const _SheetRow({required this.label, required this.value});
+  const _SheetRow({
+    required this.label,
+    required this.value,
+    this.isLast = false,
+  });
 
   final String label;
   final String value;
+  final bool isLast;
 
   @override
   Widget build(BuildContext context) {
     final palette = context.palette;
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 12),
-      decoration: BoxDecoration(
-        border: Border(bottom: BorderSide(color: palette.divider, width: 0.5)),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          SizedBox(
-            width: 88,
-            child: Text(
-              label,
-              style: TextStyle(fontSize: 13, color: palette.textHint),
+      decoration: isLast
+          ? null
+          : BoxDecoration(
+              border: Border(
+                bottom: BorderSide(color: palette.divider, width: 0.5),
+              ),
             ),
+      child: Row(
+        children: [
+          Text(
+            label,
+            style: TextStyle(fontSize: 14, color: palette.textSecondary),
           ),
+          const SizedBox(width: 16),
           Expanded(
             child: Text(
               value,
+              textAlign: TextAlign.right,
               style: TextStyle(
                 fontSize: 14,
                 color: palette.onSurface,
-                fontWeight: FontWeight.w500,
+                fontWeight: FontWeight.w600,
               ),
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+/// 操作软按钮：圆角底色 + 居中图标/文字（对齐小程序 cd-detail-edit/delete）。
+class _SheetAction extends StatelessWidget {
+  const _SheetAction({
+    required this.icon,
+    required this.label,
+    required this.iconColor,
+    required this.textColor,
+    required this.background,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String label;
+  final Color iconColor;
+  final Color textColor;
+  final Color background;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(AppColors.radiusLg),
+      onTap: onTap,
+      child: Container(
+        height: 44,
+        decoration: BoxDecoration(
+          color: background,
+          borderRadius: BorderRadius.circular(AppColors.radiusLg),
+        ),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(icon, size: 18, color: iconColor),
+            const SizedBox(width: 8),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+                color: textColor,
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
