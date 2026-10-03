@@ -213,7 +213,7 @@ void main() {
     testWidgets('渲染品牌区/简介/信息列表', (tester) async {
       await pumpTall(tester, const MaterialApp(home: AboutPage()));
 
-      expect(find.text('EV Tool 电车工具'), findsOneWidget);
+      expect(find.text('VoltMate 电车工具'), findsOneWidget);
       expect(find.text('联系邮箱'), findsNothing);
       expect(find.text('用户协议'), findsOneWidget);
       expect(find.text('隐私政策'), findsOneWidget);
