@@ -8,12 +8,11 @@ import 'package:ev_tool_app/core/widgets/skeleton/skeleton_box.dart';
 import 'package:ev_tool_app/core/widgets/skeleton/skeleton_line.dart';
 import 'package:ev_tool_app/features/equipment/data/goods_repository.dart';
 
-/// 卡片图块高度（瀑布流双列卡片统一图高，保证可估高）
-const double goodsCardImageHeight = 150;
+/// 卡片图块估算高度（正方形图 ≈ 列宽 171，瀑布流估高用）。
+const double goodsCardImageHeight = 171;
 
-/// 双列商品瀑布流卡片（图 / 名 / 券后价 / 原价划线 / 券后标签 / 销量）。
-///
-/// 视觉对齐小程序 eq-card：橙色价格强调、券 pill、原价划线。
+/// 双列商品瀑布流卡片（样式对齐小程序 eq-card：
+/// 方图 / 两行标题 / 券 pill 行内 / 橙色价格 / 原价划线 / 销量）。
 class GoodsCard extends StatelessWidget {
   const GoodsCard({super.key, required this.item, this.onTap});
 
@@ -28,6 +27,7 @@ class GoodsCard extends StatelessWidget {
       color: palette.surfaceCard,
       borderRadius: BorderRadius.circular(AppColors.radiusLg),
       clipBehavior: Clip.antiAlias,
+      shadowColor: Colors.black.withValues(alpha: 0.04),
       child: InkWell(
         onTap: onTap,
         child: Column(
@@ -35,30 +35,26 @@ class GoodsCard extends StatelessWidget {
           children: [
             _buildImage(context),
             Padding(
-              padding: const EdgeInsets.all(10),
+              padding: const EdgeInsets.fromLTRB(12, 6, 12, 12),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     item.title,
-                    maxLines: 3,
+                    maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: context.textTheme.bodySmall?.copyWith(
                       color: palette.onSurface,
+                      height: 1.5,
                     ),
                   ),
-                  if (item.hasCoupon) ...[
-                    const SizedBox(height: 6),
-                    _CouponPill(amount: item.couponAmount),
-                  ],
                   const SizedBox(height: 6),
                   _PriceRow(item: item),
                   const SizedBox(height: 4),
                   Text(
                     item.salesTip,
                     style: context.textTheme.bodySmall?.copyWith(
-                      color: palette.textHint,
-                      fontSize: 11,
+                      color: palette.textSecondary,
                     ),
                   ),
                 ],
@@ -72,8 +68,8 @@ class GoodsCard extends StatelessWidget {
 
   Widget _buildImage(BuildContext context) {
     final palette = context.palette;
-    return SizedBox(
-      height: goodsCardImageHeight,
+    return AspectRatio(
+      aspectRatio: 1,
       child: Image.network(
         item.thumbUrl,
         fit: BoxFit.cover,
@@ -86,6 +82,7 @@ class GoodsCard extends StatelessWidget {
   }
 }
 
+/// 券 pill（对齐小程序 .eq-coupon：奶油底 + 橙描边，置于价格行行首）。
 class _CouponPill extends StatelessWidget {
   const _CouponPill({required this.amount});
 
@@ -93,24 +90,28 @@ class _CouponPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final palette = context.palette;
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+      padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+      margin: const EdgeInsets.only(right: 4),
       decoration: BoxDecoration(
-        color: palette.errorContainer,
+        color: AppColors.goodsCouponBg,
+        border: Border.all(color: AppColors.goodsCoupon),
         borderRadius: BorderRadius.circular(AppColors.radiusSm),
       ),
       child: Text(
         '券${formatPrice(amount)}元',
-        style: context.textTheme.bodySmall?.copyWith(
-          color: palette.onErrorContainer,
-          fontSize: 11,
+        style: const TextStyle(
+          fontSize: 10,
+          height: 1,
+          color: AppColors.goodsCoupon,
         ),
       ),
     );
   }
 }
 
+/// 价格行（对齐小程序 .eq-price-row，baseline 对齐）：
+/// 券 pill + ¥ + 券后价 + 原价划线（始终显示）。
 class _PriceRow extends StatelessWidget {
   const _PriceRow({required this.item});
 
@@ -119,36 +120,41 @@ class _PriceRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final palette = context.palette;
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.baseline,
-      textBaseline: TextBaseline.alphabetic,
+    return Wrap(
+      crossAxisAlignment: WrapCrossAlignment.center,
+      spacing: 0,
+      runSpacing: 2,
       children: [
-        Text(
+        if (item.hasCoupon) _CouponPill(amount: item.couponAmount),
+        const Text(
           '¥',
-          style: context.textTheme.bodySmall?.copyWith(
-            color: AppColors.fastCharge,
+          style: TextStyle(
+            fontSize: 12,
             fontWeight: FontWeight.w600,
+            color: AppColors.goodsPrice,
           ),
         ),
         Text(
           formatPrice(item.couponPrice),
-          style: context.textTheme.titleLarge?.copyWith(
-            color: AppColors.fastCharge,
-            fontWeight: FontWeight.w700,
+          style: const TextStyle(
+            fontSize: 18,
+            fontWeight: FontWeight.w600,
+            height: 1,
+            color: AppColors.goodsPrice,
           ),
         ),
-        if (item.hasCoupon) ...[
-          const SizedBox(width: 4),
-          Text(
+        Padding(
+          padding: const EdgeInsets.only(left: 4),
+          child: Text(
             '¥${formatPrice(item.originalPrice)}',
-            style: context.textTheme.bodySmall?.copyWith(
-              color: palette.textHint,
-              fontSize: 11,
+            style: TextStyle(
+              fontSize: 12,
+              color: palette.textSecondary,
               decoration: TextDecoration.lineThrough,
-              decorationColor: palette.textHint,
+              decorationColor: palette.textSecondary,
             ),
           ),
-        ],
+        ),
       ],
     );
   }
@@ -166,7 +172,7 @@ class GoodsSkeletonCard extends StatelessWidget {
         children: [
           SkeletonBox(height: goodsCardImageHeight, borderRadius: 0),
           Padding(
-            padding: EdgeInsets.all(10),
+            padding: EdgeInsets.all(12),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [

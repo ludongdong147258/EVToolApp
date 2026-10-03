@@ -63,14 +63,14 @@ class GoodsDetailSheet extends StatelessWidget {
               Text(
                 '¥',
                 style: context.textTheme.titleMedium?.copyWith(
-                  color: AppColors.fastCharge,
+                  color: AppColors.goodsPrice,
                   fontWeight: FontWeight.w600,
                 ),
               ),
               Text(
                 formatPrice(item.couponPrice),
                 style: context.textTheme.headlineMedium?.copyWith(
-                  color: AppColors.fastCharge,
+                  color: AppColors.goodsPrice,
                   fontWeight: FontWeight.w700,
                 ),
               ),

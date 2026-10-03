@@ -35,6 +35,7 @@ class GoodsItem {
     required this.originalPrice,
     required this.couponAmount,
     required this.sales,
+    this.salesTipRaw = '',
     this.shortUrl = '',
   });
 
@@ -47,6 +48,8 @@ class GoodsItem {
     originalPrice: (json['min_group_price'] as num?)?.toInt() ?? 0,
     couponAmount: (json['coupon_discount'] as num?)?.toInt() ?? 0,
     sales: (json['sales'] as num?)?.toInt() ?? 0,
+    // 拼多多接口只回 sales_tip 文案（如 "10万+"），数值 sales 常缺失
+    salesTipRaw: json['sales_tip'] is String ? json['sales_tip'] as String : '',
   );
 
   /// goods_sign（拼多多商品签名）
@@ -63,6 +66,9 @@ class GoodsItem {
   /// 销量（件）
   final int sales;
 
+  /// 接口返回的销量文案（如 "10万+"；小程序同款直接展示）
+  final String salesTipRaw;
+
   /// 推广短链（promotion-url 对位回填）
   final String shortUrl;
 
@@ -73,6 +79,7 @@ class GoodsItem {
     originalPrice: originalPrice,
     couponAmount: couponAmount,
     sales: sales,
+    salesTipRaw: salesTipRaw,
     shortUrl: url,
   );
 
@@ -82,8 +89,11 @@ class GoodsItem {
   int get couponPrice =>
       hasCoupon ? originalPrice - couponAmount : originalPrice;
 
-  /// 销量文案：>= 1 万折「万」展示（对应小程序 sales_tip 展示习惯）
+  /// 销量文案：优先接口 sales_tip；缺失时按数值折「万」展示兜底
   String get salesTip {
+    if (salesTipRaw.isNotEmpty) {
+      return '已售$salesTipRaw';
+    }
     if (sales >= 10000) {
       final wan = sales / 10000;
       final wanText = wan == wan.roundToDouble()

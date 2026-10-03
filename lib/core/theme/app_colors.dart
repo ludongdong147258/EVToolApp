@@ -54,6 +54,11 @@ abstract final class AppColors {
   static const Color fastCharge = Color(0xFFF97316);
   static const Color homeCharge = Color(0xFF10B981);
 
+  // --- 装备导购（移植小程序 $accent 价格色 / 券 pill 配色） ---
+  static const Color goodsPrice = Color(0xFFF59E0B);
+  static const Color goodsCoupon = Color(0xFFD97706);
+  static const Color goodsCouponBg = Color(0xFFFFF7ED);
+
   // --- 支出类型色（移植 lib/constants.js COST_TYPE_COLORS） ---
   static const Color costTypeCharge = Color(0xFF10B981);
   static const Color costTypeInsurance = Color(0xFF409EFF);
