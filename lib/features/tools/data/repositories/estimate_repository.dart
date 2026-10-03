@@ -24,7 +24,7 @@ class EstimateRepository {
     try {
       raw = _kv.getJson(storageKey);
     } on Exception catch (e) {
-      appLogger.e('读取私桩测算失败', error: e);
+      appLogger.e('Failed to load charger estimates', error: e);
       return const <StoredEstimate>[];
     }
     if (raw == null) return const <StoredEstimate>[];
@@ -71,8 +71,8 @@ class EstimateRepository {
         for (final estimate in estimates) storedEstimateToJson(estimate),
       ]);
     } on Exception catch (e) {
-      appLogger.e('保存私桩测算失败', error: e);
-      throw const StorageException('保存失败');
+      appLogger.e('Failed to save charger estimate', error: e);
+      throw const StorageException('Failed to save');
     }
   }
 }

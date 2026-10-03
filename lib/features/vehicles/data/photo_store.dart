@@ -56,7 +56,7 @@ class PhotoStore {
   Future<String> save({required String sourcePath, required String key}) async {
     final source = sourcePath.trim();
     if (source.isEmpty) {
-      throw const PhotoStoreException('照片路径无效');
+      throw const PhotoStoreException('Invalid photo path');
     }
     await _directory.create(recursive: true);
     // 同毫秒内多次保存会撞名（时间戳相同）：存在即追加序号直至唯一
@@ -72,7 +72,10 @@ class PhotoStore {
     try {
       compressed = await _compressor(source, targetPath);
     } on Exception catch (e) {
-      appLogger.w('压缩照片失败，降级为原图拷贝', error: e);
+      appLogger.w(
+        'Photo compression failed, falling back to original copy',
+        error: e,
+      );
     }
     if (compressed == null) {
       await File(source).copy(targetPath);
@@ -97,7 +100,7 @@ class PhotoStore {
         await file.delete();
       }
     } on Exception catch (e) {
-      appLogger.w('清理照片文件失败', error: e);
+      appLogger.w('Failed to delete photo file', error: e);
     }
   }
 }

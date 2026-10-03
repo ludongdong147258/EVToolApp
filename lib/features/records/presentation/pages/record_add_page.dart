@@ -147,16 +147,16 @@ class _RecordAddPageState extends ConsumerState<RecordAddPage> {
     final restore = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('恢复草稿'),
-        content: const Text('检测到未保存的草稿，是否恢复？'),
+        title: const Text('Restore Draft'),
+        content: const Text('An unsaved draft was found. Restore it?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: const Text('放弃'),
+            child: const Text('Discard'),
           ),
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: const Text('恢复'),
+            child: const Text('Restore'),
           ),
         ],
       ),
@@ -316,16 +316,19 @@ class _RecordAddPageState extends ConsumerState<RecordAddPage> {
       final proceed = await showDialog<bool>(
         context: context,
         builder: (dialogContext) => AlertDialog(
-          title: const Text('覆盖确认'),
-          content: Text('识别结果将覆盖已填写的 $overwritten 项内容，是否继续？'),
+          title: const Text('Overwrite Fields'),
+          content: Text(
+            'The scan will overwrite $overwritten filled '
+            '${overwritten == 1 ? 'field' : 'fields'}. Continue?',
+          ),
           actions: [
             TextButton(
               onPressed: () => Navigator.of(dialogContext).pop(false),
-              child: const Text('取消'),
+              child: const Text('Cancel'),
             ),
             TextButton(
               onPressed: () => Navigator.of(dialogContext).pop(true),
-              child: const Text('继续'),
+              child: const Text('Continue'),
             ),
           ],
         ),
@@ -374,8 +377,10 @@ class _RecordAddPageState extends ConsumerState<RecordAddPage> {
     showAppToast(
       context,
       count < receiptFieldGroupCount
-          ? '已识别 $count 项，其余请手动补填'
-          : '已识别 $count 项，请核对',
+          ? 'Filled $count '
+                '${count == 1 ? 'field' : 'fields'} — complete the rest manually'
+          : 'Filled $count '
+                '${count == 1 ? 'field' : 'fields'} — please verify',
     );
   }
 
@@ -417,14 +422,14 @@ class _RecordAddPageState extends ConsumerState<RecordAddPage> {
     final vehicles = ref.read(vehiclesProvider);
     final selected = await showAppSheet<String>(
       context: context,
-      title: '选择车辆',
+      title: 'Select Vehicle',
       builder: (context) => AppSheetScrollBody(
         child: Wrap(
           spacing: 10,
           runSpacing: 10,
           children: [
             _VehicleChip(
-              label: '暂不关联',
+              label: 'None',
               isSelected: _vehicleId == null,
               onTap: () => Navigator.of(context).pop(''),
             ),
@@ -477,7 +482,7 @@ class _RecordAddPageState extends ConsumerState<RecordAddPage> {
     final now = DateTime.now().millisecondsSinceEpoch;
     final built = buildRecordFromForm(_collectForm(), now: now);
     if (built == null) {
-      showAppToast(context, '请检查表单填写');
+      showAppToast(context, 'Please check the form');
       return;
     }
     final notifier = ref.read(recordsProvider.notifier);
@@ -510,10 +515,10 @@ class _RecordAddPageState extends ConsumerState<RecordAddPage> {
             .clearDraft(RecordAddPage.draftKey);
       }
       if (!mounted) return;
-      showAppToast(context, _isEdit ? '已更新' : '已添加');
+      showAppToast(context, _isEdit ? 'Updated' : 'Added');
       Navigator.of(context).pop();
     } on Exception {
-      if (mounted) showAppToast(context, '保存失败，请重试');
+      if (mounted) showAppToast(context, 'Save failed, please try again');
     }
   }
 
@@ -522,11 +527,11 @@ class _RecordAddPageState extends ConsumerState<RecordAddPage> {
     final energy = toNumber(_energyController.text);
     var valid = true;
     if (cost == null || cost <= 0) {
-      _markError('费用需为正数');
+      _markError('Cost must be a positive number');
       valid = false;
     }
     if (energy == null || energy <= 0) {
-      _markError('电量需为正数');
+      _markError('Energy must be a positive number');
       valid = false;
     }
     if (!valid && mounted) {
@@ -549,7 +554,9 @@ class _RecordAddPageState extends ConsumerState<RecordAddPage> {
         : null;
 
     return Scaffold(
-      appBar: AppBar(title: Text(_isEdit ? '编辑充电记录' : '添加充电记录')),
+      appBar: AppBar(
+        title: Text(_isEdit ? 'Edit Charging Record' : 'Add Charging Record'),
+      ),
       body: Form(
         key: _formKey,
         child: ListView(
@@ -580,12 +587,12 @@ class _RecordAddPageState extends ConsumerState<RecordAddPage> {
                     ),
                   ],
                   if (_ocrError != null) const SizedBox(height: 16),
-                  const _FieldLabel('充电类型'),
+                  const _FieldLabel('Charge Type'),
                   Row(
                     children: [
                       Expanded(
                         child: _TypeChip(
-                          label: '快充',
+                          label: 'Fast (DC)',
                           icon: Icons.bolt_rounded,
                           isSelected: _type == 'fast',
                           onTap: () => setState(() => _type = 'fast'),
@@ -594,7 +601,7 @@ class _RecordAddPageState extends ConsumerState<RecordAddPage> {
                       const SizedBox(width: 12),
                       Expanded(
                         child: _TypeChip(
-                          label: '家充',
+                          label: 'Home (AC)',
                           icon: Icons.home_rounded,
                           isSelected: _type == 'home',
                           onTap: () => setState(() => _type = 'home'),
@@ -603,7 +610,7 @@ class _RecordAddPageState extends ConsumerState<RecordAddPage> {
                     ],
                   ),
                   const SizedBox(height: 16),
-                  const _FieldLabel('充电日期'),
+                  const _FieldLabel('Date'),
                   _PickerField(
                     value:
                         '${_date.year}-${_date.month.toString().padLeft(2, '0')}-${_date.day.toString().padLeft(2, '0')}',
@@ -616,16 +623,16 @@ class _RecordAddPageState extends ConsumerState<RecordAddPage> {
                     children: [
                       Expanded(
                         child: _NumberField(
-                          label: '费用（元）',
-                          hint: '如 45.5',
+                          label: 'Cost (\$)',
+                          hint: 'e.g. 45.5',
                           controller: _costController,
                         ),
                       ),
                       const SizedBox(width: 12),
                       Expanded(
                         child: _NumberField(
-                          label: '电量（kWh）',
-                          hint: '如 30.2',
+                          label: 'Energy (kWh)',
+                          hint: 'e.g. 30.2',
                           controller: _energyController,
                         ),
                       ),
@@ -634,18 +641,18 @@ class _RecordAddPageState extends ConsumerState<RecordAddPage> {
                   if (perKwh != null) ...[
                     const SizedBox(height: 8),
                     Text(
-                      '度电成本约 ${formatYuan(perKwh)} 元/kWh',
+                      'Est. ${formatMoney(perKwh)}/kWh',
                       style: TextStyle(fontSize: 12, color: palette.primary),
                     ),
                   ],
                   const SizedBox(height: 16),
-                  const _FieldLabel('充电时长'),
+                  const _FieldLabel('Duration'),
                   Row(
                     children: [
                       Expanded(
                         child: _NumberField(
-                          label: '小时',
-                          hint: '如 2',
+                          label: 'Hours',
+                          hint: 'e.g. 2',
                           controller: _hoursController,
                           allowDecimal: false,
                           maxDigits: 2,
@@ -654,8 +661,8 @@ class _RecordAddPageState extends ConsumerState<RecordAddPage> {
                       const SizedBox(width: 12),
                       Expanded(
                         child: _NumberField(
-                          label: '分钟',
-                          hint: '如 30',
+                          label: 'Minutes',
+                          hint: 'e.g. 30',
                           controller: _minutesController,
                           allowDecimal: false,
                           maxDigits: 2,
@@ -671,14 +678,14 @@ class _RecordAddPageState extends ConsumerState<RecordAddPage> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  const _FieldLabel('关联车辆（选填）'),
+                  const _FieldLabel('Vehicle (Optional)'),
                   _PickerField(
-                    value: _vehicleName ?? '暂不关联',
+                    value: _vehicleName ?? 'None',
                     icon: Icons.directions_car_rounded,
                     onTap: _pickVehicle,
                   ),
                   const SizedBox(height: 16),
-                  const _FieldLabel('充电地点（选填）'),
+                  const _FieldLabel('Location (Optional)'),
                   _PickerField(
                     value:
                         [
@@ -686,7 +693,7 @@ class _RecordAddPageState extends ConsumerState<RecordAddPage> {
                           _locationName,
                         ].whereType<String>().join(' · ').isNotEmpty
                         ? [_city, _locationName].whereType<String>().join(' · ')
-                        : '点击地图选择地点',
+                        : 'Choose on map',
                     icon: Icons.place_rounded,
                     onTap: _pickLocation,
                     trailing:
@@ -712,8 +719,8 @@ class _RecordAddPageState extends ConsumerState<RecordAddPage> {
                   ),
                   const SizedBox(height: 16),
                   _NumberField(
-                    label: '备注（选填，最多 100 字）',
-                    hint: '如：家充为主、夜间谷电',
+                    label: 'Note (Optional, max 100 chars)',
+                    hint: 'e.g. Mostly home charging, off-peak',
                     controller: _noteController,
                     isMultiline: true,
                   ),
@@ -721,7 +728,10 @@ class _RecordAddPageState extends ConsumerState<RecordAddPage> {
               ),
             ),
             const SizedBox(height: 24),
-            AppPrimaryButton(text: _isEdit ? '保存修改' : '添加记录', onTap: _save),
+            AppPrimaryButton(
+              text: _isEdit ? 'Save Changes' : 'Add Record',
+              onTap: _save,
+            ),
             const SizedBox(height: 32),
           ],
         ),
@@ -993,7 +1003,7 @@ class _OcrErrorRow extends StatelessWidget {
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
             child: Text(
-              '重试',
+              'Retry',
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w600,

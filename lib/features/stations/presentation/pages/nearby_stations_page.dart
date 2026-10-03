@@ -58,7 +58,10 @@ class _NearbyStationsPageState extends ConsumerState<NearbyStationsPage> {
       _locateThenLoad();
     } else {
       _loading = false;
-      _error = const StationServiceException('未配置地图服务 Key', isKeyMissing: true);
+      _error = const StationServiceException(
+        'Map service key not configured',
+        isKeyMissing: true,
+      );
     }
   }
 
@@ -169,11 +172,11 @@ class _NearbyStationsPageState extends ConsumerState<NearbyStationsPage> {
         mode: LaunchMode.externalApplication,
       );
       if (!launched && mounted) {
-        showAppToast(context, '拨号失败');
+        showAppToast(context, 'Call failed');
       }
     } on Exception {
       if (mounted) {
-        showAppToast(context, '拨号失败');
+        showAppToast(context, 'Call failed');
       }
     }
   }
@@ -190,11 +193,11 @@ class _NearbyStationsPageState extends ConsumerState<NearbyStationsPage> {
         mode: LaunchMode.externalApplication,
       );
       if (!launched && mounted) {
-        showAppToast(context, '唤起导航失败');
+        showAppToast(context, 'Failed to open navigation');
       }
     } on Exception {
       if (mounted) {
-        showAppToast(context, '唤起导航失败');
+        showAppToast(context, 'Failed to open navigation');
       }
     }
   }
@@ -209,12 +212,12 @@ class _NearbyStationsPageState extends ConsumerState<NearbyStationsPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('附近充电桩'),
+        title: const Text('Nearby Stations'),
         actions: [
           IconButton(
             onPressed: _loading ? null : () => _loadStations(force: true),
             icon: const Icon(Icons.refresh),
-            tooltip: '刷新',
+            tooltip: 'Refresh',
           ),
         ],
       ),
@@ -269,7 +272,7 @@ class _NearbyStationsPageState extends ConsumerState<NearbyStationsPage> {
           children: [
             CircularProgressIndicator(),
             SizedBox(height: 12),
-            Text('正在搜索附近充电桩…'),
+            Text('Searching for nearby charging stations…'),
           ],
         ),
       );
@@ -280,11 +283,13 @@ class _NearbyStationsPageState extends ConsumerState<NearbyStationsPage> {
       return SingleChildScrollView(
         child: EmptyState(
           icon: Icons.ev_station_outlined,
-          title: isKeyMissing ? '位置服务未配置' : '加载失败',
+          title: isKeyMissing
+              ? 'Location service not configured'
+              : 'Failed to load',
           subtitle: isKeyMissing
-              ? '需要在 .env 配置 TENCENT_LBS_KEY（腾讯位置服务 Key）后重启应用'
+              ? 'Set TENCENT_LBS_KEY (Tencent LBS key) in .env and restart the app'
               : error.message,
-          ctaText: isKeyMissing ? null : '重试',
+          ctaText: isKeyMissing ? null : 'Retry',
           onCta: isKeyMissing ? null : () => _loadStations(force: true),
         ),
       );
@@ -293,8 +298,9 @@ class _NearbyStationsPageState extends ConsumerState<NearbyStationsPage> {
       return const SingleChildScrollView(
         child: EmptyState(
           icon: Icons.ev_station_outlined,
-          title: '附近暂无充电桩',
-          subtitle: '可尝试点击右上角刷新，或移动到其他区域',
+          title: 'No charging stations nearby',
+          subtitle:
+              'Try the refresh button in the top right, or move to another area',
         ),
       );
     }
@@ -335,7 +341,7 @@ class _DefaultLocationBar extends StatelessWidget {
           const SizedBox(width: 6),
           Expanded(
             child: Text(
-              '未获取定位，展示默认位置（北京）',
+              'Location unavailable — showing the default area (Beijing)',
               style: context.textTheme.bodySmall?.copyWith(
                 color: palette.textHint,
               ),
@@ -407,7 +413,7 @@ class _StationTile extends StatelessWidget {
                           if (station.distance != null) ...[
                             const SizedBox(width: 8),
                             Text(
-                              formatDistance(station.distance),
+                              '${formatDistance(station.distance)} away',
                               style: context.textTheme.bodySmall?.copyWith(
                                 color: palette.primary,
                               ),
@@ -478,7 +484,7 @@ class _NavButton extends StatelessWidget {
             Icon(Icons.arrow_forward_rounded, size: 14, color: Colors.white),
             SizedBox(width: 4),
             Text(
-              '导航',
+              'Navigate',
               style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w600,
@@ -512,7 +518,7 @@ class _CallButton extends StatelessWidget {
           borderRadius: BorderRadius.circular(AppColors.radiusMd),
         ),
         child: Text(
-          '$tel 咨询',
+          'Call $tel',
           style: TextStyle(
             fontSize: 14,
             fontWeight: FontWeight.w600,

@@ -120,7 +120,7 @@ class RecordCard extends StatelessWidget {
                     ),
                     const SizedBox(width: 8),
                     Text(
-                      '-¥${formatYuan(record.cost)}',
+                      '-${formatMoney(record.cost)}',
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w700,
@@ -151,8 +151,8 @@ class RecordCard extends StatelessWidget {
                     _MetaItem(
                       icon: Icons.payments_rounded,
                       label: costPerKwh == null
-                          ? '--/度'
-                          : '¥${formatYuan(costPerKwh)}/度',
+                          ? '--/kWh'
+                          : '${formatMoney(costPerKwh)}/kWh',
                     ),
                     if (_vehicle != null)
                       _VehicleMeta(vehicle: _vehicle!)
@@ -267,7 +267,7 @@ class _MoreButton extends StatelessWidget {
           children: [
             ListTile(
               leading: const Icon(Icons.edit_outlined),
-              title: const Text('编辑记录'),
+              title: const Text('Edit Record'),
               onTap: () {
                 Navigator.of(sheetContext).pop();
                 onEdit?.call();
@@ -279,7 +279,7 @@ class _MoreButton extends StatelessWidget {
                 color: context.palette.error,
               ),
               title: Text(
-                '删除记录',
+                'Delete Record',
                 style: TextStyle(color: context.palette.error),
               ),
               onTap: () {

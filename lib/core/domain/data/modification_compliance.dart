@@ -6,8 +6,8 @@
 /// 具体以当地车管所及最新法规为准，不构成法律建议。
 library;
 
-/// 风险等级（无 → 低 → 中 → 高，页面徽章配色按此映射）
-const List<String> riskLevels = ['无', '低', '中', '高'];
+/// 风险等级（None → Low → Medium → High，页面徽章配色按此映射）
+const List<String> riskLevels = ['None', 'Low', 'Medium', 'High'];
 
 /// 合规等级分类（页面分区渲染顺序即数组顺序）
 class ModCategory {
@@ -58,20 +58,23 @@ const List<ModCategory> modCategories = [
   ModCategory(
     id: 'legal',
     icon: 'check_circle',
-    title: '合法改装',
-    desc: '无需备案或基本无门槛，注意不影响安全与号牌识别',
+    title: 'Legal',
+    desc:
+        'No registration needed or minimal requirements; just keep safety and plate readability intact',
   ),
   ModCategory(
     id: 'register',
     icon: 'warning',
-    title: '合法但需备案',
-    desc: '先改装后备案，逾期未备案按违法处理',
+    title: 'Legal (registration required)',
+    desc:
+        'Modify first, then register; failing to register in time is treated as illegal',
   ),
   ModCategory(
     id: 'illegal',
     icon: 'close',
-    title: '违法改装',
-    desc: '不允许备案，年审不过、路检可查处',
+    title: 'Illegal',
+    desc:
+        'Cannot be registered; will fail the annual inspection and can be penalized in roadside checks',
   ),
 ];
 
@@ -79,99 +82,109 @@ const List<ModCategory> modCategories = [
 const List<ModificationItem> modificationItems = [
   ModificationItem(
     id: 'interior',
-    name: '内饰改装',
+    name: 'Interior modifications',
     category: 'legal',
-    needRegister: '否',
-    inspectionRisk: '无',
-    policeRisk: '无',
-    note: '座椅套、脚垫、内饰板等，不改动车辆结构与电路即可',
+    needRegister: 'No',
+    inspectionRisk: 'None',
+    policeRisk: 'None',
+    note:
+        'Seat covers, floor mats, trim panels, etc. — fine as long as vehicle structure and wiring are untouched',
   ),
   ModificationItem(
     id: 'decal',
-    name: '小型外观装饰',
+    name: 'Small exterior decorations',
     category: 'legal',
-    needRegister: '否',
-    inspectionRisk: '低',
-    policeRisk: '低',
-    note: '车贴面积不超过车身 30%，不得遮挡号牌或影响识别',
+    needRegister: 'No',
+    inspectionRisk: 'Low',
+    policeRisk: 'Low',
+    note:
+        'Decals must cover no more than 30% of the body and must not block or obscure the plate',
   ),
   ModificationItem(
     id: 'wheel-same',
-    name: '同规格轮毂替换',
+    name: 'Same-spec wheel replacement',
     category: 'legal',
-    needRegister: '否',
-    inspectionRisk: '低',
-    policeRisk: '低',
-    note: '保持原厂尺寸、J 值与 ET 值不变，轮胎规格与登记一致',
+    needRegister: 'No',
+    inspectionRisk: 'Low',
+    policeRisk: 'Low',
+    note:
+        'Keep original size, J value and ET offset unchanged; tire spec must match the registration',
   ),
   ModificationItem(
     id: 'color-change',
-    name: '车身改色（贴膜/喷漆）',
+    name: 'Body color change (wrap/paint)',
     category: 'register',
-    needRegister: '是（改色后 10 日内）',
-    inspectionRisk: '低',
-    policeRisk: '中',
-    note: '备案后需更换行驶证照片；特种车辆配色（警用/消防/救护）禁止使用',
+    needRegister: 'Yes (within 10 days of the change)',
+    inspectionRisk: 'Low',
+    policeRisk: 'Medium',
+    note:
+        'Registration requires updated registration photos; special-service color schemes (police/fire/ambulance) are prohibited',
   ),
   ModificationItem(
     id: 'body-kit',
-    name: '外观套件（包围/侧裙/尾翼）',
+    name: 'Exterior kits (bumpers/side skirts/spoilers)',
     category: 'register',
-    needRegister: '是',
-    inspectionRisk: '高',
-    policeRisk: '中',
-    note: '仅不影响原车长宽高登记参数的项目方可备案，多数大包围无法通过',
+    needRegister: 'Yes',
+    inspectionRisk: 'High',
+    policeRisk: 'Medium',
+    note:
+        'Only items that do not affect the registered length/width/height can be registered; most wide-body kits will not pass',
   ),
   ModificationItem(
     id: 'wheel-spec',
-    name: '改变轮毂规格尺寸',
+    name: 'Changing wheel size/spec',
     category: 'register',
-    needRegister: '视当地政策',
-    inspectionRisk: '高',
-    policeRisk: '中',
-    note: '多数地区不允许变更轮毂尺寸，年审按原厂参数核对',
+    needRegister: 'Depends on local policy',
+    inspectionRisk: 'High',
+    policeRisk: 'Medium',
+    note:
+        'Most regions do not allow changing wheel diameter; the annual inspection checks against factory specs',
   ),
   ModificationItem(
     id: 'battery-motor',
-    name: '改动电池/电机/电控',
+    name: 'Modifying battery/motor/electronics',
     category: 'illegal',
-    needRegister: '不允许',
-    inspectionRisk: '高',
-    policeRisk: '高',
-    note: '改变三电系统属违法改装，且丧失质保、存在起火风险',
+    needRegister: 'Not allowed',
+    inspectionRisk: 'High',
+    policeRisk: 'High',
+    note:
+        'Altering the battery/motor/electronics system is illegal, voids the warranty and poses a fire risk',
   ),
   ModificationItem(
     id: 'suspension',
-    name: '悬架改装（升高/降低）',
+    name: 'Suspension modifications (lift/lower)',
     category: 'illegal',
-    needRegister: '不允许',
-    inspectionRisk: '高',
-    policeRisk: '高',
-    note: '改变悬架结构或高度无法备案，年审必查',
+    needRegister: 'Not allowed',
+    inspectionRisk: 'High',
+    policeRisk: 'High',
+    note:
+        'Changing suspension structure or height cannot be registered and is always checked at the annual inspection',
   ),
   ModificationItem(
     id: 'lights-illegal',
-    name: '非法灯光（爆闪/加装射灯）',
+    name: 'Illegal lights (strobe/added spotlights)',
     category: 'illegal',
-    needRegister: '不允许',
-    inspectionRisk: '高',
-    policeRisk: '高',
-    note: '夜间路检高发项，私自加装射灯、爆闪灯直接查处',
+    needRegister: 'Not allowed',
+    inspectionRisk: 'High',
+    policeRisk: 'High',
+    note:
+        'A frequent nighttime roadside-check item; unauthorized spotlights or strobe lights are penalized on the spot',
   ),
   ModificationItem(
     id: 'track-width',
-    name: '加宽轮距/加装垫片',
+    name: 'Wider track / spacer adapters',
     category: 'illegal',
-    needRegister: '不允许',
-    inspectionRisk: '高',
-    policeRisk: '高',
-    note: '改变轮距影响行驶证登记参数，属典型违法改装',
+    needRegister: 'Not allowed',
+    inspectionRisk: 'High',
+    policeRisk: 'High',
+    note:
+        'Changing the track width alters registered parameters — a textbook illegal modification',
   ),
 ];
 
 /// 页面底部免责声明
 const String modComplianceDisclaimer =
-    '以上信息为通用参考，具体以当地车管所及最新法规为准，改装前建议先咨询当地车管部门。';
+    'The information above is general reference only; specifics follow your local vehicle administration office and the latest regulations. Consult them before modifying your car.';
 
 /// 按合规等级取改装项目（页面分区渲染用）
 List<ModificationItem> getItemsByCategory(String category) =>

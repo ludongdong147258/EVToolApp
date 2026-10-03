@@ -4,18 +4,20 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:ev_tool_app/core/widgets/app_toast.dart';
 
 void main() {
-  testWidgets('普通场景：toast 立即显示', (tester) async {
+  testWidgets('shows toast immediately in the normal case', (tester) async {
     await tester.pumpWidget(const MaterialApp(home: _ToastHostPage()));
     await tester.tap(find.text('show'));
     await tester.pump();
 
-    expect(find.text('已保存'), findsOneWidget);
+    expect(find.text('Saved'), findsOneWidget);
 
     await tester.pump(const Duration(seconds: 3));
-    expect(find.text('已保存'), findsNothing);
+    expect(find.text('Saved'), findsNothing);
   });
 
-  testWidgets('golden：大字号下 toast 无异常条纹（缺 Material 祖先后果守护）', (tester) async {
+  testWidgets('golden: no stray underlines at large text scale', (
+    tester,
+  ) async {
     tester.view.physicalSize = const Size(402, 874);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
@@ -36,7 +38,9 @@ void main() {
     await tester.pump(const Duration(seconds: 3));
   });
 
-  testWidgets('路由退出转场中调用：等转场结束再插入 toast', (tester) async {
+  testWidgets('waits for route exit transition before inserting toast', (
+    tester,
+  ) async {
     await tester.pumpWidget(const MaterialApp(home: _ToastHostPage()));
 
     // 打开底部弹层
@@ -50,15 +54,15 @@ void main() {
 
     // 转场进行中：toast 尚未插入
     expect(find.text('sheet'), findsOneWidget);
-    expect(find.text('已保存'), findsNothing);
+    expect(find.text('Saved'), findsNothing);
 
     // 转场结束后：toast 出现
     await tester.pumpAndSettle();
     expect(find.text('sheet'), findsNothing);
-    expect(find.text('已保存'), findsOneWidget);
+    expect(find.text('Saved'), findsOneWidget);
 
     await tester.pump(const Duration(seconds: 3));
-    expect(find.text('已保存'), findsNothing);
+    expect(find.text('Saved'), findsNothing);
   });
 }
 
@@ -72,7 +76,7 @@ class _ToastHostPage extends StatelessWidget {
       body: Column(
         children: [
           TextButton(
-            onPressed: () => showAppToast(context, '已保存'),
+            onPressed: () => showAppToast(context, 'Saved'),
             child: const Text('show'),
           ),
           TextButton(
@@ -86,7 +90,7 @@ class _ToastHostPage extends StatelessWidget {
                       TextButton(
                         onPressed: () {
                           Navigator.of(sheetContext).pop();
-                          showAppToast(sheetContext, '已保存');
+                          showAppToast(sheetContext, 'Saved');
                         },
                         child: const Text('pop+toast'),
                       ),

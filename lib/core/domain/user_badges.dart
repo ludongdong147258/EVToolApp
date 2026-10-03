@@ -22,10 +22,10 @@ class BadgeTier {
 /// 等级档位表（升序）
 // ignore: constant_identifier_names
 const List<BadgeTier> BADGE_TIERS = <BadgeTier>[
-  BadgeTier(min: 0, label: '见习车主'),
-  BadgeTier(min: 10, label: '充电达人'),
-  BadgeTier(min: 50, label: '资深车主'),
-  BadgeTier(min: 200, label: '元老车主'),
+  BadgeTier(min: 0, label: 'Rookie Owner'),
+  BadgeTier(min: 10, label: 'Charging Pro'),
+  BadgeTier(min: 50, label: 'Veteran Owner'),
+  BadgeTier(min: 200, label: 'Legend Owner'),
 ];
 
 /// 安全计数：仅接受有限正数（宽松字符串如 "10abc" 不解析，防脏输入意外晋级）

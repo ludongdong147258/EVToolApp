@@ -136,19 +136,20 @@ TargetSize computeTargetSize(num? width, num? height, num? maxSide) {
   );
 }
 
-/// GLM-4V-Flash 识别 prompt：要求只输出一个 JSON 对象，字段语义见下方 schema
+/// GLM-4V-Flash 识别 prompt（双语：中英文小票均可识别，始终输出英文值）：
+/// 要求只输出一个 JSON 对象，字段语义见下方 schema
 const String ocrPrompt = '''
-你是充电小票识别助手。请仔细阅读图片中的充电订单小票，只输出一个 JSON 对象，不要任何解释、markdown 代码块或多余文本。字段定义：
+You are a charging receipt recognition assistant / 充电小票识别助手。Carefully read the charging order receipt in the image (it may be in Chinese or English). Output ONLY one JSON object, with no explanations, markdown code fences, or extra text. Field definitions:
 {
-  "stationName": "电站/运营商名称，string 或 null",
-  "totalEnergyKwh": "本次充电总电量（度/kWh），number 或 null",
-  "totalCostYuan": "本次订单实付总费用（元）。小票有电费/服务费等分项时必须取各项之和（即合计/实付金额），不要只取电费分项。number 或 null",
-  "durationMinutes": "充电总时长折算为分钟整数。小票给开始/结束时间时按时长=结束时间-开始时间计算，如 14:05 至 15:28 = 83。integer 或 null",
-  "date": "小票上的日期，格式 YYYY-MM-DD；小票只有时间没有日期则为 null",
-  "chargeType": "根据电站特征推断：公共快充桩为 \\"fast\\"，家用/私桩为 \\"home\\"，不确定为 null"
+  "stationName": "Charging station or operator name, translated into English. string or null",
+  "totalEnergyKwh": "Total energy charged this session (kWh / 度). number or null",
+  "totalCostYuan": "Total amount actually paid for this order (CNY / 元). When the receipt lists itemized fees such as energy fee + service fee, take the sum of all items (i.e. the total / amount due), NOT just the energy fee. number or null",
+  "durationMinutes": "Total charging duration converted to whole minutes. If the receipt gives start/end times, duration = end - start, e.g. 14:05 to 15:28 = 83. integer or null",
+  "date": "Date from the receipt, format YYYY-MM-DD; null if the receipt shows only a time without a date",
+  "chargeType": "Infer from station characteristics: public DC fast charger = \\"fast\\", home/private charger = \\"home\\", null if uncertain"
 }
-注意：以上字段的值必须直接是字符串/数字/null，不要嵌套对象。另外在顶层输出 "confidence" 对象，为上述每个字段给出 0-1 的识别置信度（看不清或不存在时字段值为 null 且置信度给 0）。
-要求：所有数值从图片中读取，禁止编造；单位换算要正确（度=kWh，元保留小数）。''';
+Notes: field values must be plain strings/numbers/null — never nested objects. Additionally output a top-level "confidence" object giving a 0-1 recognition confidence for each field above (if a field is unreadable or absent, its value is null and confidence is 0).
+Requirements: read all numbers from the image, never fabricate values; convert units correctly (度 = kWh; keep decimal precision for CNY amounts).''';
 
 final RegExp _fenceRe = RegExp(r'```(?:json)?\s*([\s\S]*?)```');
 

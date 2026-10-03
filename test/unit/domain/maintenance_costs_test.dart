@@ -443,7 +443,7 @@ void main() {
         'parking',
       ]);
       expect(breakdown[0].key, 'charge');
-      expect(breakdown[0].label, '充电');
+      expect(breakdown[0].label, 'Charging');
       expect(breakdown[0].percent, 50);
       expect(breakdown[1].percent, 33);
     });
@@ -468,30 +468,38 @@ void main() {
       final breakdown = <TypeBreakdownItem>[
         const TypeBreakdownItem(
           key: 'charge',
-          label: '充电',
+          label: 'Charging',
           count: 5,
           totalAmount: 0,
           percent: 42,
         ),
         const TypeBreakdownItem(
           key: 'insurance',
-          label: '保险费',
+          label: 'Insurance',
           count: 1,
           totalAmount: 0,
           percent: 35,
         ),
         const TypeBreakdownItem(
           key: 'parking',
-          label: '停车费',
+          label: 'Parking',
           count: 4,
           totalAmount: 0,
           percent: 15,
         ),
       ];
       // Act
-      final line = buildReportTextLine(breakdown, 4860, periodLabel: '本年度');
+      final line = buildReportTextLine(
+        breakdown,
+        4860,
+        periodLabel: 'This year',
+      );
       // Assert
-      expect(line, '本年度养车总花费 4,860.00 元；充电 42%，保险费 35%，停车费 15%');
+      expect(
+        line,
+        'This year · Total maintenance spend: \$4,860.00; '
+        'Charging 42%, Insurance 35%, Parking 15%',
+      );
     });
 
     test('超过 3 项时其余合并为「其他」', () {
@@ -499,50 +507,62 @@ void main() {
       final breakdown = <TypeBreakdownItem>[
         const TypeBreakdownItem(
           key: 'charge',
-          label: '充电',
+          label: 'Charging',
           count: 0,
           totalAmount: 0,
           percent: 50,
         ),
         const TypeBreakdownItem(
           key: 'insurance',
-          label: '保险费',
+          label: 'Insurance',
           count: 0,
           totalAmount: 0,
           percent: 20,
         ),
         const TypeBreakdownItem(
           key: 'parking',
-          label: '停车费',
+          label: 'Parking',
           count: 0,
           totalAmount: 0,
           percent: 10,
         ),
         const TypeBreakdownItem(
           key: 'wash',
-          label: '洗车费',
+          label: 'Car Wash',
           count: 0,
           totalAmount: 0,
           percent: 8,
         ),
         const TypeBreakdownItem(
           key: 'maintenance',
-          label: '保养维修',
+          label: 'Maintenance & Repair',
           count: 0,
           totalAmount: 0,
           percent: 5,
         ),
       ];
       // Act
-      final line = buildReportTextLine(breakdown, 1000, periodLabel: '2026年8月');
+      final line = buildReportTextLine(
+        breakdown,
+        1000,
+        periodLabel: 'Aug 2026',
+      );
       // Assert
-      expect(line, '2026年8月养车总花费 1,000.00 元；充电 50%，保险费 20%，停车费 10%，其他 13%');
+      expect(
+        line,
+        'Aug 2026 · Total maintenance spend: \$1,000.00; '
+        'Charging 50%, Insurance 20%, Parking 10%, Other 13%',
+      );
     });
 
     test('total 为 0 → 暂无支出文案', () {
       expect(
-        buildReportTextLine(const <TypeBreakdownItem>[], 0, periodLabel: '本年度'),
-        '本年度暂无支出记录',
+        buildReportTextLine(
+          const <TypeBreakdownItem>[],
+          0,
+          periodLabel: 'This year',
+        ),
+        'This year · No expenses yet',
       );
     });
   });
@@ -558,7 +578,7 @@ void main() {
       // Act
       final top = pickTopExpense(expenses);
       // Assert
-      expect(top, const TopExpense(amount: 3600, typeLabel: '保险费'));
+      expect(top, const TopExpense(amount: 3600, typeLabel: 'Insurance'));
     });
 
     test('并列最大取先出现的一项；非法项被跳过', () {
@@ -579,7 +599,7 @@ void main() {
       // Act
       final top = pickTopExpense(expenses);
       // Assert
-      expect(top?.typeLabel, '洗车费');
+      expect(top?.typeLabel, 'Car Wash');
     });
 
     test('空数组 / 非数组 / 全非法 → null', () {
@@ -634,9 +654,9 @@ void main() {
   });
 
   group('formatDateCn 中文日期', () {
-    test('合法日期 → 中文全格式', () {
-      expect(formatDateCn('2026-08-28'), '2026年8月28日');
-      expect(formatDateCn('2026-01-01'), '2026年1月1日');
+    test('合法日期 → 英文全格式', () {
+      expect(formatDateCn('2026-08-28'), 'Aug 28, 2026');
+      expect(formatDateCn('2026-01-01'), 'Jan 1, 2026');
     });
 
     test('非法日期 → 空串', () {

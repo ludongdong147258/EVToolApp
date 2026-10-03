@@ -5,7 +5,7 @@ import 'package:ev_tool_app/core/extensions/context_extensions.dart';
 class AppSearchBar extends StatelessWidget {
   const AppSearchBar({
     super.key,
-    this.hint = '搜索...',
+    this.hint = 'Search',
     this.controller,
     this.onChanged,
     this.onSubmitted,

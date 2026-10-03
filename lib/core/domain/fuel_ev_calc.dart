@@ -199,10 +199,12 @@ FuelEvInputs? parseShareQuery(Map<String, String>? params) {
 /// 节省为正 → 省钱口径；为负 → 差额口径；空 → 兜底文案
 String buildShareTitle(AnnualCostResult? result) {
   if (result == null) {
-    return '油电成本对比 · 一分钟算出开电车能省多少';
+    return 'Fuel vs EV cost · see your annual savings in one minute';
   }
   if (result.savings > 0) {
-    return '开电车一年比油车省 ¥${formatAmount(result.savings)}，帮你算好了';
+    return 'An EV saves \$${formatAmount(result.savings)} a year vs a gas '
+        'car — here is the math';
   }
-  return '油电一年成本差 ¥${formatAmount(result.savings.abs())}，进来算算你的';
+  return '\$${formatAmount(result.savings.abs())} a year apart — run your own '
+      'numbers';
 }

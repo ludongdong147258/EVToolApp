@@ -58,9 +58,9 @@ void main() {
 
       await pumpPage(tester, container, const ChargeStatsPage());
 
-      expect(find.text('充电统计'), findsWidgets);
-      expect(find.text('暂无充电数据'), findsOneWidget);
-      expect(find.text('去添加'), findsOneWidget);
+      expect(find.text('Charging Stats'), findsWidgets);
+      expect(find.text('No charging data yet'), findsOneWidget);
+      expect(find.text('Add Now'), findsOneWidget);
     });
 
     testWidgets('有记录时展示累计 hero 与月份导航', (tester) async {
@@ -92,16 +92,16 @@ void main() {
       await pumpPage(tester, container, const ChargeStatsPage());
 
       // 累计 hero（40 + 10 = 40.00 元）
-      expect(find.text('累计充电支出'), findsOneWidget);
+      expect(find.text('Total Charging Spend'), findsOneWidget);
       expect(find.textContaining('40.00', findRichText: true), findsWidgets);
       // 月份导航标题带「本月」标记
-      expect(find.textContaining('本月'), findsOneWidget);
+      expect(find.textContaining('This month'), findsOneWidget);
       // 筛选 chips + 年度报告入口 + 导出入口
-      expect(find.text('全部'), findsOneWidget);
-      expect(find.text('充电年度报告'), findsOneWidget);
-      expect(find.text('导出'), findsOneWidget);
+      expect(find.text('All'), findsOneWidget);
+      expect(find.text('Annual Charging Report'), findsOneWidget);
+      expect(find.text('Export'), findsOneWidget);
       // 月份列表标题
-      expect(find.textContaining('2 条'), findsOneWidget);
+      expect(find.textContaining('2 records'), findsOneWidget);
     });
   });
 
@@ -111,9 +111,9 @@ void main() {
 
       await pumpPage(tester, container, const AnnualReportPage());
 
-      expect(find.text('充电年度报告'), findsWidgets);
-      expect(find.text('暂无充电数据'), findsOneWidget);
-      expect(find.text('去添加记录'), findsOneWidget);
+      expect(find.text('Annual Charging Report'), findsWidgets);
+      expect(find.text('No charging data yet'), findsOneWidget);
+      expect(find.text('Add Records'), findsOneWidget);
     });
 
     testWidgets('有记录时展示年份 chips + 12 柱图 + 占比与年度之最', (tester) async {
@@ -145,14 +145,14 @@ void main() {
       await pumpPage(tester, container, const AnnualReportPage());
 
       // 年份 chip（仅有记录的年份）
-      expect(find.text('${now.year}年'), findsOneWidget);
+      expect(find.text('${now.year}'), findsOneWidget);
       // hero 标题 + 12 柱月度费用图
-      expect(find.text('${now.year} 年度充电支出'), findsOneWidget);
+      expect(find.text('${now.year} Annual Charging Spend'), findsOneWidget);
       expect(find.byType(MonthBarChart), findsOneWidget);
       // 充电方式占比 + 年度之最 + 海报入口
-      expect(find.text('充电方式占比'), findsOneWidget);
-      expect(find.text('年度之最'), findsOneWidget);
-      expect(find.text('生成分享海报'), findsOneWidget);
+      expect(find.text('Charging Mix'), findsOneWidget);
+      expect(find.text('Year Highlights'), findsOneWidget);
+      expect(find.text('Create Share Poster'), findsOneWidget);
     });
   });
 
@@ -162,9 +162,9 @@ void main() {
 
       await pumpPage(tester, container, const CostReportPage());
 
-      expect(find.text('综合费用统计'), findsWidgets);
-      expect(find.text('暂无账单数据'), findsOneWidget);
-      expect(find.text('去记一笔'), findsOneWidget);
+      expect(find.text('Cost Report'), findsWidgets);
+      expect(find.text('No data yet'), findsOneWidget);
+      expect(find.text('Add a record'), findsOneWidget);
     });
 
     testWidgets('有账单时展示周期 hero 与分项占比图例', (tester) async {
@@ -200,18 +200,18 @@ void main() {
       await pumpPage(tester, container, const CostReportPage());
 
       // 周期 hero
-      expect(find.textContaining('用车总花费'), findsOneWidget);
+      expect(find.textContaining('Total spend'), findsOneWidget);
       expect(find.textContaining('50.00', findRichText: true), findsWidgets);
       // 模式 chips + 月份导航
-      expect(find.text('月度'), findsOneWidget);
-      expect(find.text('年度'), findsOneWidget);
-      expect(find.textContaining('本月'), findsOneWidget);
+      expect(find.text('Monthly'), findsOneWidget);
+      expect(find.text('Yearly'), findsOneWidget);
+      expect(find.textContaining('This month'), findsOneWidget);
       // 分项图例：充电 + 停车费（金额降序，充电 30 在前）
-      expect(find.text('分项占比'), findsOneWidget);
-      expect(find.text('充电'), findsWidgets);
-      expect(find.text('停车费'), findsOneWidget);
+      expect(find.text('Breakdown'), findsOneWidget);
+      expect(find.text('Charging'), findsWidgets);
+      expect(find.text('Parking'), findsOneWidget);
       // 小结复制入口
-      expect(find.text('复制'), findsOneWidget);
+      expect(find.text('Copy'), findsOneWidget);
     });
 
     testWidgets('年度模式展示 12 柱月度趋势', (tester) async {
@@ -233,12 +233,12 @@ void main() {
       );
 
       await pumpPage(tester, container, const CostReportPage());
-      await tester.tap(find.text('年度'));
+      await tester.tap(find.text('Yearly'));
       await tester.pumpAndSettle();
 
-      expect(find.text('月度趋势'), findsOneWidget);
+      expect(find.text('Monthly trend'), findsOneWidget);
       expect(find.byType(MonthBarChart), findsOneWidget);
-      expect(find.textContaining('今年'), findsOneWidget);
+      expect(find.textContaining('This year'), findsOneWidget);
     });
   });
 }

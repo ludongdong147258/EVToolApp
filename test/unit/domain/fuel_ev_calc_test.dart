@@ -204,7 +204,10 @@ void main() {
       final title = buildShareTitle(result);
 
       // Assert
-      expect(title, '开电车一年比油车省 ¥7,500，帮你算好了');
+      expect(
+        title,
+        'An EV saves \$7,500 a year vs a gas car — here is the math',
+      );
     });
 
     test('电动更贵时标题切换为成本对比口径', () {
@@ -216,12 +219,15 @@ void main() {
       final title = buildShareTitle(result);
 
       // Assert
-      expect(title, '油电一年成本差 ¥10,050，进来算算你的');
+      expect(title, '\$10,050 a year apart — run your own numbers');
     });
 
     test('结果为空时返回兜底标题', () {
       // Act & Assert
-      expect(buildShareTitle(null), '油电成本对比 · 一分钟算出开电车能省多少');
+      expect(
+        buildShareTitle(null),
+        'Fuel vs EV cost · see your annual savings in one minute',
+      );
     });
   });
 }

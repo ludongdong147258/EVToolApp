@@ -46,26 +46,26 @@ class AppBottomNav extends StatelessWidget {
         children: [
           _NavItem(
             icon: Icons.ev_station_rounded,
-            label: '充电记录',
+            label: 'Records',
             isActive: currentIndex == 0,
             onTap: () => onTap?.call(0),
           ),
           _NavItem(
             icon: Icons.payments_rounded,
-            label: '养车支出',
+            label: 'Costs',
             isActive: currentIndex == 1,
             onTap: () => onTap?.call(1),
           ),
           _NavItem(
             icon: Icons.build_rounded,
-            label: '实用工具',
+            label: 'Tools',
             isActive: currentIndex == 2,
             showDot: showToolsDot,
             onTap: () => onTap?.call(2),
           ),
           _NavItem(
             icon: Icons.person_rounded,
-            label: '我的',
+            label: 'Profile',
             isActive: currentIndex == 3,
             onTap: () => onTap?.call(3),
           ),

@@ -131,16 +131,16 @@ class _CostAddPageState extends ConsumerState<CostAddPage> {
     final restore = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('恢复草稿'),
-        content: const Text('检测到未保存的草稿，是否恢复？'),
+        title: const Text('Restore draft?'),
+        content: const Text('An unsaved draft was found. Restore it?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: const Text('不恢复'),
+            child: const Text('Discard'),
           ),
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: const Text('恢复'),
+            child: const Text('Restore'),
           ),
         ],
       ),
@@ -224,14 +224,14 @@ class _CostAddPageState extends ConsumerState<CostAddPage> {
     final vehicles = ref.read(vehiclesProvider);
     final selected = await showAppSheet<String>(
       context: context,
-      title: '选择车辆',
+      title: 'Choose vehicle',
       builder: (context) => AppSheetScrollBody(
         child: Wrap(
           spacing: 10,
           runSpacing: 10,
           children: [
             _VehicleChip(
-              label: '暂不关联',
+              label: 'No vehicle',
               isSelected: _vehicleId == null,
               onTap: () => Navigator.of(context).pop(''),
             ),
@@ -264,8 +264,8 @@ class _CostAddPageState extends ConsumerState<CostAddPage> {
   Future<void> _save() async {
     final amountText = _amountController.text;
     if (!_isValidAmount(amountText)) {
-      setState(() => _amountError = '请输入有效金额');
-      showAppToast(context, '请检查标红字段');
+      setState(() => _amountError = 'Enter a valid amount');
+      showAppToast(context, 'Please check the highlighted fields');
       return;
     }
     setState(() => _amountError = null);
@@ -281,7 +281,7 @@ class _CostAddPageState extends ConsumerState<CostAddPage> {
       DateTime.now().millisecondsSinceEpoch,
     );
     if (built == null) {
-      showAppToast(context, '请检查日期和金额输入');
+      showAppToast(context, 'Please check the date and amount');
       return;
     }
     final notifier = ref.read(costsProvider.notifier);
@@ -299,10 +299,10 @@ class _CostAddPageState extends ConsumerState<CostAddPage> {
       }
       if (!mounted) return;
       unawaited(HapticFeedback.lightImpact());
-      showAppToast(context, '保存成功');
+      showAppToast(context, 'Saved');
       Navigator.of(context).pop();
     } on Exception {
-      if (mounted) showAppToast(context, '保存失败，请重试');
+      if (mounted) showAppToast(context, 'Save failed, please try again');
     }
   }
 
@@ -331,7 +331,7 @@ class _CostAddPageState extends ConsumerState<CostAddPage> {
         .firstOrNull;
 
     return Scaffold(
-      appBar: AppBar(title: Text(_isEdit ? '编辑养车支出' : '新增养车支出')),
+      appBar: AppBar(title: Text(_isEdit ? 'Edit Expense' : 'Add Expense')),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
@@ -339,7 +339,7 @@ class _CostAddPageState extends ConsumerState<CostAddPage> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const _FieldLabel('支出类型'),
+                const _FieldLabel('Expense Type'),
                 // 8 类型 chip 网格单选
                 Wrap(
                   spacing: 8,
@@ -359,14 +359,14 @@ class _CostAddPageState extends ConsumerState<CostAddPage> {
                   ],
                 ),
                 const SizedBox(height: 16),
-                const _FieldLabel('支出日期'),
+                const _FieldLabel('Expense Date'),
                 _PickerField(
                   value: formatDateCn(_dateStr),
                   icon: Icons.calendar_month_rounded,
                   onTap: _pickDate,
                 ),
                 const SizedBox(height: 16),
-                const _FieldLabel('支出金额（元）'),
+                const _FieldLabel('Amount'),
                 TextField(
                   controller: _amountController,
                   keyboardType: const TextInputType.numberWithOptions(
@@ -383,7 +383,7 @@ class _CostAddPageState extends ConsumerState<CostAddPage> {
                       vertical: 10,
                     ),
                     hintText: '0.00',
-                    suffixText: '元',
+                    prefixText: '\$',
                     errorText: _amountError,
                   ),
                   onChanged: (_) {
@@ -393,24 +393,24 @@ class _CostAddPageState extends ConsumerState<CostAddPage> {
                   },
                 ),
                 const SizedBox(height: 16),
-                const _FieldLabel('关联车辆（选填）'),
+                const _FieldLabel('Vehicle (optional)'),
                 // 与添加充电记录页一致：无论有无车辆始终显示选择框
                 // （无车时弹层内仅「暂不关联」可选）
                 _PickerField(
                   value: selectedVehicle == null
-                      ? '暂不关联'
+                      ? 'No vehicle'
                       : selectedVehicle.name,
                   icon: Icons.directions_car_rounded,
                   onTap: _pickVehicle,
                 ),
                 const SizedBox(height: 16),
-                const _FieldLabel('备注（选填，最多 100 字）'),
+                const _FieldLabel('Note (optional, up to 100 characters)'),
                 TextField(
                   controller: _noteController,
                   maxLines: 3,
                   maxLength: expenseNoteMaxLength,
                   decoration: const InputDecoration(
-                    hintText: '例如：小区月停车费、4S 店首保',
+                    hintText: 'e.g. Monthly parking, first scheduled service',
                     counterText: '',
                   ),
                 ),
@@ -418,7 +418,10 @@ class _CostAddPageState extends ConsumerState<CostAddPage> {
             ),
           ),
           const SizedBox(height: 24),
-          AppPrimaryButton(text: _isEdit ? '保存修改' : '保存账单', onTap: _save),
+          AppPrimaryButton(
+            text: _isEdit ? 'Save Changes' : 'Save',
+            onTap: _save,
+          ),
           const SizedBox(height: 32),
         ],
       ),

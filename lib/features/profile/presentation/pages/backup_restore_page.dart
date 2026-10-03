@@ -78,7 +78,7 @@ class BackupRestorePage extends ConsumerWidget {
     final payload = ref.watch(backupPayloadProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('数据备份')),
+      appBar: AppBar(title: const Text('Backup & Restore')),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
         children: [
@@ -86,17 +86,17 @@ class BackupRestorePage extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('导出数据', style: context.textTheme.titleSmall),
+                Text('Export Data', style: context.textTheme.titleSmall),
                 const SizedBox(height: 8),
                 Text(
-                  '共 ${payload.recordCount} 条充电记录、${payload.vehicleCount} 辆车、'
-                  '${payload.expenseCount} 笔养车支出、${payload.memoCount} 条年检备忘，'
-                  '备份大小约 ${payload.size}（车辆照片不随备份迁移）。',
+                  '${payload.recordCount} charging records, ${payload.vehicleCount} vehicles, '
+                  '${payload.expenseCount} expenses, and ${payload.memoCount} inspection memos, '
+                  'about ${payload.size} in total (vehicle photos are not included).',
                   style: TextStyle(fontSize: 13, color: palette.textSecondary),
                 ),
                 const SizedBox(height: 16),
                 AppPrimaryButton(
-                  text: '导出数据',
+                  text: 'Export Data',
                   height: 44,
                   onTap: () => _exportPayload(context, ref),
                 ),
@@ -108,16 +108,17 @@ class BackupRestorePage extends ConsumerWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text('导入恢复', style: context.textTheme.titleSmall),
+                Text('Import Backup', style: context.textTheme.titleSmall),
                 const SizedBox(height: 8),
                 Text(
-                  '选择此前导出的 .json 备份文件，数据将与现有记录合并'
-                  '（重复条目自动跳过）。',
+                  'Pick a .json backup file you exported earlier. Its data will be '
+                  'merged with your existing records (duplicates are skipped '
+                  'automatically).',
                   style: TextStyle(fontSize: 13, color: palette.textSecondary),
                 ),
                 const SizedBox(height: 16),
                 AppPrimaryButton(
-                  text: '导入恢复',
+                  text: 'Import Backup',
                   height: 44,
                   onTap: () => _pickAndImport(context, ref),
                 ),
@@ -140,11 +141,13 @@ class BackupRestorePage extends ConsumerWidget {
       if (!context.mounted) return;
       final result = await shareFiles(context, [XFile(file.path)]);
       if (result.status == ShareResultStatus.success && context.mounted) {
-        showAppToast(context, '备份文件已分享');
+        showAppToast(context, 'Backup file shared');
       }
     } on Exception catch (e) {
-      appLogger.e('导出备份文件失败', error: e);
-      if (context.mounted) showAppToast(context, '导出失败，请重试');
+      appLogger.e('Failed to export backup file', error: e);
+      if (context.mounted) {
+        showAppToast(context, 'Export failed, please try again');
+      }
     }
   }
 
@@ -157,15 +160,17 @@ class BackupRestorePage extends ConsumerWidget {
         allowedExtensions: ['json'],
       );
     } on Exception catch (e) {
-      appLogger.e('选择备份文件失败', error: e);
-      if (context.mounted) showAppToast(context, '选择文件失败，请重试');
+      appLogger.e('Failed to pick backup file', error: e);
+      if (context.mounted) {
+        showAppToast(context, 'Failed to pick a file, please try again');
+      }
       return;
     }
     final path = picked?.files.single.path;
     if (path == null) return; // 用户取消
     if (!context.mounted) return;
     if (!isJsonFilePath(path)) {
-      showAppToast(context, '文件格式不正确');
+      showAppToast(context, 'Invalid file format');
       return;
     }
 
@@ -173,15 +178,17 @@ class BackupRestorePage extends ConsumerWidget {
     try {
       text = await File(path).readAsString();
     } on Exception catch (e) {
-      appLogger.e('读取备份文件失败', error: e);
-      if (context.mounted) showAppToast(context, '读取备份文件失败');
+      appLogger.e('Failed to read backup file', error: e);
+      if (context.mounted) {
+        showAppToast(context, 'Failed to read the backup file');
+      }
       return;
     }
     if (!context.mounted) return;
 
     final parsed = parseExportJson(text);
     if (parsed == null) {
-      showAppToast(context, '文件格式不正确');
+      showAppToast(context, 'Invalid file format');
       return;
     }
     final total =
@@ -190,27 +197,28 @@ class BackupRestorePage extends ConsumerWidget {
         parsed.expenses.length +
         parsed.memos.length;
     if (total == 0) {
-      showAppToast(context, '备份中没有可导入的数据');
+      showAppToast(context, 'No importable data in this backup');
       return;
     }
 
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('导入备份'),
+        title: const Text('Import Backup'),
         content: Text(
-          '将导入 ${parsed.records.length} 条充电记录、${parsed.vehicles.length} 辆车、'
-          '${parsed.expenses.length} 笔养车支出、${parsed.memos.length} 条年检备忘，'
-          '与现有数据合并（重复条目自动跳过）。',
+          'This will import ${parsed.records.length} charging records, '
+          '${parsed.vehicles.length} vehicles, ${parsed.expenses.length} expenses, '
+          'and ${parsed.memos.length} inspection memos, merged with your existing '
+          'data (duplicates are skipped automatically).',
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: const Text('取消'),
+            child: const Text('Cancel'),
           ),
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: const Text('导入'),
+            child: const Text('Import'),
           ),
         ],
       ),
@@ -256,11 +264,13 @@ class BackupRestorePage extends ConsumerWidget {
           expensePick.skippedCount +
           memoPick.skippedCount;
       if (context.mounted) {
-        showAppToast(context, '新增 $added 条，跳过 $skipped 条');
+        showAppToast(context, '$added added, $skipped skipped');
       }
     } on Exception catch (e) {
-      appLogger.e('备份导入失败', error: e);
-      if (context.mounted) showAppToast(context, '导入失败，请重试');
+      appLogger.e('Backup import failed', error: e);
+      if (context.mounted) {
+        showAppToast(context, 'Import failed, please try again');
+      }
     }
   }
 }

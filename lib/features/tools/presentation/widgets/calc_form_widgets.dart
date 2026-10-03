@@ -30,10 +30,10 @@ const List<int> batteryOptions = <int>[
   150,
 ];
 
-/// 综合折扣中文表述：1 → 无折扣；0.45 → 约 4.5 折。
+/// 综合折扣表述：1 → 无折扣；0.45 → ≈45%。
 String formatDiscount(double factor) {
-  if (factor >= 1) return '无折扣';
-  return '约 ${(factor * 100).round() / 10} 折';
+  if (factor >= 1) return 'No discount';
+  return '≈${formatPlainNumber((factor * 1000).round() / 10)}%';
 }
 
 /// 数值展示：整数值省略小数位（342.0 → "342"；342.5 → "342.5"）。
@@ -327,7 +327,7 @@ Future<void> showBatteryOptionsSheet(
   final myVehicle = myVehicleBattery;
   return showAppSheet(
     context: context,
-    title: '选择电池容量',
+    title: 'Select battery capacity',
     builder: (sheetContext) => AppSheetScrollBody(
       child: Wrap(
         spacing: 10,
@@ -335,7 +335,7 @@ Future<void> showBatteryOptionsSheet(
         children: [
           if (myVehicle is double)
             CalcChip(
-              label: '${formatPlainNumber(myVehicle)} 度 · 我的车',
+              label: '${formatPlainNumber(myVehicle)} kWh · My car',
               isSelected: myVehicle == current,
               onTap: () {
                 Navigator.of(sheetContext).pop();
@@ -344,7 +344,7 @@ Future<void> showBatteryOptionsSheet(
             ),
           for (final capacity in batteryOptions)
             CalcChip(
-              label: '$capacity 度',
+              label: '$capacity kWh',
               isSelected: capacity == current,
               onTap: () {
                 Navigator.of(sheetContext).pop();

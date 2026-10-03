@@ -28,15 +28,15 @@ class MemoReminder {
   final String text;
 }
 
-/// 到期天数 → 中文后缀（-3 → "已到期 3 天"；0 → "今天到期"；5 → "5 天后到期"）
+/// 到期天数 → 英文后缀（-3 → "3 days overdue"；0 → "due today"；5 → "due in 5 days"）
 String _buildDueSuffix(int daysRemaining) {
   if (daysRemaining < 0) {
-    return '已到期 ${-daysRemaining} 天';
+    return '${-daysRemaining} days overdue';
   }
   if (daysRemaining == 0) {
-    return '今天到期';
+    return 'due today';
   }
-  return '$daysRemaining 天后到期';
+  return 'due in $daysRemaining days';
 }
 
 /// 单条备忘的候选提醒（order 用于保证排序稳定性，等价 JS 稳定 sort）
@@ -91,7 +91,8 @@ List<_Candidate> _buildCandidates(MemoItem memo, DateTime now) {
         order: candidates.length,
         category: 'insurance',
         dueIn: insurance.daysRemaining,
-        text: '$prefix车险 ${_buildDueSuffix(insurance.daysRemaining)}',
+        text:
+            '${prefix}Car insurance ${_buildDueSuffix(insurance.daysRemaining)}',
       ),
     );
   }
@@ -114,7 +115,7 @@ List<_Candidate> _buildCandidates(MemoItem memo, DateTime now) {
           category: 'maintenance',
           dueIn: isKmDue ? -1 : node.daysRemaining,
           text: isKmDue
-              ? '$prefix${node.label} 已到保养里程'
+              ? '$prefix${node.label}: service mileage reached'
               : '$prefix${node.label} ${_buildDueSuffix(node.daysRemaining)}',
         ),
       );

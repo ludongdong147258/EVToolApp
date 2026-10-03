@@ -89,20 +89,43 @@ class GoodsItem {
   int get couponPrice =>
       hasCoupon ? originalPrice - couponAmount : originalPrice;
 
-  /// 销量文案：优先接口 sales_tip；缺失时按数值折「万」展示兜底
+  /// 销量文案：优先接口 sales_tip（中文 "10万+" 折 k）；缺失时按数值兜底
   String get salesTip {
     if (salesTipRaw.isNotEmpty) {
-      return '已售$salesTipRaw';
+      final count = parseSalesTipCount(salesTipRaw);
+      if (count != null) {
+        final plus = salesTipRaw.trim().endsWith('+') ? '+' : '';
+        return '${formatSalesCount(count)}$plus sold';
+      }
     }
     if (sales >= 10000) {
-      final wan = sales / 10000;
-      final wanText = wan == wan.roundToDouble()
-          ? wan.toInt().toString()
-          : wan.toStringAsFixed(1);
-      return '已售$wanText万+';
+      return '${formatSalesCount(sales)}+ sold';
     }
-    return '已售$sales';
+    return '${formatSalesCount(sales)} sold';
   }
+}
+
+/// 中文销量文案（"10万+" / "1.2万" / "8500"）→ 数值（万 = ×10,000）。
+/// 无法解析时返回 null。
+int? parseSalesTipCount(String raw) {
+  final match = RegExp(r'^(\d+(?:\.\d+)?)(万)?\+?$').firstMatch(raw.trim());
+  if (match == null) {
+    return null;
+  }
+  final value = double.parse(match.group(1)!);
+  return (match.group(2) != null ? value * 10000 : value).round();
+}
+
+/// 数值 → 英文缩写："8500"→"8.5k"、"120000"→"120k"、"800"→"800"。
+String formatSalesCount(num value) {
+  if (value >= 1000) {
+    final k = value / 1000;
+    final kText = k == k.roundToDouble()
+        ? k.toInt().toString()
+        : k.toStringAsFixed(1);
+    return '${kText}k';
+  }
+  return value.round().toString();
 }
 
 class GoodsRepository {
@@ -192,8 +215,10 @@ class GoodsRepository {
       final response = await call();
       return response.data;
     } on DioException catch (e) {
-      appLogger.w('装备商品请求失败：${e.message}');
-      throw const GoodsException('商品加载失败，请稍后重试');
+      appLogger.w('Goods request failed: ${e.message}');
+      throw const GoodsException(
+        'Failed to load products, please try again later',
+      );
     }
   }
 

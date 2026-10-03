@@ -71,7 +71,11 @@ void main() {
         throwsA(
           isA<OcrException>()
               .having((e) => e.code, 'code', ocrKeyMissingCode)
-              .having((e) => e.message, 'message', '小票识别服务 Key 未配置'),
+              .having(
+                (e) => e.message,
+                'message',
+                'Receipt OCR service key not configured',
+              ),
         ),
       );
       expect(calls, isEmpty);
@@ -143,7 +147,7 @@ void main() {
           isA<OcrException>().having(
             (e) => e.message,
             'message',
-            '小票识别服务请求失败（500）',
+            'Receipt OCR request failed (500)',
           ),
         ),
       );
@@ -160,7 +164,7 @@ void main() {
           isA<OcrException>().having(
             (e) => e.message,
             'message',
-            '小票识别失败：API Key 无效',
+            'Receipt recognition failed: API Key 无效',
           ),
         ),
       );
@@ -203,7 +207,7 @@ void main() {
           isA<OcrException>().having(
             (e) => e.message,
             'message',
-            '无法识别小票内容，请换一张更清晰的照片',
+            'Could not read the receipt, please try a clearer photo',
           ),
         ),
       );
@@ -224,7 +228,7 @@ void main() {
           isA<OcrException>().having(
             (e) => e.message,
             'message',
-            contains('图片过大'),
+            contains('too large'),
           ),
         ),
       );

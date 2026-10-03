@@ -99,7 +99,7 @@ class _CouponPill extends StatelessWidget {
         borderRadius: BorderRadius.circular(AppColors.radiusSm),
       ),
       child: Text(
-        '券${formatPrice(amount)}元',
+        '\$${formatPrice(amount)} coupon',
         style: const TextStyle(
           fontSize: 10,
           height: 1,
@@ -127,7 +127,7 @@ class _PriceRow extends StatelessWidget {
       children: [
         if (item.hasCoupon) _CouponPill(amount: item.couponAmount),
         const Text(
-          '¥',
+          '\$',
           style: TextStyle(
             fontSize: 12,
             fontWeight: FontWeight.w600,
@@ -146,7 +146,7 @@ class _PriceRow extends StatelessWidget {
         Padding(
           padding: const EdgeInsets.only(left: 4),
           child: Text(
-            '¥${formatPrice(item.originalPrice)}',
+            '\$${formatPrice(item.originalPrice)}',
             style: TextStyle(
               fontSize: 12,
               color: palette.textSecondary,

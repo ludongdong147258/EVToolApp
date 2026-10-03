@@ -90,17 +90,17 @@ class _FuelEvCalcPageState extends State<FuelEvCalcPage> {
         : _minBarRatio;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('油电成本对比')),
+      appBar: AppBar(title: const Text('Fuel vs EV Cost')),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
         children: [
           Text(
-            '对比燃油车与电动车的年度用车成本',
+            'Compare annual running costs of gas vs. electric cars.',
             style: TextStyle(fontSize: 13, color: palette.textSecondary),
           ),
           const SizedBox(height: 12),
           CalcCard(
-            title: '年度成本对比',
+            title: 'Annual cost comparison',
             icon: Icons.bar_chart_rounded,
             iconColor: palette.peak,
             child: Column(
@@ -113,7 +113,7 @@ class _FuelEvCalcPageState extends State<FuelEvCalcPage> {
                     children: [
                       _CostBar(
                         value: fuelCost,
-                        label: '燃油车',
+                        label: 'Gas car',
                         ratio: _maxBarRatio,
                         color: palette.fuel,
                       ),
@@ -129,7 +129,7 @@ class _FuelEvCalcPageState extends State<FuelEvCalcPage> {
                       ),
                       _CostBar(
                         value: evCost,
-                        label: '电动车',
+                        label: 'EV',
                         ratio: evRatio,
                         color: palette.primaryContainer,
                       ),
@@ -140,7 +140,7 @@ class _FuelEvCalcPageState extends State<FuelEvCalcPage> {
                   Padding(
                     padding: const EdgeInsets.only(top: 8),
                     child: Text(
-                      '当前参数下电动车成本更高',
+                      'The EV costs more with these settings',
                       style: TextStyle(fontSize: 12, color: palette.error),
                     ),
                   ),
@@ -155,7 +155,7 @@ class _FuelEvCalcPageState extends State<FuelEvCalcPage> {
                     ),
                     const SizedBox(width: 6),
                     Text(
-                      isEvMoreExpensive ? '电动反而多花' : '年度节省',
+                      isEvMoreExpensive ? 'EV costs more' : 'Annual savings',
                       style: TextStyle(
                         fontSize: 13,
                         color: palette.onSurfaceVariant,
@@ -163,7 +163,7 @@ class _FuelEvCalcPageState extends State<FuelEvCalcPage> {
                     ),
                     const SizedBox(width: 8),
                     Text(
-                      '¥ ${formatAmount(savings.abs())}',
+                      formatMoney(savings.abs()),
                       style: TextStyle(
                         fontSize: 18,
                         fontWeight: FontWeight.w700,
@@ -174,8 +174,8 @@ class _FuelEvCalcPageState extends State<FuelEvCalcPage> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  '${isEvMoreExpensive ? '每万公里多花' : '每万公里节省'}'
-                  ' ¥ ${formatAmount(savingPer10k.abs())}',
+                  '${isEvMoreExpensive ? 'Costs' : 'Saves'} '
+                  '${formatMoney(savingPer10k.abs())} per 10,000 km',
                   style: TextStyle(fontSize: 12, color: palette.textHint),
                 ),
               ],
@@ -183,7 +183,7 @@ class _FuelEvCalcPageState extends State<FuelEvCalcPage> {
           ),
           const SizedBox(height: 12),
           CalcCard(
-            title: '驾驶画像',
+            title: 'Driving profile',
             icon: Icons.tune,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -192,7 +192,7 @@ class _FuelEvCalcPageState extends State<FuelEvCalcPage> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      '年行驶里程',
+                      'Annual mileage',
                       style: TextStyle(
                         fontSize: 12,
                         color: palette.textSecondary,
@@ -227,19 +227,19 @@ class _FuelEvCalcPageState extends State<FuelEvCalcPage> {
           ),
           const SizedBox(height: 12),
           CalcCard(
-            title: '燃油车',
+            title: 'Gas car',
             icon: Icons.local_gas_station,
             iconColor: palette.fuel,
             child: Column(
               children: [
                 CalcTextField(
-                  label: '油耗（L/100km）',
+                  label: 'Fuel consumption (L/100km)',
                   hint: '8.5',
                   controller: _fuelConsumptionController,
                 ),
                 const SizedBox(height: 12),
                 CalcTextField(
-                  label: '油价（¥/L）',
+                  label: 'Fuel price (\$/L)',
                   hint: '8.0',
                   controller: _fuelPriceController,
                 ),
@@ -248,19 +248,19 @@ class _FuelEvCalcPageState extends State<FuelEvCalcPage> {
           ),
           const SizedBox(height: 12),
           CalcCard(
-            title: '电动车',
+            title: 'EV',
             icon: Icons.bolt_rounded,
             iconColor: palette.primaryContainer,
             child: Column(
               children: [
                 CalcTextField(
-                  label: '电耗（kWh/100km）',
+                  label: 'Energy consumption (kWh/100km)',
                   hint: '15.0',
                   controller: _evConsumptionController,
                 ),
                 const SizedBox(height: 12),
                 CalcTextField(
-                  label: '电价（¥/kWh）',
+                  label: 'Electricity price (\$/kWh)',
                   hint: '1.2',
                   controller: _elecPriceController,
                 ),
@@ -310,7 +310,7 @@ class _CostBar extends StatelessWidget {
                     ),
                   ),
                   child: Text(
-                    '¥ ${formatAmount(value)}',
+                    formatMoney(value),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: const TextStyle(

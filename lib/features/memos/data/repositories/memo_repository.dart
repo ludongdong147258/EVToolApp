@@ -42,7 +42,7 @@ class MemoRepository {
     if (memo.vehicleId.isEmpty ||
         parseDateStr(memo.registrationDate) == null ||
         memo.mileageKm <= 0) {
-      throw const StorageException('备忘录参数不合法');
+      throw const StorageException('Invalid memo details');
     }
     final now = DateTime.now().millisecondsSinceEpoch;
     final memos = getMemos();
@@ -132,8 +132,8 @@ class MemoRepository {
           },
       ]);
     } on Exception catch (e) {
-      appLogger.e('保存备忘录失败', error: e);
-      throw const StorageException('备忘录保存失败');
+      appLogger.e('Failed to save memos', error: e);
+      throw const StorageException('Failed to save memo');
     }
   }
 

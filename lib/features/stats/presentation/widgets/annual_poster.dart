@@ -98,7 +98,7 @@ class AnnualPoster extends StatelessWidget {
             ),
             const SizedBox(height: 24),
             const Text(
-              '年度充电支出',
+              'Annual Charging Spend',
               style: TextStyle(
                 fontSize: 24,
                 color: Color(0xBFFFFFFF), // 75% 白
@@ -148,7 +148,7 @@ class AnnualPoster extends StatelessWidget {
       top: posterLayout.splitTop,
       children: [
         const Text(
-          '充电方式',
+          'Charging Mix',
           style: TextStyle(
             fontSize: 26,
             fontWeight: FontWeight.w500,
@@ -183,7 +183,7 @@ class AnnualPoster extends StatelessWidget {
         Row(
           children: [
             Text(
-              '快充 ${model.fastPercent}%',
+              'Fast (DC) ${model.fastPercent}%',
               style: TextStyle(
                 fontSize: 24,
                 color: _PosterPalette.light.primary,
@@ -191,7 +191,7 @@ class AnnualPoster extends StatelessWidget {
             ),
             const Spacer(),
             Text(
-              '家充 ${model.homePercent}%',
+              'Home (AC) ${model.homePercent}%',
               style: const TextStyle(fontSize: 24, color: Color(0xFF666666)),
             ),
           ],
@@ -213,7 +213,7 @@ class AnnualPoster extends StatelessWidget {
         const Row(
           children: [
             Text(
-              '月度费用',
+              'Monthly Cost',
               style: TextStyle(
                 fontSize: 26,
                 fontWeight: FontWeight.w500,
@@ -222,7 +222,7 @@ class AnnualPoster extends StatelessWidget {
             ),
             Spacer(),
             Text(
-              '单位：元',
+              'In USD',
               style: TextStyle(fontSize: 20, color: _PosterPalette.hint),
             ),
           ],
@@ -275,7 +275,7 @@ class AnnualPoster extends StatelessWidget {
       top: posterLayout.bestTop,
       children: [
         const Text(
-          '年度之最',
+          'Year Highlights',
           style: TextStyle(
             fontSize: 26,
             fontWeight: FontWeight.w500,

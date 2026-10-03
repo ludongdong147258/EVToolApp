@@ -9,6 +9,9 @@ class PrivacyPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const LegalDocPage(title: '隐私政策', sections: privacySections);
+    return const LegalDocPage(
+      title: 'Privacy Policy',
+      sections: privacySections,
+    );
   }
 }

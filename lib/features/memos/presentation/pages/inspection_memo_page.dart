@@ -216,7 +216,7 @@ class _InspectionMemoPageState extends ConsumerState<InspectionMemoPage> {
     };
     final selected = await showAppSheet<String>(
       context: context,
-      title: '选择车辆',
+      title: 'Select vehicle',
       builder: (sheetContext) => AppSheetScrollBody(
         child: Wrap(
           spacing: 10,
@@ -233,8 +233,8 @@ class _InspectionMemoPageState extends ConsumerState<InspectionMemoPage> {
             ))
               _VehicleChip(
                 label:
-                    '${memo.vehicleName.isEmpty ? '未命名车辆' : memo.vehicleName}'
-                    ' · 已删除',
+                    '${memo.vehicleName.isEmpty ? 'Unnamed vehicle' : memo.vehicleName}'
+                    ' · Deleted',
                 isSelected: _selectedVehicleId == memo.vehicleId,
                 onTap: () => Navigator.of(sheetContext).pop(memo.vehicleId),
               ),
@@ -287,16 +287,16 @@ class _InspectionMemoPageState extends ConsumerState<InspectionMemoPage> {
   Future<void> _save() async {
     final vehicleId = _selectedVehicleId;
     if (vehicleId == null) {
-      showAppToast(context, '请先选择车辆');
+      showAppToast(context, 'Select a vehicle first');
       return;
     }
     if (parseDateStr(_registrationDate) == null) {
-      showAppToast(context, '请选择上牌日期');
+      showAppToast(context, 'Select the registration date');
       return;
     }
     final mileage = toNumber(_mileageController.text);
     if (mileage == null || !_isValidMileage(_mileageController.text)) {
-      showAppToast(context, '请输入有效里程');
+      showAppToast(context, 'Enter a valid mileage');
       return;
     }
     final vehicleName = _resolveVehicleName(vehicleId);
@@ -318,14 +318,14 @@ class _InspectionMemoPageState extends ConsumerState<InspectionMemoPage> {
             ),
           );
     } on Exception catch (e) {
-      appLogger.e('保存年检维保备忘失败', error: e);
-      if (mounted) showAppToast(context, '保存失败');
+      appLogger.e('Failed to save inspection memo', error: e);
+      if (mounted) showAppToast(context, 'Save failed');
       return;
     }
     // 联动记录页提醒条与底栏红点（替代小程序 MEMO_CHANGE 事件）
     ref.invalidate(memoListProvider);
     unawaited(HapticFeedback.lightImpact());
-    if (mounted) showAppToast(context, '已保存');
+    if (mounted) showAppToast(context, 'Saved');
   }
 
   String _resolveVehicleName(String vehicleId) {
@@ -346,19 +346,21 @@ class _InspectionMemoPageState extends ConsumerState<InspectionMemoPage> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('删除备忘录'),
-        content: const Text('确认删除该车辆的年检维保备忘录？'),
+        title: const Text('Delete memo'),
+        content: const Text(
+          'Delete the inspection & maintenance memo for this vehicle?',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: const Text('取消'),
+            child: const Text('Cancel'),
           ),
           TextButton(
             style: TextButton.styleFrom(
               foregroundColor: dialogContext.palette.error,
             ),
             onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: const Text('删除'),
+            child: const Text('Delete'),
           ),
         ],
       ),
@@ -369,8 +371,8 @@ class _InspectionMemoPageState extends ConsumerState<InspectionMemoPage> {
     try {
       await ref.read(memoRepositoryProvider).removeMemo(vehicleId);
     } on Exception catch (e) {
-      appLogger.e('删除年检维保备忘失败', error: e);
-      if (mounted) showAppToast(context, '删除失败');
+      appLogger.e('Failed to delete inspection memo', error: e);
+      if (mounted) showAppToast(context, 'Delete failed');
       return;
     }
     ref.invalidate(memoListProvider);
@@ -384,7 +386,7 @@ class _InspectionMemoPageState extends ConsumerState<InspectionMemoPage> {
         _mileageController.clear();
       });
     }
-    showAppToast(context, '已删除');
+    showAppToast(context, 'Deleted');
   }
 
   @override
@@ -434,12 +436,13 @@ class _InspectionMemoPageState extends ConsumerState<InspectionMemoPage> {
                 currentMemo.insuranceExpiryDate);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('年检维保备忘录')),
+      appBar: AppBar(title: const Text('Service & Inspection Memo')),
       body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
           Text(
-            '跟踪年检与维保节点，到期前心中有数。',
+            'Track inspections and maintenance milestones so due dates never '
+            'sneak up on you.',
             style: TextStyle(fontSize: 13, color: palette.textSecondary),
           ),
           const SizedBox(height: 12),
@@ -520,7 +523,7 @@ class _NextInspectionHero extends StatelessWidget {
             children: [
               Expanded(
                 child: Text(
-                  '距下次年检 · ${next.typeLabel}',
+                  'Next inspection · ${next.typeLabel}',
                   style: const TextStyle(
                     fontSize: 13,
                     color: AppColors.onPrimaryA85,
@@ -539,23 +542,26 @@ class _NextInspectionHero extends StatelessWidget {
                     borderRadius: BorderRadius.circular(AppColors.radiusSm),
                   ),
                   child: const Text(
-                    '即将到期',
+                    'Due soon',
                     style: TextStyle(fontSize: 11, color: Colors.white),
                   ),
                 ),
             ],
           ),
           const SizedBox(height: 8),
-          HeroValue(value: '${next.daysRemaining}', unit: '天'),
+          HeroValue(value: '${next.daysRemaining}', unit: 'days'),
           const SizedBox(height: 16),
           HeroStatsRow(
             items: [
-              HeroStatItem(label: '下次年检日期', value: formatCnDate(next.dueDate)),
-              HeroStatItem(label: '节点类型', value: next.typeLabel),
               HeroStatItem(
-                label: '车龄',
+                label: 'Next inspection date',
+                value: formatCnDate(next.dueDate),
+              ),
+              HeroStatItem(label: 'Milestone type', value: next.typeLabel),
+              HeroStatItem(
+                label: 'Vehicle age',
                 value: ageYears == null ? '--' : '$ageYears',
-                unit: '年',
+                unit: 'yr',
               ),
             ],
           ),
@@ -641,16 +647,19 @@ class _MemoFormCard extends StatelessWidget {
                 Icon(Icons.edit_rounded, size: 18, color: palette.primary),
                 const SizedBox(width: 6),
                 Text(
-                  '备忘信息',
+                  'Memo details',
                   style: context.textTheme.titleSmall?.copyWith(
                     fontWeight: FontWeight.w600,
                   ),
                 ),
                 const Spacer(),
                 if (memo != null && !hasUnsavedChanges)
-                  Text(
-                    '已保存 · ${formatTimestampDate(memo.updatedAt)}',
-                    style: TextStyle(fontSize: 11, color: palette.textHint),
+                  Flexible(
+                    child: Text(
+                      'Saved · ${formatTimestampDate(memo.updatedAt)}',
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(fontSize: 11, color: palette.textHint),
+                    ),
                   )
                 else if (memo != null)
                   Row(
@@ -666,7 +675,7 @@ class _MemoFormCard extends StatelessWidget {
                       ),
                       const SizedBox(width: 4),
                       const Text(
-                        '未保存',
+                        'Unsaved',
                         style: TextStyle(fontSize: 11, color: AppColors.amber),
                       ),
                     ],
@@ -678,26 +687,28 @@ class _MemoFormCard extends StatelessWidget {
               EmptyState(
                 compact: true,
                 icon: Icons.directions_car_rounded,
-                title: '先添加车辆后即可建立备忘录',
-                ctaText: '去添加车辆',
+                title: 'Add a vehicle first to set up a memo',
+                ctaText: 'Add vehicle',
                 onCta: onGoVehicles,
               )
             else ...[
               _PickerField(
-                label: '选择车辆',
+                label: 'Vehicle',
                 value: selectedVehicleId == null
-                    ? '请选择'
+                    ? 'Select'
                     : (selectedVehicleName.isEmpty
-                          ? '未命名车辆'
+                          ? 'Unnamed vehicle'
                           : selectedVehicleName),
                 icon: Icons.directions_car_rounded,
-                tag: selectedIsOrphan ? '车辆已删除' : null,
+                tag: selectedIsOrphan ? 'Vehicle deleted' : null,
                 onTap: onPickVehicle,
               ),
               const SizedBox(height: 14),
               _PickerField(
-                label: '上牌日期',
-                value: registrationDate.isEmpty ? '请选择上牌日期' : registrationDate,
+                label: 'Registration date',
+                value: registrationDate.isEmpty
+                    ? 'Select registration date'
+                    : registrationDate,
                 icon: Icons.calendar_month_rounded,
                 onTap: onPickRegistrationDate,
               ),
@@ -706,7 +717,7 @@ class _MemoFormCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    '当前行驶里程 (km)',
+                    'Current mileage (km)',
                     style: TextStyle(
                       fontSize: 12,
                       color: palette.textSecondary,
@@ -740,7 +751,7 @@ class _MemoFormCard extends StatelessWidget {
                             decoration: const InputDecoration(
                               border: InputBorder.none,
                               isDense: true,
-                              hintText: '如 25000',
+                              hintText: 'e.g. 25000',
                               counterText: '',
                             ),
                           ),
@@ -758,7 +769,7 @@ class _MemoFormCard extends StatelessWidget {
                   if (isMileageInvalid) ...[
                     const SizedBox(height: 4),
                     Text(
-                      '请输入 1 ~ $mileageMax 的里程数',
+                      'Enter a mileage between 1 and $mileageMax',
                       style: TextStyle(fontSize: 11, color: palette.error),
                     ),
                   ],
@@ -766,9 +777,9 @@ class _MemoFormCard extends StatelessWidget {
               ),
               const SizedBox(height: 14),
               _PickerField(
-                label: '保险到期日（选填）',
+                label: 'Insurance expiry (optional)',
                 value: insuranceExpiryDate.isEmpty
-                    ? '请选择保险到期日'
+                    ? 'Select insurance expiry date'
                     : insuranceExpiryDate,
                 icon: Icons.verified_user_rounded,
                 onTap: onPickInsuranceDate,
@@ -792,7 +803,7 @@ class _MemoFormCard extends StatelessWidget {
                           ),
                         ),
                         child: const Text(
-                          '保存备忘',
+                          'Save memo',
                           style: TextStyle(fontWeight: FontWeight.w700),
                         ),
                       ),
@@ -813,7 +824,7 @@ class _MemoFormCard extends StatelessWidget {
                             ),
                           ),
                         ),
-                        child: const Text('删除'),
+                        child: const Text('Delete'),
                       ),
                     ),
                   ],
@@ -891,7 +902,7 @@ class _PickerField extends StatelessWidget {
                     value,
                     style: TextStyle(
                       fontSize: 14,
-                      color: value.contains('请选择')
+                      color: value.startsWith('Select')
                           ? palette.textHint
                           : palette.onSurface,
                     ),
@@ -912,7 +923,7 @@ class _PickerField extends StatelessWidget {
 }
 
 class _StatusBadge extends StatelessWidget {
-  const _StatusBadge({required this.status, this.soonText = '临近'});
+  const _StatusBadge({required this.status, this.soonText = 'Soon'});
 
   final String status;
   final String soonText;
@@ -924,7 +935,7 @@ class _StatusBadge extends StatelessWidget {
     }
     final palette = context.palette;
     final color = _statusColor(status, palette);
-    final text = status == statusSoon ? soonText : '已到期';
+    final text = status == statusSoon ? soonText : 'Overdue';
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
       decoration: BoxDecoration(
@@ -959,7 +970,7 @@ class _InsuranceCard extends StatelessWidget {
                 ),
                 const SizedBox(width: 6),
                 Text(
-                  '保险备忘',
+                  'Insurance memo',
                   style: context.textTheme.titleSmall?.copyWith(
                     fontWeight: FontWeight.w600,
                   ),
@@ -977,20 +988,22 @@ class _InsuranceCard extends StatelessWidget {
                     children: [
                       Row(
                         children: [
-                          const Expanded(child: Text('交强险 / 商业险到期')),
+                          const Expanded(
+                            child: Text('Compulsory / commercial insurance'),
+                          ),
                           _StatusBadge(
                             status: insurance.status,
-                            soonText: '即将到期',
+                            soonText: 'Due soon',
                           ),
                         ],
                       ),
                       const SizedBox(height: 2),
                       Text(
                         insurance.status == statusOverdue
-                            ? '已于 ${formatCnDate(insurance.expiryDate)} 过期 '
-                                  '${insurance.daysRemaining.abs()} 天'
-                            : '${formatCnDate(insurance.expiryDate)} 到期 · 剩 '
-                                  '${insurance.daysRemaining} 天',
+                            ? 'Expired ${formatCnDate(insurance.expiryDate)} · '
+                                  '${insurance.daysRemaining.abs()} days ago'
+                            : 'Due ${formatCnDate(insurance.expiryDate)} · '
+                                  '${insurance.daysRemaining} days left',
                         style: TextStyle(
                           fontSize: 12,
                           color: palette.textSecondary,
@@ -1003,8 +1016,9 @@ class _InsuranceCard extends StatelessWidget {
             ),
             const SizedBox(height: 10),
             Text(
-              '仅本机提醒（打开页面可见），请以保单信息为准；'
-              '到期前 $insuranceSoonDays 天会标记「即将到期」。',
+              'Local reminder only (visible on this page); your policy is the '
+              'authoritative source. Marked "Due soon" within '
+              '$insuranceSoonDays days of expiry.',
               style: TextStyle(fontSize: 11, color: palette.textHint),
             ),
           ],
@@ -1034,7 +1048,7 @@ class _TimelineCard extends StatelessWidget {
                 Icon(Icons.schedule_rounded, size: 18, color: palette.primary),
                 const SizedBox(width: 6),
                 Text(
-                  '年检时间轴',
+                  'Inspection timeline',
                   style: context.textTheme.titleSmall?.copyWith(
                     fontWeight: FontWeight.w600,
                   ),
@@ -1048,8 +1062,9 @@ class _TimelineCard extends StatelessWidget {
               _TimelineItem(milestone: milestone, isPast: false),
             const SizedBox(height: 10),
             Text(
-              '规则：10 年内仅第 6 / 10 年上线检测，其余申领检验标志；'
-              '到期前 $dueSoonDays 天会标记「临近」。',
+              'Rule: within the first 10 years, only years 6 and 10 require an '
+              'in-person inspection — other years just need an inspection '
+              'sticker. Marked "Soon" within $dueSoonDays days of the due date.',
               style: TextStyle(fontSize: 11, color: palette.textHint),
             ),
           ],
@@ -1069,8 +1084,8 @@ class _TimelineItem extends StatelessWidget {
   Widget build(BuildContext context) {
     final palette = context.palette;
     final daysText = isPast
-        ? '已过 ${milestone.daysRemaining.abs()} 天'
-        : '剩 ${milestone.daysRemaining} 天';
+        ? '${milestone.daysRemaining.abs()} days ago'
+        : '${milestone.daysRemaining} days left';
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 6),
       child: Row(
@@ -1088,7 +1103,7 @@ class _TimelineItem extends StatelessWidget {
           const SizedBox(width: 10),
           Expanded(
             child: Text(
-              '第 ${milestone.years} 年 · ${milestone.typeLabel}',
+              'Year ${milestone.years} · ${milestone.typeLabel}',
               style: TextStyle(
                 fontSize: 13,
                 color: isPast ? palette.textHint : palette.onSurface,
@@ -1096,7 +1111,7 @@ class _TimelineItem extends StatelessWidget {
             ),
           ),
           Text(
-            isPast ? '如已办理可忽略' : daysText,
+            isPast ? 'Ignore if already done' : daysText,
             style: TextStyle(
               fontSize: 12,
               color: isPast
@@ -1128,10 +1143,12 @@ class _MaintenanceCard extends StatelessWidget {
               children: [
                 Icon(Icons.build_rounded, size: 18, color: palette.primary),
                 const SizedBox(width: 6),
-                Text(
-                  '新能源维保节点',
-                  style: context.textTheme.titleSmall?.copyWith(
-                    fontWeight: FontWeight.w600,
+                Expanded(
+                  child: Text(
+                    'EV maintenance milestones',
+                    style: context.textTheme.titleSmall?.copyWith(
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
               ],
@@ -1192,7 +1209,8 @@ class _MaintenanceCard extends StatelessWidget {
               ),
             const SizedBox(height: 6),
             Text(
-              '节点自上牌时点起算，如已在门店处理可忽略。',
+              'Milestones count from the registration date; ignore any already '
+              'handled at a service center.',
               style: TextStyle(fontSize: 11, color: palette.textHint),
             ),
           ],
@@ -1222,7 +1240,7 @@ class _ScienceCard extends StatelessWidget {
             color: AppColors.info,
           ),
           title: const Text(
-            '年检与维保科普',
+            'Inspection & maintenance basics',
             style: TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
           ),
           childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
@@ -1293,7 +1311,7 @@ class _SavedMemosCard extends StatelessWidget {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              '已保存备忘 · ${memos.length} 条',
+              'Saved memos · ${memos.length}',
               style: context.textTheme.titleSmall?.copyWith(
                 fontWeight: FontWeight.w600,
               ),
@@ -1308,15 +1326,18 @@ class _SavedMemosCard extends StatelessWidget {
                       children: [
                         const SizedBox(height: 8),
                         Text(
-                          memo.vehicleName.isEmpty ? '未命名车辆' : memo.vehicleName,
+                          memo.vehicleName.isEmpty
+                              ? 'Unnamed vehicle'
+                              : memo.vehicleName,
                           style: const TextStyle(
                             fontSize: 13,
                             fontWeight: FontWeight.w500,
                           ),
                         ),
                         Text(
-                          '上牌 ${memo.registrationDate} · ${memo.mileageKm} km'
-                          '${memo.insuranceExpiryDate == null ? '' : ' · 保险 ${memo.insuranceExpiryDate}'}',
+                          'Registered ${memo.registrationDate} · '
+                          '${memo.mileageKm} km'
+                          '${memo.insuranceExpiryDate == null ? '' : ' · Insured until ${memo.insuranceExpiryDate}'}',
                           style: TextStyle(
                             fontSize: 11,
                             color: palette.textSecondary,
@@ -1329,7 +1350,7 @@ class _SavedMemosCard extends StatelessWidget {
                     Padding(
                       padding: const EdgeInsets.only(left: 6),
                       child: Text(
-                        '当前',
+                        'Current',
                         style: TextStyle(fontSize: 10, color: palette.primary),
                       ),
                     ),
@@ -1339,7 +1360,7 @@ class _SavedMemosCard extends StatelessWidget {
                       size: 18,
                       color: palette.textHint,
                     ),
-                    tooltip: '删除备忘',
+                    tooltip: 'Delete memo',
                     onPressed: () => onDelete(memo.vehicleId),
                   ),
                 ],

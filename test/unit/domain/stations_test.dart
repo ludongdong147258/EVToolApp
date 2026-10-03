@@ -120,6 +120,21 @@ void main() {
       expect(normalizeStation(poi, tianhe)!.tel, '');
     });
 
+    test('title 为空串/空值时兜底为 Unnamed station', () {
+      // Arrange
+      final poi = mkPoi('poi-x', '', 23.13, 113.27);
+
+      // Act
+      final station = normalizeStation(poi, tianhe);
+
+      // Assert
+      expect(station!.name, 'Unnamed station');
+      expect(
+        normalizeStation({...poi, 'title': null}, tianhe)!.name,
+        'Unnamed station',
+      );
+    });
+
     test('缺少 location 返回 null', () {
       expect(normalizeStation({'id': 'x', 'title': 't'}, tianhe), isNull);
       expect(

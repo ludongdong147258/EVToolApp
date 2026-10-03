@@ -12,8 +12,9 @@ import 'package:ev_tool_app/core/domain/vehicles.dart';
 
 const String csvBom = '﻿';
 
-const String _recordCsvHeader = '日期,类型,费用(元),电量(kWh),时长(分钟),度电成本(元/kWh),车辆,备注';
-const String _vehicleCsvHeader = '车辆名称,电池容量(kWh),备注,默认车';
+const String _recordCsvHeader =
+    'Date,Type,Cost (\$),Energy (kWh),Duration (min),Cost per kWh (\$/kWh),Vehicle,Note';
+const String _vehicleCsvHeader = 'Vehicle Name,Battery (kWh),Note,Default';
 
 final RegExp _csvEscapeRe = RegExp(r'[",\n\r]');
 
@@ -67,7 +68,7 @@ String vehiclesToCsv(List<Vehicle>? vehicles) {
           vehicle.name,
           _numToCsv(vehicle.battery),
           vehicle.note,
-          vehicle.isDefault ? '是' : '否',
+          vehicle.isDefault ? 'Yes' : 'No',
         ].map(escapeCsvCell).join(','),
       )
       .toList();

@@ -10,7 +10,10 @@ import 'package:ev_tool_app/core/domain/date_utils.dart';
 import 'package:ev_tool_app/core/domain/numbers.dart';
 
 /// 充电类型默认标题（记录无备注时列表展示用）
-const Map<String, String> typeDefaultTitles = {'fast': '快充', 'home': '家充'};
+const Map<String, String> typeDefaultTitles = {
+  'fast': 'Fast (DC)',
+  'home': 'Home (AC)',
+};
 
 /// 备注最大长度（与表单 maxlength 一致）
 const int noteMaxLength = 100;
@@ -390,7 +393,7 @@ class RecordFilters {
 
 /// 记录日期展示文案：当年省略年份，跨年带年份前缀
 ///
-/// 当年 "8月23日"；跨年 "2024年8月23日"；非法 ""
+/// 当年 "Aug 23"；跨年 "Aug 23, 2024"；非法 ""
 String formatRecordDate(dynamic dateStr, {DateTime? now}) {
   if (!isValidDateString(dateStr)) {
     return '';
@@ -398,14 +401,12 @@ String formatRecordDate(dynamic dateStr, {DateTime? now}) {
   final current = now ?? DateTime.now();
   final text = dateStr as String;
   final year = int.parse(text.substring(0, 4));
-  final month = int.parse(text.substring(5, 7));
-  final day = int.parse(text.substring(8, 10));
-  return year == current.year ? '$month月$day日' : '$year年$month月$day日';
+  return year == current.year ? formatMonthDay(text) : formatFullDate(text);
 }
 
 /// 时长展示文案
 ///
-/// 85 → "1小时25分"；45 → "45分"；null/0/非法 → ""（视为未记录）
+/// 85 → "1h 25m"；45 → "45m"；null/0/非法 → ""（视为未记录）
 String formatDuration(dynamic minutes) {
   final numValue = toNumber(minutes);
   if (numValue == null || numValue <= 0) {
@@ -415,12 +416,12 @@ String formatDuration(dynamic minutes) {
   final hours = total ~/ 60;
   final mins = total % 60;
   if (hours == 0) {
-    return '$mins分';
+    return '${mins}m';
   }
   if (mins == 0) {
-    return '$hours小时';
+    return '${hours}h';
   }
-  return '$hours小时$mins分';
+  return '${hours}h ${mins}m';
 }
 
 /// 度电成本（¥/kWh）
@@ -533,18 +534,18 @@ TotalSummary calcTotalSummary(List<ChargeRecord>? records) {
 
 /// 月度小结文案（统计页「复制小结」/ 动态分享标题用）
 ///
-/// "2026年9月充电 12 次 · 花费 320.50 元 · 度电均价 0.72 元/kWh"；
-/// 无记录 → "{monthLabel}暂无充电记录"
+/// "Sep 2026 · 12 charges · $320.50 total · avg $0.72/kWh"；
+/// 无记录 → "{monthLabel} · No charging records yet"
 String buildMonthSummaryText(MonthSummary? summary, String monthLabel) {
   final count = summary?.count ?? 0;
   if (count <= 0) {
-    return '$monthLabel暂无充电记录';
+    return '$monthLabel · No charging records yet';
   }
   final costPerKwh = summary?.costPerKwh;
   final costPerKwhText = costPerKwh == null ? '--' : formatYuan(costPerKwh);
-  return '$monthLabel充电 $count 次 · '
-      '花费 ${formatYuan(summary?.totalCost)} 元 · '
-      '度电均价 $costPerKwhText 元/kWh';
+  return '$monthLabel · $count charges · '
+      '${formatMoney(summary?.totalCost)} total · '
+      'avg \$$costPerKwhText/kWh';
 }
 
 /// 解析时/分表单字段为总分钟数
@@ -788,15 +789,6 @@ String? shiftMonthKey(dynamic monthKey, num? delta) {
   final nextYear = (total - remainder) ~/ 12;
   final nextMonth = remainder + 1;
   return '$nextYear-${pad2(nextMonth)}';
-}
-
-/// 月份 key 展示文案："2026年8月"；非法返回 ""
-String formatMonthLabel(dynamic monthKey) {
-  if (monthKey is! String || !monthKeyRe.hasMatch(monthKey)) {
-    return '';
-  }
-  return '${int.parse(monthKey.substring(0, 4))}'
-      '年${int.parse(monthKey.substring(5))}月';
 }
 
 /// 组合筛选记录（统计页月份 + 类型 + 车辆；地图页复用 year）

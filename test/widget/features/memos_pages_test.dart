@@ -33,8 +33,9 @@ void main() {
   }
 
   // 静态长列表：放大画布让 ListView 一次性构建全部子项
+  // （英文字幕比中文高，需更高画布才能构建完 11 张品牌卡）
   Future<void> pumpTall(WidgetTester tester, Widget child) async {
-    await tester.binding.setSurfaceSize(const Size(400, 9000));
+    await tester.binding.setSurfaceSize(const Size(400, 20000));
     addTearDown(() => tester.binding.setSurfaceSize(null));
     await tester.pumpWidget(child);
     await tester.pumpAndSettle();
@@ -80,18 +81,21 @@ void main() {
       );
 
       // 表单回填
-      expect(find.text('备忘信息'), findsOneWidget);
+      expect(find.text('Memo details'), findsOneWidget);
       expect(find.text('我的小车'), findsWidgets);
       expect(find.text('2021-06-15'), findsOneWidget);
-      expect(find.text('保存备忘'), findsOneWidget);
+      expect(find.text('Save memo'), findsOneWidget);
 
       // 年检 hero + 时间轴 + 维保节点
-      expect(find.text('距下次年检 · 上线检测'), findsOneWidget);
-      expect(find.text('年检时间轴'), findsOneWidget);
-      expect(find.text('新能源维保节点'), findsOneWidget);
-      expect(find.text('三电系统检查'), findsOneWidget);
-      expect(find.text('冷却液检查更换'), findsOneWidget);
-      expect(find.text('已保存备忘 · 1 条'), findsOneWidget);
+      expect(
+        find.text('Next inspection · In-person inspection'),
+        findsOneWidget,
+      );
+      expect(find.text('Inspection timeline'), findsOneWidget);
+      expect(find.text('EV maintenance milestones'), findsOneWidget);
+      expect(find.text('Battery/motor/electronics check'), findsOneWidget);
+      expect(find.text('Coolant check & replacement'), findsOneWidget);
+      expect(find.text('Saved memos · 1'), findsOneWidget);
     });
 
     testWidgets('无车辆时展示去添加车辆空态', (tester) async {
@@ -105,9 +109,9 @@ void main() {
       );
       await tester.pumpAndSettle();
 
-      expect(find.text('先添加车辆后即可建立备忘录'), findsOneWidget);
-      expect(find.text('去添加车辆'), findsOneWidget);
-      expect(find.text('保存备忘'), findsNothing);
+      expect(find.text('Add a vehicle first to set up a memo'), findsOneWidget);
+      expect(find.text('Add vehicle'), findsOneWidget);
+      expect(find.text('Save memo'), findsNothing);
     });
 
     testWidgets('车辆选择弹层支持已删车辆的孤儿备忘', (tester) async {
@@ -151,7 +155,7 @@ void main() {
       await tester.tap(find.text('现役车'));
       await tester.pumpAndSettle();
 
-      expect(find.text('幽灵车 · 已删除'), findsOneWidget);
+      expect(find.text('幽灵车 · Deleted'), findsOneWidget);
       expect(find.text('现役车'), findsWidgets);
     });
   });
@@ -163,25 +167,26 @@ void main() {
         const MaterialApp(home: ModificationCompliancePage()),
       );
 
-      expect(find.text('常见改装项目速查'), findsOneWidget);
-      expect(find.text('合法改装'), findsOneWidget);
-      expect(find.text('合法但需备案'), findsOneWidget);
-      expect(find.text('违法改装'), findsOneWidget);
+      expect(find.text('Common modifications at a glance'), findsOneWidget);
+      // Hero 统计、跳转 chip 与分区标题同文案（Legal / Illegal 各出现 3 次）
+      expect(find.text('Legal'), findsNWidgets(3));
+      expect(find.text('Legal (registration required)'), findsOneWidget);
+      expect(find.text('Illegal'), findsNWidgets(3));
       for (final name in [
-        '内饰改装',
-        '小型外观装饰',
-        '同规格轮毂替换',
-        '车身改色（贴膜/喷漆）',
-        '外观套件（包围/侧裙/尾翼）',
-        '改变轮毂规格尺寸',
-        '改动电池/电机/电控',
-        '悬架改装（升高/降低）',
-        '非法灯光（爆闪/加装射灯）',
-        '加宽轮距/加装垫片',
+        'Interior modifications',
+        'Small exterior decorations',
+        'Same-spec wheel replacement',
+        'Body color change (wrap/paint)',
+        'Exterior kits (bumpers/side skirts/spoilers)',
+        'Changing wheel size/spec',
+        'Modifying battery/motor/electronics',
+        'Suspension modifications (lift/lower)',
+        'Illegal lights (strobe/added spotlights)',
+        'Wider track / spacer adapters',
       ]) {
         expect(find.text(name), findsOneWidget, reason: name);
       }
-      expect(find.text('交警查处风险'), findsNWidgets(10));
+      expect(find.text('Enforcement risk'), findsNWidgets(10));
     });
   });
 
@@ -189,21 +194,21 @@ void main() {
     testWidgets('渲染全部 11 个品牌卡与国标基线', (tester) async {
       await pumpTall(tester, const MaterialApp(home: WarrantyHandbookPage()));
 
-      expect(find.text('主流车企三电质保速查'), findsOneWidget);
-      expect(find.text('国家规定基线'), findsOneWidget);
-      expect(find.text('整车质保'), findsNWidgets(11));
+      expect(find.text('Warranty quick reference by brand'), findsOneWidget);
+      expect(find.text('National regulatory baseline'), findsOneWidget);
+      expect(find.text('Vehicle warranty'), findsNWidgets(11));
       for (final name in [
-        '比亚迪',
-        '小鹏',
-        '小米汽车',
-        '极氪',
-        '蔚来',
-        '特斯拉',
-        '吉利',
-        '问界',
-        '理想',
-        '零跑',
-        '埃安',
+        'BYD',
+        'XPeng',
+        'Xiaomi',
+        'Zeekr',
+        'NIO',
+        'Tesla',
+        'Geely',
+        'AITO',
+        'Li Auto',
+        'Leapmotor',
+        'Aion',
       ]) {
         // 视口外的横向跳转 chip 不构建，只断言品牌卡名称至少出现一次
         expect(find.text(name), findsWidgets, reason: name);

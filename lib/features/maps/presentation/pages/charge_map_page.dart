@@ -31,16 +31,16 @@ const int _cityTopN = 3;
 
 /* 时间范围选项（key → filterRecords 的 monthKey/year 入参） */
 const List<({String key, String text})> _rangeOptions = [
-  (key: 'all', text: '全部'),
-  (key: 'year', text: '本年'),
-  (key: 'month', text: '本月'),
+  (key: 'all', text: 'All'),
+  (key: 'year', text: 'This Year'),
+  (key: 'month', text: 'This Month'),
 ];
 
 /* 类型选项（null = 全部） */
 const List<({String? key, String text})> _typeOptions = [
-  (key: null, text: '全部'),
-  (key: 'home', text: '家充'),
-  (key: 'fast', text: '快充'),
+  (key: null, text: 'All'),
+  (key: 'home', text: 'Home (AC)'),
+  (key: 'fast', text: 'Fast (DC)'),
 ];
 
 /// 充电点位地图（移植小程序 charge-map）。
@@ -92,7 +92,7 @@ class _ChargeMapPageState extends ConsumerState<ChargeMapPage> {
     }
 
     return Scaffold(
-      appBar: AppBar(title: const Text('充电点位地图')),
+      appBar: AppBar(title: const Text('Charging Map')),
       body: SingleChildScrollView(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
         child: Column(
@@ -167,14 +167,14 @@ class _ChargeMapPageState extends ConsumerState<ChargeMapPage> {
       child: ListView(
         scrollDirection: Axis.horizontal,
         children: [
-          const _FilterLabel('时间'),
+          const _FilterLabel('Time'),
           for (final option in _rangeOptions)
             _FilterChip(
               text: option.text,
               active: _rangeFilter == option.key,
               onTap: () => _handleRangeFilter(option.key),
             ),
-          const _FilterLabel('类型', indent: true),
+          const _FilterLabel('Type', indent: true),
           for (final option in _typeOptions)
             _FilterChip(
               text: option.text,
@@ -182,7 +182,7 @@ class _ChargeMapPageState extends ConsumerState<ChargeMapPage> {
               onTap: () => _handleTypeFilter(option.key),
             ),
           if (vehicleOptions.isNotEmpty) ...[
-            const _FilterLabel('车辆', indent: true),
+            const _FilterLabel('Vehicle', indent: true),
             for (final option in vehicleOptions)
               _FilterChip(
                 text: option.text,
@@ -259,7 +259,7 @@ class _ChargeMapPageState extends ConsumerState<ChargeMapPage> {
     setState(() => _selectedKey = group.key);
     await showAppSheet(
       context: context,
-      title: '${group.locationName} · 共${group.count}次',
+      title: '${group.locationName} · ${group.count} charges',
       builder: (_) => AppSheetScrollBody(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -277,7 +277,7 @@ class _ChargeMapPageState extends ConsumerState<ChargeMapPage> {
             FilledButton.icon(
               onPressed: () => _navigateTo(group),
               icon: const Icon(Icons.arrow_forward_rounded, size: 16),
-              label: const Text('导航到此点位'),
+              label: const Text('Navigate There'),
             ),
           ],
         ),
@@ -300,11 +300,11 @@ class _ChargeMapPageState extends ConsumerState<ChargeMapPage> {
         mode: LaunchMode.externalApplication,
       );
       if (!launched && mounted) {
-        showAppToast(context, '唤起导航失败');
+        showAppToast(context, 'Could not open Maps');
       }
     } on Exception {
       if (mounted) {
-        showAppToast(context, '唤起导航失败');
+        showAppToast(context, 'Could not open Maps');
       }
     }
   }
@@ -321,10 +321,10 @@ class _ChargeMapPageState extends ConsumerState<ChargeMapPage> {
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 10),
       child: HeroStatsRow(
         items: [
-          HeroStatItem(label: '充电点位', value: '${groups.length}'),
-          HeroStatItem(label: '充电次数', value: '${stats.recordCount}'),
-          HeroStatItem(label: '家充占比', value: '${stats.homeRatio}%'),
-          HeroStatItem(label: '快充占比', value: '${stats.fastRatio}%'),
+          HeroStatItem(label: 'Locations', value: '${groups.length}'),
+          HeroStatItem(label: 'Charges', value: '${stats.recordCount}'),
+          HeroStatItem(label: 'Home %', value: '${stats.homeRatio}%'),
+          HeroStatItem(label: 'Fast %', value: '${stats.fastRatio}%'),
         ],
       ),
     );
@@ -342,7 +342,7 @@ class _ChargeMapPageState extends ConsumerState<ChargeMapPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('高频充电城市', style: context.textTheme.titleSmall),
+          Text('Top Charging Cities', style: context.textTheme.titleSmall),
           const SizedBox(height: 12),
           for (var i = 0; i < cityTop.length; i++)
             _CityTopItem(
@@ -364,9 +364,13 @@ class _ChargeMapPageState extends ConsumerState<ChargeMapPage> {
     );
     return EmptyState(
       icon: Icons.place_outlined,
-      title: hasLocatedEver ? '当前筛选下没有充电点位' : '还没有充电地点记录',
-      subtitle: hasLocatedEver ? '试试切换时间范围或车辆筛选' : '新增充电记录时会自动定位充电地点，即可在这里回顾分布',
-      ctaText: hasLocatedEver ? null : '去添加充电记录',
+      title: hasLocatedEver
+          ? 'No locations for this filter'
+          : 'No locations yet',
+      subtitle: hasLocatedEver
+          ? 'Try a different time range or vehicle'
+          : 'Add a charging record with a location to see it on the map',
+      ctaText: hasLocatedEver ? null : 'Add Record',
       onCta: hasLocatedEver ? null : _goAddRecord,
     );
   }
@@ -467,14 +471,14 @@ class _MapLegend extends StatelessWidget {
         children: [
           const _LegendDot(AppColors.homeCharge),
           const SizedBox(width: 4),
-          Text('家充', style: context.textTheme.bodySmall),
+          Text('Home', style: context.textTheme.bodySmall),
           const SizedBox(width: 8),
           const _LegendDot(AppColors.fastCharge),
           const SizedBox(width: 4),
-          Text('快充', style: context.textTheme.bodySmall),
+          Text('Fast', style: context.textTheme.bodySmall),
           const SizedBox(width: 8),
           Text(
-            '共 $pointCount 个点位',
+            '$pointCount points',
             style: context.textTheme.bodySmall?.copyWith(
               color: palette.textSecondary,
             ),
@@ -562,7 +566,7 @@ class _CityTopItem extends StatelessWidget {
                       ),
                     ),
                     Text(
-                      '$count次',
+                      '$count charges',
                       style: context.textTheme.bodySmall?.copyWith(
                         color: palette.textHint,
                       ),
@@ -651,8 +655,8 @@ class _GroupRecordTile extends StatelessWidget {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  '¥${formatYuan(record.cost)} · ${record.energy}度'
-                  '${costPerKwh == null ? '' : ' · ¥${formatYuan(costPerKwh)}/度'}',
+                  '${formatMoney(record.cost)} · ${record.energy} kWh'
+                  '${costPerKwh == null ? '' : ' · ${formatMoney(costPerKwh)}/kWh'}',
                   style: context.textTheme.bodySmall?.copyWith(
                     color: palette.onSurface,
                   ),

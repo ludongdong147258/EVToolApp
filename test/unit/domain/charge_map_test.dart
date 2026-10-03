@@ -46,9 +46,11 @@ LocationGroup _group({
 
 void main() {
   group('getCityCoord 城市坐标查询', () {
-    test('全称匹配（选择器口径）', () {
+    test('全称匹配（选择器口径），返回条目携带英文名与中文匹配键', () {
+      expect(getCityCoord('浙江省', '杭州市')!.name, 'Hangzhou');
       expect(getCityCoord('浙江省', '杭州市')!.lat, closeTo(30.274, 1e-9));
       expect(getCityCoord('浙江省', '杭州市')!.lng, closeTo(120.155, 1e-9));
+      expect(getCityCoord('北京市', '北京市')!.name, 'Beijing');
       expect(getCityCoord('北京市', '北京市')!.lat, closeTo(39.904, 1e-9));
       expect(getCityCoord('北京市', '北京市')!.lng, closeTo(116.407, 1e-9));
     });
@@ -66,18 +68,40 @@ void main() {
     });
   });
 
-  group('findNearestCity 最近城市', () {
-    test('坐标落在杭州附近返回杭州', () {
-      final hit = findNearestCity(30.3, 120.1);
-      expect(hit, isNotNull);
-      expect(hit!.city, '杭州');
-      expect(hit.province, '浙江省');
+  group('中英文省市输入回归（zh 匹配键）', () {
+    test('中文省市全称（腾讯逆地理口径）仍能命中并返回英文名', () {
+      expect(matchCity('广东省', '广州市'), 'Guangzhou');
+      expect(matchCity('浙江省', '杭州市'), 'Hangzhou');
+      expect(matchCity('北京市', '北京市'), 'Beijing');
+      expect(getCityCoord('广东省', '广州市')!.name, 'Guangzhou');
+      expect(getCityCoord('广东省', '广州市')!.zh, '广州');
+      expect(getCityCoord('广东省', '广州市')!.lat, closeTo(23.129, 1e-9));
+      expect(getCityCoord('广东省', '广州市')!.lng, closeTo(113.264, 1e-9));
     });
 
-    test('与 matchCity 口径一致（选择器全称与地图选点归一到同一简称）', () {
-      expect(matchCity('浙江省', '杭州市'), '杭州');
-      expect(matchCity('湖北省', '恩施土家族苗族自治州'), '恩施');
-      expect(matchCity('广东省', '广州'), '广州');
+    test('英文省份 key 直接命中（findNearestCity 回填后再查询）', () {
+      expect(matchCity('Guangdong', '广州市'), 'Guangzhou');
+      expect(getCityCoord('Zhejiang', '杭州市')!.name, 'Hangzhou');
+    });
+
+    test('旧记录中的中文简称城市名仍能命中', () {
+      expect(matchCity('浙江省', '杭州'), 'Hangzhou');
+      expect(getCityCoord('新疆维吾尔自治区', '乌鲁木齐')!.name, 'Urumqi');
+    });
+  });
+
+  group('findNearestCity 最近城市', () {
+    test('坐标落在杭州附近返回杭州（英文名 + 英文省份）', () {
+      final hit = findNearestCity(30.3, 120.1);
+      expect(hit, isNotNull);
+      expect(hit!.city, 'Hangzhou');
+      expect(hit.province, 'Zhejiang');
+    });
+
+    test('与 matchCity 口径一致（选择器全称与地图选点归一到同一英文名）', () {
+      expect(matchCity('浙江省', '杭州市'), 'Hangzhou');
+      expect(matchCity('湖北省', '恩施土家族苗族自治州'), 'Enshi');
+      expect(matchCity('广东省', '广州'), 'Guangzhou');
       expect(matchCity('浙江省', '不存在市'), isNull);
     });
 
@@ -251,7 +275,7 @@ void main() {
       expect(markers[0].calloutText, isNull);
       expect(markers[0].isSelected, isFalse);
       expect(markers[1].isSelected, isTrue);
-      expect(markers[1].calloutText, 'B · 5次');
+      expect(markers[1].calloutText, 'B · 5 charges');
     });
 
     test('空数组输入返回空数组', () {

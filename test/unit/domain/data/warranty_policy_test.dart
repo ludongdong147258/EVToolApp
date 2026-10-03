@@ -46,7 +46,7 @@ void main() {
     test('免责声明非空且注明仅供参考', () {
       // Act & Assert
       expect(warrantyDisclaimer.length, greaterThan(0));
-      expect(warrantyDisclaimer, contains('仅供参考'));
+      expect(warrantyDisclaimer, contains('For reference only'));
     });
 
     test('数据日期为 YYYY-MM 格式且免责声明包含该日期', () {
@@ -77,7 +77,7 @@ void main() {
       // Assert
       expect(brand, isNotNull);
       expect(brand!.id, id);
-      expect(brand.name, '特斯拉');
+      expect(brand.name, 'Tesla');
     });
 
     test('未知 id 返回 null', () {

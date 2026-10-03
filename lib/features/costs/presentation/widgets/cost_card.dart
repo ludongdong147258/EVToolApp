@@ -100,7 +100,7 @@ class CostCard extends StatelessWidget {
                     ),
                   ),
                   Text(
-                    '-¥${formatYuan(expense.amount)}',
+                    '-${formatMoney(expense.amount)}',
                     style: context.textTheme.titleMedium?.copyWith(
                       color: palette.onSurface,
                       fontWeight: FontWeight.w700,
@@ -193,7 +193,7 @@ class _MoreButton extends StatelessWidget {
             if (onEdit != null)
               ListTile(
                 leading: const Icon(Icons.edit_outlined),
-                title: const Text('编辑'),
+                title: const Text('Edit'),
                 onTap: () {
                   Navigator.of(sheetContext).pop();
                   onEdit?.call();
@@ -204,7 +204,10 @@ class _MoreButton extends StatelessWidget {
                 Icons.delete_outline_rounded,
                 color: context.palette.error,
               ),
-              title: Text('删除', style: TextStyle(color: context.palette.error)),
+              title: Text(
+                'Delete',
+                style: TextStyle(color: context.palette.error),
+              ),
               onTap: () {
                 Navigator.of(sheetContext).pop();
                 onDelete?.call();

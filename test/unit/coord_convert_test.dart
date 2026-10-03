@@ -16,9 +16,8 @@ void main() {
       final point = wgs84ToGcj02(wgsLat, wgsLng);
       // GCJ-02 相对 WGS-84 在中国境内偏移约 300-700m
       final latDiff = (point.latitude - wgsLat).abs() * 111000; // 纬度 1° ≈ 111km
-      final lngDiff = (point.longitude - wgsLng).abs() *
-          111000 *
-          0.77; // 北京纬度经度 1° ≈ 85km
+      final lngDiff =
+          (point.longitude - wgsLng).abs() * 111000 * 0.77; // 北京纬度经度 1° ≈ 85km
       expect(latDiff, greaterThan(100));
       expect(latDiff, lessThan(1000));
       expect(lngDiff, greaterThan(100));

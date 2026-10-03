@@ -74,7 +74,7 @@ class _AppSheetShell extends StatelessWidget {
                         onPressed: () => Navigator.of(context).maybePop(),
                         icon: const Icon(Icons.close, size: 24),
                         color: palette.onSurfaceVariant,
-                        tooltip: '关闭',
+                        tooltip: 'Close',
                         constraints: const BoxConstraints(
                           minWidth: 44,
                           minHeight: 44,

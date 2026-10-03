@@ -94,25 +94,25 @@ void main() {
 
       // 用户卡：昵称 + 等级徽标 + 记录天数 + 累计花费
       expect(find.text('阿明'), findsOneWidget);
-      expect(find.text('见习车主'), findsOneWidget);
-      expect(find.text('记录 2 天'), findsOneWidget);
-      expect(find.text('累计花费 ¥45.00'), findsOneWidget);
+      expect(find.text('Rookie Owner'), findsOneWidget);
+      expect(find.text('2 days logged'), findsOneWidget);
+      expect(find.text(r'Total spent $45.00'), findsOneWidget);
 
       // 三列统计
-      expect(find.text('充电记录'), findsOneWidget);
-      expect(find.text('本月充电'), findsOneWidget);
-      expect(find.text('累计电量'), findsOneWidget);
+      expect(find.text('Charge Records'), findsOneWidget);
+      expect(find.text('This Month'), findsOneWidget);
+      expect(find.text('Total Energy'), findsOneWidget);
 
       // 菜单
-      expect(find.text('我的服务'), findsOneWidget);
-      expect(find.text('我的车辆'), findsOneWidget);
-      expect(find.text('充电统计'), findsOneWidget);
-      expect(find.text('充电点位地图'), findsOneWidget);
-      expect(find.text('数据备份'), findsOneWidget);
-      expect(find.text('关于应用'), findsOneWidget);
-      expect(find.text('主题配色'), findsOneWidget);
-      expect(find.text('设置'), findsNothing);
-      expect(find.text('关于'), findsOneWidget);
+      expect(find.text('My Services'), findsOneWidget);
+      expect(find.text('My Vehicles'), findsOneWidget);
+      expect(find.text('Charge Stats'), findsOneWidget);
+      expect(find.text('Charging Map'), findsOneWidget);
+      expect(find.text('Backup & Restore'), findsOneWidget);
+      expect(find.text('About the App'), findsOneWidget);
+      expect(find.text('Theme Colors'), findsOneWidget);
+      expect(find.text('Settings'), findsNothing);
+      expect(find.text('About'), findsOneWidget);
     });
 
     testWidgets('主题配色菜单打开 6 套配色弹层', (tester) async {
@@ -126,15 +126,15 @@ void main() {
         ),
       );
 
-      await tester.tap(find.text('主题配色'));
+      await tester.tap(find.text('Theme Colors'));
       await tester.pumpAndSettle();
 
-      expect(find.text('极光绿'), findsOneWidget);
-      expect(find.text('深海蓝'), findsOneWidget);
-      expect(find.text('落日橙'), findsOneWidget);
-      expect(find.text('星辰紫'), findsOneWidget);
-      expect(find.text('樱花粉'), findsOneWidget);
-      expect(find.text('赛博青'), findsOneWidget);
+      expect(find.text('Aurora Green'), findsOneWidget);
+      expect(find.text('Deep Blue'), findsOneWidget);
+      expect(find.text('Sunset Orange'), findsOneWidget);
+      expect(find.text('Stellar Purple'), findsOneWidget);
+      expect(find.text('Sakura Pink'), findsOneWidget);
+      expect(find.text('Cyber Cyan'), findsOneWidget);
     });
   });
 
@@ -151,13 +151,13 @@ void main() {
       );
 
       // 分区标题与按钮同名，各出现两次
-      expect(find.text('导出数据'), findsNWidgets(2));
-      expect(find.text('复制备份文本'), findsNothing);
-      expect(find.text('导入恢复'), findsNWidgets(2));
-      expect(find.textContaining('2 条充电记录'), findsOneWidget);
-      expect(find.textContaining('1 辆车'), findsOneWidget);
-      expect(find.textContaining('0 笔养车支出'), findsOneWidget);
-      expect(find.textContaining('0 条年检备忘'), findsOneWidget);
+      expect(find.text('Export Data'), findsNWidgets(2));
+      expect(find.text('Copy Backup Text'), findsNothing);
+      expect(find.text('Import Backup'), findsNWidgets(2));
+      expect(find.textContaining('2 charging records'), findsOneWidget);
+      expect(find.textContaining('1 vehicles'), findsOneWidget);
+      expect(find.textContaining('0 expenses'), findsOneWidget);
+      expect(find.textContaining('0 inspection memos'), findsOneWidget);
     });
   });
 
@@ -175,22 +175,22 @@ void main() {
 
       // 车库卡片：昵称 + 默认徽标 + 容量 + 备注 + 添加入口
       expect(find.text('小白'), findsOneWidget);
-      expect(find.text('默认'), findsOneWidget);
+      expect(find.text('Default'), findsOneWidget);
       expect(find.text('60'), findsOneWidget);
       expect(find.text('白色 Model 3'), findsOneWidget);
-      expect(find.text('添加车辆'), findsOneWidget);
+      expect(find.text('Add Vehicle'), findsOneWidget);
 
       // 打开添加弹层：表单字段齐全
-      await tester.tap(find.text('添加车辆'));
+      await tester.tap(find.text('Add Vehicle'));
       await tester.pumpAndSettle();
 
-      expect(find.text('昵称'), findsOneWidget);
-      expect(find.text('电池容量（kWh）'), findsOneWidget);
-      expect(find.text('备注（选填）'), findsOneWidget);
-      expect(find.text('车辆照片（选填）'), findsOneWidget);
-      expect(find.text('拍照'), findsOneWidget);
-      expect(find.text('从相册选择'), findsOneWidget);
-      expect(find.text('保存'), findsOneWidget);
+      expect(find.text('Nickname'), findsOneWidget);
+      expect(find.text('Battery (kWh)'), findsOneWidget);
+      expect(find.text('Note (Optional)'), findsOneWidget);
+      expect(find.text('Photo (Optional)'), findsOneWidget);
+      expect(find.text('Take Photo'), findsOneWidget);
+      expect(find.text('Choose from Library'), findsOneWidget);
+      expect(find.text('Save'), findsOneWidget);
     });
 
     testWidgets('空车库展示空态与 CTA', (tester) async {
@@ -204,8 +204,11 @@ void main() {
         ),
       );
 
-      expect(find.text('暂无车辆'), findsOneWidget);
-      expect(find.text('添加车辆信息，方便后续计算充电花费'), findsOneWidget);
+      expect(find.text('No vehicles yet'), findsOneWidget);
+      expect(
+        find.text('Add a vehicle to track your charging costs'),
+        findsOneWidget,
+      );
     });
   });
 
@@ -213,11 +216,11 @@ void main() {
     testWidgets('渲染品牌区/简介/信息列表', (tester) async {
       await pumpTall(tester, const MaterialApp(home: AboutPage()));
 
-      expect(find.text('VoltMate 电车工具'), findsOneWidget);
-      expect(find.text('联系邮箱'), findsNothing);
-      expect(find.text('用户协议'), findsOneWidget);
-      expect(find.text('隐私政策'), findsOneWidget);
-      expect(find.text('版本'), findsOneWidget);
+      expect(find.text('VoltMate · EV Toolkit'), findsOneWidget);
+      expect(find.text('Contact Email'), findsNothing);
+      expect(find.text('User Agreement'), findsOneWidget);
+      expect(find.text('Privacy Policy'), findsOneWidget);
+      expect(find.text('Version'), findsOneWidget);
       expect(find.text('1.0.0'), findsOneWidget);
     });
   });
@@ -226,15 +229,15 @@ void main() {
     testWidgets('用户协议页渲染更新日期与首章节', (tester) async {
       await pumpTall(tester, const MaterialApp(home: AgreementPage()));
 
-      expect(find.text('更新日期：2026-08-23'), findsOneWidget);
-      expect(find.text('一、协议的接受'), findsOneWidget);
+      expect(find.text('Last updated: 2026-08-23'), findsOneWidget);
+      expect(find.text('1. Acceptance of These Terms'), findsOneWidget);
     });
 
     testWidgets('隐私政策页渲染更新日期与首章节', (tester) async {
       await pumpTall(tester, const MaterialApp(home: PrivacyPage()));
 
-      expect(find.text('更新日期：2026-08-23'), findsOneWidget);
-      expect(find.text('一、引言'), findsOneWidget);
+      expect(find.text('Last updated: 2026-08-23'), findsOneWidget);
+      expect(find.text('1. Introduction'), findsOneWidget);
     });
   });
 }

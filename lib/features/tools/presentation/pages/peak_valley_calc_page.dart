@@ -226,24 +226,24 @@ class _PeakValleyCalcPageState extends ConsumerState<PeakValleyCalcPage> {
     final savingPerKwh = hasCheaperValley ? peakPrice - valleyPrice : 0;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('峰谷电价优化')),
+      appBar: AppBar(title: const Text('Time-of-Use Savings')),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
         children: [
           Text(
-            '智能规划充电时间，优化用电成本。',
+            'Plan your charging times to cut electricity costs.',
             style: TextStyle(fontSize: 13, color: palette.textSecondary),
           ),
           const SizedBox(height: 12),
           CalcCard(
-            title: '时段与电价设置',
+            title: 'Periods & rates',
             icon: Icons.tune,
             iconColor: palette.info,
             child: Column(
               children: [
                 _TimePickerRow(
                   dotColor: palette.peak,
-                  label: '峰时段 (时:分)',
+                  label: 'Peak hours',
                   start: _peakStart,
                   end: _peakEnd,
                   onPickStart: () => _pickTime('peakStart', _peakStart),
@@ -251,14 +251,14 @@ class _PeakValleyCalcPageState extends ConsumerState<PeakValleyCalcPage> {
                 ),
                 const SizedBox(height: 12),
                 CalcTextField(
-                  label: '峰时电价 (¥/度)',
+                  label: 'Peak rate (\$/kWh)',
                   hint: '1.25',
                   controller: _peakPriceController,
                 ),
                 const SizedBox(height: 12),
                 _TimePickerRow(
                   dotColor: palette.primary,
-                  label: '谷时段 (时:分)',
+                  label: 'Off-peak hours',
                   start: _valleyStart,
                   end: _valleyEnd,
                   onPickStart: () => _pickTime('valleyStart', _valleyStart),
@@ -266,14 +266,14 @@ class _PeakValleyCalcPageState extends ConsumerState<PeakValleyCalcPage> {
                 ),
                 const SizedBox(height: 12),
                 CalcTextField(
-                  label: '谷时电价 (¥/度)',
+                  label: 'Off-peak rate (\$/kWh)',
                   hint: '0.35',
                   controller: _valleyPriceController,
                 ),
                 const SizedBox(height: 12),
                 if (isTimesInvalid)
                   Text(
-                    '峰谷时段不合法（重叠或时长为 0），请调整',
+                    'Peak and off-peak periods overlap or have zero length; please adjust',
                     style: TextStyle(fontSize: 12, color: palette.error),
                   )
                 else
@@ -328,7 +328,7 @@ class _PeakValleyCalcPageState extends ConsumerState<PeakValleyCalcPage> {
           ),
           const SizedBox(height: 12),
           CalcCard(
-            title: '车辆与充电需求',
+            title: 'Vehicle & charging',
             icon: Icons.battery_charging_full,
             iconColor: palette.primary,
             child: Column(
@@ -349,7 +349,7 @@ class _PeakValleyCalcPageState extends ConsumerState<PeakValleyCalcPage> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      '目标充电量',
+                      'Charge target',
                       style: TextStyle(
                         fontSize: 12,
                         color: palette.textSecondary,
@@ -376,7 +376,7 @@ class _PeakValleyCalcPageState extends ConsumerState<PeakValleyCalcPage> {
                 const _ScaleRow(left: '$targetMin%', right: '$targetMax%'),
                 const SizedBox(height: 4),
                 Text(
-                  '预计需充入: ${liveResult == null ? '--' : formatPlainNumber(liveResult.energy)} 度电',
+                  'Energy to add: ${liveResult == null ? '--' : formatPlainNumber(liveResult.energy)} kWh',
                   style: TextStyle(fontSize: 12, color: palette.textHint),
                 ),
               ],
@@ -384,28 +384,30 @@ class _PeakValleyCalcPageState extends ConsumerState<PeakValleyCalcPage> {
           ),
           const SizedBox(height: 12),
           CalcCard(
-            title: '预估成本对比',
+            title: 'Cost comparison',
             icon: Icons.bar_chart_rounded,
             iconColor: palette.peak,
             child: Column(
               children: [
                 _CostCompareRow(
-                  label: '平准电价成本 (按峰谷时长加权)',
-                  value: '¥${formatYuan(flatCost)}',
+                  label: 'Average-rate cost (weighted by period length)',
+                  value: formatMoney(flatCost),
                   valueColor: palette.onSurface,
                   ratio: _maxRatio,
                   barColor: palette.surfaceContainerHighest,
                 ),
                 const SizedBox(height: 12),
                 _CostCompareRow(
-                  label: '峰谷优化成本',
+                  label: 'Off-peak optimized cost',
                   icon: Icons.eco_outlined,
-                  value: '¥${formatYuan(optimizedCost)}',
+                  value: formatMoney(optimizedCost),
                   valueColor: palette.primaryContainer,
-                  badge: '${isWorse ? '多花' : '省'} ¥${formatYuan(saving.abs())}',
+                  badge:
+                      '${isWorse ? 'Overspends' : 'Saves'} ${formatMoney(saving.abs())}',
                   ratio: optimizedRatio,
                   barColor: palette.primaryContainer,
-                  note: '优化策略：假设全部电量在谷时段充入',
+                  note:
+                      'Strategy: assumes all energy is charged during off-peak hours',
                 ),
                 const SizedBox(height: 12),
                 Row(
@@ -419,9 +421,9 @@ class _PeakValleyCalcPageState extends ConsumerState<PeakValleyCalcPage> {
                     Expanded(
                       child: Text(
                         hasCheaperValley
-                            ? '建议在谷时段 $_valleyStart - $_valleyEnd 充电，'
-                                  '每度省 ¥${formatYuan(savingPerKwh)}'
-                            : '当前谷时电价不低于峰时，请核对电价设置',
+                            ? 'Charge between $_valleyStart and $_valleyEnd to save '
+                                  '${formatMoney(savingPerKwh)} per kWh'
+                            : 'The off-peak rate is not lower than peak; please check your rates',
                         style: TextStyle(
                           fontSize: 12,
                           color: palette.onSurfaceVariant,
@@ -434,7 +436,9 @@ class _PeakValleyCalcPageState extends ConsumerState<PeakValleyCalcPage> {
             ),
           ),
           const SizedBox(height: 8),
-          const CalcDisclaimer('* 测算结果仅供参考，实际充电费用以电网账单为准。'),
+          const CalcDisclaimer(
+            '* Estimates are for reference only; actual charges follow your utility bill.',
+          ),
         ],
       ),
     );
@@ -575,7 +579,7 @@ class _BatteryPickerRow extends StatelessWidget {
         child: Row(
           children: [
             Text(
-              '电池容量：$battery 度',
+              'Battery capacity: $battery kWh',
               style: TextStyle(fontSize: 13, color: palette.onSurface),
             ),
             const Spacer(),

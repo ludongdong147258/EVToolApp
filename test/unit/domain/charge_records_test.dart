@@ -2,6 +2,7 @@
 library;
 
 import 'package:ev_tool_app/core/domain/charge_records.dart';
+// formatMonthLabel 现由 date_utils 提供（charge_records 本地副本已删除）。
 import 'package:ev_tool_app/core/domain/date_utils.dart';
 import 'package:ev_tool_app/core/domain/numbers.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -93,13 +94,13 @@ void main() {
   group('formatRecordDate 记录日期展示', () {
     test('当年日期省略年份', () {
       final now = DateTime(2026, 8, 23);
-      expect(formatRecordDate('2026-08-01', now: now), '8月1日');
-      expect(formatRecordDate('2026-01-15', now: now), '1月15日');
+      expect(formatRecordDate('2026-08-01', now: now), 'Aug 1');
+      expect(formatRecordDate('2026-01-15', now: now), 'Jan 15');
     });
 
     test('跨年日期带年份前缀', () {
       final now = DateTime(2026, 8, 23);
-      expect(formatRecordDate('2024-10-24', now: now), '2024年10月24日');
+      expect(formatRecordDate('2024-10-24', now: now), 'Oct 24, 2024');
     });
 
     test('非法输入返回空串', () {
@@ -111,13 +112,13 @@ void main() {
 
   group('formatDuration 时长展示', () {
     test('小时 + 分钟组合', () {
-      expect(formatDuration(85), '1小时25分');
-      expect(formatDuration('85'), '1小时25分');
+      expect(formatDuration(85), '1h 25m');
+      expect(formatDuration('85'), '1h 25m');
     });
 
     test('整小时 / 不足一小时', () {
-      expect(formatDuration(60), '1小时');
-      expect(formatDuration(45), '45分');
+      expect(formatDuration(60), '1h');
+      expect(formatDuration(45), '45m');
     });
 
     test('null / 0 / 非法返回空串（视为未记录）', () {
@@ -540,8 +541,8 @@ void main() {
 
   group('TYPE_DEFAULT_TITLES', () {
     test('包含快充 / 家充默认标题', () {
-      expect(typeDefaultTitles['fast'], '快充');
-      expect(typeDefaultTitles['home'], '家充');
+      expect(typeDefaultTitles['fast'], 'Fast (DC)');
+      expect(typeDefaultTitles['home'], 'Home (AC)');
     });
   });
 
@@ -918,13 +919,13 @@ void main() {
   });
 
   group('formatMonthLabel 月份文案', () {
-    test('补零月与不补零月均输出 N 月（无前导零）', () {
-      expect(formatMonthLabel('2026-08'), '2026年8月');
-      expect(formatMonthLabel('2026-11'), '2026年11月');
+    test('补零月与不补零月均输出英文月份缩写', () {
+      expect(formatMonthLabel('2026-08'), 'Aug 2026');
+      expect(formatMonthLabel('2026-11'), 'Nov 2026');
     });
 
-    test('非法输入返回空串', () {
-      expect(formatMonthLabel('2026-8'), '');
+    test('非法输入：格式不符原样返回，null 返回空串（date_utils 契约）', () {
+      expect(formatMonthLabel('2026-8'), '2026-8');
       expect(formatMonthLabel(null), '');
     });
   });
@@ -1026,10 +1027,10 @@ void main() {
       );
 
       // Act
-      final text = buildMonthSummaryText(summary, '2026年9月');
+      final text = buildMonthSummaryText(summary, 'Sep 2026');
 
       // Assert
-      expect(text, '2026年9月充电 12 次 · 花费 320.50 元 · 度电均价 0.72 元/kWh');
+      expect(text, 'Sep 2026 · 12 charges · \$320.50 total · avg \$0.72/kWh');
     });
 
     test('costPerKwh 为 null（无有效电量）时均价降级为 --', () {
@@ -1042,8 +1043,8 @@ void main() {
       );
 
       expect(
-        buildMonthSummaryText(summary, '2026年9月'),
-        '2026年9月充电 3 次 · 花费 90.00 元 · 度电均价 -- 元/kWh',
+        buildMonthSummaryText(summary, 'Sep 2026'),
+        'Sep 2026 · 3 charges · \$90.00 total · avg \$--/kWh',
       );
     });
 
@@ -1055,8 +1056,14 @@ void main() {
         totalEnergy: 0,
         costPerKwh: null,
       );
-      expect(buildMonthSummaryText(empty, '2026年9月'), '2026年9月暂无充电记录');
-      expect(buildMonthSummaryText(null, '2026年9月'), '2026年9月暂无充电记录');
+      expect(
+        buildMonthSummaryText(empty, 'Sep 2026'),
+        'Sep 2026 · No charging records yet',
+      );
+      expect(
+        buildMonthSummaryText(null, 'Sep 2026'),
+        'Sep 2026 · No charging records yet',
+      );
     });
   });
 

@@ -29,9 +29,9 @@ void main() {
     await tester.pumpAndSettle();
 
     // Assert — 4 nav items visible on the records shell
-    expect(find.text('充电记录'), findsWidgets);
-    expect(find.text('养车支出'), findsOneWidget);
-    expect(find.text('实用工具'), findsOneWidget);
-    expect(find.text('我的'), findsOneWidget);
+    expect(find.text('Records'), findsWidgets);
+    expect(find.text('Costs'), findsOneWidget);
+    expect(find.text('Tools'), findsOneWidget);
+    expect(find.text('Profile'), findsOneWidget);
   });
 }

@@ -77,6 +77,11 @@ String formatYuan(dynamic value) {
   return '${_withCommas(parts[0])}.${parts[1]}';
 }
 
+/// 货币显示格式化（$ + 两位小数 + 千分位）
+///
+/// 345.5 → "$345.50"；非法 → "$0.00"
+String formatMoney(dynamic value) => '\$${formatYuan(value)}';
+
 /// 金额千分位格式化（整数元），小程序端避免依赖 toLocaleString
 ///
 /// 如 2850 → "2,850"

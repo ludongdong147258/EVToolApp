@@ -9,7 +9,7 @@ final DateTime now = DateTime(2026, 10, 15);
 MemoItem buildMemo({
   String id = 'm1',
   String vehicleId = 'v1',
-  String vehicleName = '小鹏P7',
+  String vehicleName = 'XPeng P7',
   String registrationDate = '2024-06-10',
   int mileageKm = 20000,
   String? insuranceExpiryDate,
@@ -55,7 +55,7 @@ void main() {
         fail('reminder should not be null');
       }
       expect(reminder.level, 'soon');
-      expect(reminder.text, '小鹏P7 · 上线检测 15 天后到期');
+      expect(reminder.text, 'XPeng P7 · In-person inspection due in 15 days');
     });
 
     test('年检已过期返回 overdue 级提醒', () {
@@ -70,7 +70,10 @@ void main() {
         fail('reminder should not be null');
       }
       expect(reminder.level, 'overdue');
-      expect(reminder.text, '小鹏P7 · 申领检验标志 已到期 44 天');
+      expect(
+        reminder.text,
+        'XPeng P7 · Inspection sticker application 44 days overdue',
+      );
     });
 
     test('保险到期参与提醒（带车辆名）', () {
@@ -89,7 +92,7 @@ void main() {
         fail('reminder should not be null');
       }
       expect(reminder.level, 'soon');
-      expect(reminder.text, '小鹏P7 · 车险 10 天后到期');
+      expect(reminder.text, 'XPeng P7 · Car insurance due in 10 days');
     });
 
     test('维保里程到期（kmRemaining ≤ 0）提示已到保养里程', () {
@@ -104,7 +107,10 @@ void main() {
         fail('reminder should not be null');
       }
       expect(reminder.level, 'overdue');
-      expect(reminder.text, '小鹏P7 · 三电系统检查 已到保养里程');
+      expect(
+        reminder.text,
+        'XPeng P7 · Battery/motor/electronics check: service mileage reached',
+      );
     });
 
     test('多条备忘取最紧急（overdue 优先于 soon）', () {
@@ -131,7 +137,7 @@ void main() {
         fail('reminder should not be null');
       }
       expect(reminder.level, 'overdue');
-      expect(reminder.text, '申领检验标志 已到期 44 天');
+      expect(reminder.text, 'Inspection sticker application 44 days overdue');
     });
   });
 }

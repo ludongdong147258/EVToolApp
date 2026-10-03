@@ -105,7 +105,7 @@ void main() {
           isA<ProfileStorageException>().having(
             (e) => e.message,
             'message',
-            '保存失败',
+            'Failed to save',
           ),
         ),
       );
@@ -135,7 +135,7 @@ void main() {
           isA<ProfileStorageException>().having(
             (e) => e.message,
             'message',
-            '头像路径无效',
+            'Invalid avatar path',
           ),
         ),
       );

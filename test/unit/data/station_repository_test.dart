@@ -169,7 +169,11 @@ void main() {
         throwsA(
           isA<StationServiceException>()
               .having((e) => e.isKeyMissing, 'isKeyMissing', isTrue)
-              .having((e) => e.message, 'message', '未配置地图服务 Key'),
+              .having(
+                (e) => e.message,
+                'message',
+                'Map service key not configured',
+              ),
         ),
       );
       expect(captured, isEmpty);
@@ -223,7 +227,7 @@ void main() {
           isA<StationServiceException>().having(
             (e) => e.message,
             'message',
-            contains('今日位置服务调用次数已达上限'),
+            contains('daily quota'),
           ),
         ),
       );
@@ -244,7 +248,7 @@ void main() {
           isA<StationServiceException>().having(
             (e) => e.message,
             'message',
-            contains('位置服务错误'),
+            contains('Location service error'),
           ),
         ),
       );

@@ -61,35 +61,35 @@ class MaintenanceNodeDef {
 const List<MaintenanceNodeDef> maintenanceNodes = [
   MaintenanceNodeDef(
     id: 'powertrain',
-    label: '三电系统检查',
+    label: 'Battery/motor/electronics check',
     icon: 'build',
     intervalKm: 10000,
     intervalMonths: 12,
   ),
   MaintenanceNodeDef(
     id: 'coolant',
-    label: '冷却液检查更换',
+    label: 'Coolant check & replacement',
     icon: 'speed',
     intervalKm: 40000,
     intervalMonths: 24,
   ),
   MaintenanceNodeDef(
     id: 'brakeFluid',
-    label: '刹车油检查更换',
+    label: 'Brake fluid check & replacement',
     icon: 'warning',
     intervalKm: 40000,
     intervalMonths: 24,
   ),
   MaintenanceNodeDef(
     id: 'tireRotation',
-    label: '轮胎换位检查',
+    label: 'Tire rotation check',
     icon: 'directions_car',
     intervalKm: 10000,
     intervalMonths: 12,
   ),
   MaintenanceNodeDef(
     id: 'tireReplace',
-    label: '轮胎更换（年限）',
+    label: 'Tire replacement (by age)',
     icon: 'task_alt',
     intervalKm: null,
     intervalMonths: tireReplaceMonths,
@@ -116,43 +116,47 @@ const List<ScienceSection> scienceSections = [
   ScienceSection(
     id: 'exempt',
     icon: 'verified_user',
-    title: '什么是 6 年免检',
+    title: 'What is the 6-year inspection exemption',
     lines: [
-      '非营运小微型客车（9 座及以下）10 年内仅需在第 6 年、第 10 年上线检测。',
-      '第 2、4、8 年无需上线，在线申领检验标志即可（交管 12123）。',
-      '免检不等于免申领：检验标志仍需按期在线申领。',
+      'Non-commercial passenger cars (9 seats or fewer) only need in-person inspections in years 6 and 10 within the first 10 years.',
+      'Years 2, 4 and 8 require no in-person inspection — simply claim the inspection sticker online (via the 12123 traffic app).',
+      'Exemption does not mean no application: the inspection sticker must still be claimed online on schedule.',
     ],
   ),
   ScienceSection(
     id: 'online',
     icon: 'directions_car',
-    title: '上线检测查什么',
+    title: 'What the in-person inspection covers',
     lines: [
-      '第 6 / 10 年上线检测包含外观、灯光、制动等项目。',
-      '纯电动车无尾气检测项目，侧重制动、灯光与底盘。',
-      '10 年后每年上线检测一次。',
+      'The year-6 and year-10 in-person inspections cover exterior, lighting, braking and other items.',
+      'Battery electric vehicles have no emissions test; the focus is on brakes, lights and chassis.',
+      'After 10 years, an in-person inspection is required every year.',
     ],
   ),
   ScienceSection(
     id: 'nev',
     icon: 'menu_book',
-    title: '新能源维保要点',
+    title: 'EV maintenance essentials',
     lines: [
-      '三电系统（电池/电机/电控）建议每年或每 1 万公里检查一次。',
-      '冷却液约每 2 年或 4 万公里更换（电池冷却系统）。',
-      '刹车油约每 2 年或 4 万公里检查更换；轮胎建议每 1 万公里换位检查。',
-      '轮胎使用 5~6 年或磨损到限建议更换，以先到为准。',
+      'Have the battery/motor/electronics system checked once a year or every 10,000 km.',
+      'Replace coolant roughly every 2 years or 40,000 km (battery cooling system).',
+      'Check and replace brake fluid roughly every 2 years or 40,000 km; rotate and inspect tires every 10,000 km.',
+      'Replace tires after 5-6 years of use or when worn to the limit, whichever comes first.',
     ],
   ),
 ];
 
 const String memoDisclaimer =
-    '* 以上节点按通用周期估算，仅供参考，不构成维修建议；'
-    '年检政策各地或有差异，请以车管所官方说明为准。';
+    '* The milestones above are generic interval estimates for reference only '
+    'and do not constitute maintenance advice; inspection policies vary by '
+    'region, so refer to your local vehicle administration office.';
 
 const int _msPerDay = 24 * 60 * 60 * 1000;
 
-const Map<String, String> _typeLabels = {'badge': '申领检验标志', 'online': '上线检测'};
+const Map<String, String> _typeLabels = {
+  'badge': 'Inspection sticker application',
+  'online': 'In-person inspection',
+};
 
 /// 完整年检节点表：10 年内计划表 + 第 11~30 年每年上线
 List<InspectionPlanNode> _buildFullPlan() {
@@ -228,7 +232,7 @@ int? diffDays(String dateStr, [DateTime? now]) {
       .round();
 }
 
-/// 中文短日期：同年显示 "9月15日"，跨年显示 "2027年8月25日"（省空间）
+/// 中文短日期：同年显示 "Sep 15"，跨年显示 "Aug 25, 2027"（省空间）
 ///
 /// 入参非法时原样返回（兜底展示）
 String formatCnDate(dynamic dateStr, [DateTime? now]) {
@@ -238,8 +242,8 @@ String formatCnDate(dynamic dateStr, [DateTime? now]) {
   }
   final current = now ?? DateTime.now();
   final sameYear = date.year == current.year;
-  final core = '${date.month}月${date.day}日';
-  return sameYear ? core : '${date.year}年$core';
+  final core = '${monthShortNames[date.month - 1]} ${date.day}';
+  return sameYear ? core : '$core, ${date.year}';
 }
 
 /// 两个日期字符串之间的整天数（from → to，to 在后为正）；任一非法返回 null
@@ -373,12 +377,9 @@ InspectionSchedule? calcInspectionSchedule(
   );
 }
 
-/// 里程格式化：10000 → "1 万"，40000 → "4 万"，其余原样
+/// 里程格式化：10000 → "10,000"（千分位）
 String _formatKm(int km) {
-  if (km >= 10000 && km % 10000 == 0) {
-    return '${km ~/ 10000} 万';
-  }
-  return '$km';
+  return formatAmount(km);
 }
 
 /// 周期年数文本：12 → "1"、24 → "2"、18 → "1.5"
@@ -423,11 +424,11 @@ String _buildHint(
 ) {
   final intervalKm = node.intervalKm;
   final intervalText = intervalKm != null
-      ? '每 ${_formatKm(intervalKm)}公里 / ${_yearsText(node.intervalMonths)} 年'
-      : '建议 ${_yearsText(node.intervalMonths)} 年内更换';
+      ? 'Every ${_formatKm(intervalKm)} km / ${_yearsText(node.intervalMonths)} yr'
+      : 'Replace within ${_yearsText(node.intervalMonths)} yr';
   final triggerText = intervalKm != null && kmRemaining != null
-      ? '再行驶 ${_formatKm(kmRemaining)} 公里或 $nextDueDate 前'
-      : '$nextDueDate 前';
+      ? 'in ${_formatKm(kmRemaining)} km or by ${formatMonthDay(nextDueDate)}'
+      : 'by ${formatMonthDay(nextDueDate)}';
   return '$intervalText · $triggerText';
 }
 

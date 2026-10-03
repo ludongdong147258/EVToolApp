@@ -14,6 +14,7 @@ import 'package:ev_tool_app/core/utils/share_files.dart';
 
 import 'package:ev_tool_app/core/domain/annual_report.dart';
 import 'package:ev_tool_app/core/domain/charge_records.dart';
+import 'package:ev_tool_app/core/domain/date_utils.dart';
 import 'package:ev_tool_app/core/domain/numbers.dart';
 import 'package:ev_tool_app/core/domain/poster.dart';
 import 'package:ev_tool_app/core/extensions/context_extensions.dart';
@@ -61,7 +62,7 @@ class _AnnualReportPageState extends ConsumerState<AnnualReportPage> {
   ) async {
     await showAppSheet<void>(
       context: context,
-      title: '年度报告海报',
+      title: 'Annual Report Poster',
       builder: (sheetContext) => AppSheetScrollBody(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -80,7 +81,7 @@ class _AnnualReportPageState extends ConsumerState<AnnualReportPage> {
             FilledButton.icon(
               onPressed: () => unawaited(_sharePoster()),
               icon: const Icon(Icons.ios_share_rounded, size: 18),
-              label: const Text('保存 / 分享海报'),
+              label: const Text('Save / Share Poster'),
             ),
           ],
         ),
@@ -92,7 +93,9 @@ class _AnnualReportPageState extends ConsumerState<AnnualReportPage> {
   Future<void> _sharePoster() async {
     final renderObject = _posterKey.currentContext?.findRenderObject();
     if (renderObject is! RenderRepaintBoundary) {
-      if (mounted) showAppToast(context, '海报生成中，请稍候重试');
+      if (mounted) {
+        showAppToast(context, 'Poster is still rendering, try again');
+      }
       return;
     }
     try {
@@ -100,7 +103,7 @@ class _AnnualReportPageState extends ConsumerState<AnnualReportPage> {
       final data = await image.toByteData(format: ui.ImageByteFormat.png);
       final bytes = data?.buffer.asUint8List();
       if (bytes == null || bytes.isEmpty) {
-        if (mounted) showAppToast(context, '海报导出失败，请重试');
+        if (mounted) showAppToast(context, 'Poster export failed. Try again');
         return;
       }
       final dir = await getTemporaryDirectory();
@@ -110,8 +113,8 @@ class _AnnualReportPageState extends ConsumerState<AnnualReportPage> {
       if (!mounted) return;
       await shareFiles(context, [XFile(file.path)]);
     } on Exception catch (err) {
-      appLogger.e('海报导出失败', error: err);
-      if (mounted) showAppToast(context, '海报导出失败，请重试');
+      appLogger.e('Poster export failed', error: err);
+      if (mounted) showAppToast(context, 'Poster export failed. Try again');
     }
   }
 
@@ -123,15 +126,15 @@ class _AnnualReportPageState extends ConsumerState<AnnualReportPage> {
     // 两类情况整页空态：从未记录 / 数据被删空
     if (years.isEmpty) {
       return Scaffold(
-        appBar: AppBar(title: const Text('充电年度报告')),
+        appBar: AppBar(title: const Text('Annual Charging Report')),
         body: ListView(
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
           children: [
             EmptyState(
               icon: Icons.insights_rounded,
-              title: '暂无充电数据',
-              subtitle: '添加充电记录后，即可查看你的年度充电报告',
-              ctaText: '去添加记录',
+              title: 'No charging data yet',
+              subtitle: 'Add charging records to see your annual report',
+              ctaText: 'Add Records',
               onCta: () => context.go(RouteNames.records),
             ),
           ],
@@ -145,7 +148,7 @@ class _AnnualReportPageState extends ConsumerState<AnnualReportPage> {
     final percents = calcBarPercents(report.months);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('充电年度报告')),
+      appBar: AppBar(title: const Text('Annual Charging Report')),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
         children: [
@@ -156,7 +159,7 @@ class _AnnualReportPageState extends ConsumerState<AnnualReportPage> {
             children: [
               for (final item in years)
                 _YearChip(
-                  label: '$item年',
+                  label: '$item',
                   isSelected: item == year,
                   onTap: () {
                     unawaited(HapticFeedback.selectionClick());
@@ -173,7 +176,7 @@ class _AnnualReportPageState extends ConsumerState<AnnualReportPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  '$year 年度充电支出',
+                  '$year Annual Charging Spend',
                   style: const TextStyle(
                     fontSize: 13,
                     color: AppColors.onPrimaryA85,
@@ -181,26 +184,22 @@ class _AnnualReportPageState extends ConsumerState<AnnualReportPage> {
                   ),
                 ),
                 const SizedBox(height: 8),
-                HeroValue(value: formatYuan(report.totalCost), unit: '¥'),
+                HeroValue(value: formatMoney(report.totalCost)),
                 const SizedBox(height: 16),
                 HeroStatsRow(
                   items: [
+                    HeroStatItem(label: 'Sessions', value: '${report.count}'),
                     HeroStatItem(
-                      label: '充电次数',
-                      value: '${report.count}',
-                      unit: '次',
-                    ),
-                    HeroStatItem(
-                      label: '总电量',
+                      label: 'Total Energy',
                       value: formatYuan(report.totalEnergy),
                       unit: 'kWh',
                     ),
                     HeroStatItem(
-                      label: '度电均价',
+                      label: 'Avg Cost per kWh',
                       value: report.costPerKwh == null
                           ? '--'
-                          : formatYuan(report.costPerKwh!),
-                      unit: '¥/kWh',
+                          : formatMoney(report.costPerKwh!),
+                      unit: '/kWh',
                     ),
                   ],
                 ),
@@ -212,8 +211,8 @@ class _AnnualReportPageState extends ConsumerState<AnnualReportPage> {
           // 月度费用柱状图（12 柱）
           _SectionCard(
             icon: Icons.bar_chart_rounded,
-            title: '月度费用',
-            hint: '单位：元',
+            title: 'Monthly Cost',
+            hint: 'in USD',
             child: MonthBarChart(
               bars: [
                 for (var i = 0; i < report.months.length; i++)
@@ -246,7 +245,7 @@ class _AnnualReportPageState extends ConsumerState<AnnualReportPage> {
             onPressed: () =>
                 unawaited(_openPosterSheet(report, records.length)),
             icon: const Icon(Icons.insights_rounded, size: 18),
-            label: const Text('生成分享海报'),
+            label: const Text('Create Share Poster'),
           ),
         ],
       ),
@@ -371,8 +370,8 @@ class _SplitCard extends StatelessWidget {
 
     return _SectionCard(
       icon: Icons.bolt_rounded,
-      title: '充电方式占比',
-      hint: '按充电次数',
+      title: 'Charging Mix',
+      hint: 'by sessions',
       child: Column(
         children: [
           ClipRRect(
@@ -403,14 +402,14 @@ class _SplitCard extends StatelessWidget {
           if (report.fast.count > 0)
             _SplitRow(
               dotColor: palette.primary,
-              label: '快充',
+              label: 'Fast (DC)',
               summary: report.fast,
               totalCount: totalCount,
             ),
           if (report.home.count > 0)
             _SplitRow(
               dotColor: AppColors.amber,
-              label: '家充',
+              label: 'Home (AC)',
               summary: report.home,
               totalCount: totalCount,
             ),
@@ -455,7 +454,7 @@ class _SplitRow extends StatelessWidget {
           ),
           const Spacer(),
           Text(
-            '${summary.count}次 · ¥${formatYuan(summary.totalCost)} · $percent%',
+            '${summary.count} · ${formatMoney(summary.totalCost)} · $percent%',
             style: TextStyle(
               fontSize: 12,
               fontWeight: FontWeight.w600,
@@ -483,42 +482,42 @@ class _BestCard extends StatelessWidget {
 
     return _SectionCard(
       icon: Icons.trending_up_rounded,
-      title: '年度之最',
+      title: 'Year Highlights',
       child: maxCost == null
           ? Text(
-              '暂无数据',
+              'No data yet',
               style: TextStyle(fontSize: 13, color: palette.textHint),
             )
           : Column(
               children: [
                 _BestRow(
                   icon: Icons.star_rounded,
-                  label: '单次最高花费',
-                  value: '¥${formatYuan(maxCost.cost)}',
+                  label: 'Most Expensive Session',
+                  value: formatMoney(maxCost.cost),
                   sub: [
                     formatRecordDate(maxCost.date),
                     typeDefaultTitles[maxCost.type] ?? '',
-                    '${formatYuan(maxCost.energy)}kWh',
+                    '${formatYuan(maxCost.energy)} kWh',
                   ].where((part) => part.isNotEmpty).join(' · '),
                 ),
                 if (maxEnergy != null)
                   _BestRow(
                     icon: Icons.battery_charging_full_rounded,
-                    label: '单次最多电量',
+                    label: 'Most Energy in a Session',
                     value: '${formatYuan(maxEnergy.energy)} kWh',
                     sub: [
                       formatRecordDate(maxEnergy.date),
-                      '¥${formatYuan(maxEnergy.cost)}',
+                      formatMoney(maxEnergy.cost),
                     ].join(' · '),
                   ),
                 if (topMonth != null)
                   _BestRow(
                     icon: Icons.trending_up_rounded,
-                    label: '最活跃月份',
-                    value:
-                        '${int.tryParse(topMonth.monthKey?.substring(5) ?? '') ?? 0}月',
+                    label: 'Most Active Month',
+                    value: formatMonthLabel(topMonth.monthKey),
                     sub:
-                        '充电 ${topMonth.count} 次 · ¥${formatYuan(topMonth.totalCost)}',
+                        '${topMonth.count} charges · '
+                        '${formatMoney(topMonth.totalCost)}',
                     isLast: true,
                   ),
               ],

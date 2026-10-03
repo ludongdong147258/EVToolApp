@@ -68,7 +68,14 @@ Future<void> _pumpPage(WidgetTester tester, ProviderContainer container) async {
 }
 
 void main() {
-  final tabTitles = ['充电枪', '随车充', '家充桩', '车载配件', '充电线材', '应急电源'];
+  final tabTitles = [
+    'Charging gun',
+    'Travel charger',
+    'Home charging station',
+    'Car accessories',
+    'Charging cables',
+    'Jump starters',
+  ];
 
   testWidgets('空数据时渲染 6 个分类 Tab 与空态', (tester) async {
     final container = await _bootstrap(FakeGoodsRepository());
@@ -78,8 +85,8 @@ void main() {
     for (final title in tabTitles) {
       expect(find.text(title), findsOneWidget);
     }
-    expect(find.text('暂无商品'), findsOneWidget);
-    expect(find.text('重新加载'), findsOneWidget);
+    expect(find.text('No products yet'), findsOneWidget);
+    expect(find.text('Reload'), findsOneWidget);
   });
 
   testWidgets('加载失败时 toast 提示并保留空态', (tester) async {
@@ -90,11 +97,11 @@ void main() {
     await tester.pump(); // 构建 toast 弹层
 
     // toast 弹层出现后随 2s 定时器关闭
-    expect(find.text('加载失败'), findsOneWidget);
+    expect(find.text('Failed to load'), findsOneWidget);
     await tester.pump(const Duration(seconds: 2));
     await tester.pumpAndSettle();
-    expect(find.text('加载失败'), findsNothing);
-    expect(find.text('暂无商品'), findsOneWidget);
+    expect(find.text('Failed to load'), findsNothing);
+    expect(find.text('No products yet'), findsOneWidget);
   });
 
   testWidgets('点击其他分类 Tab 触发对应关键词加载', (tester) async {
@@ -104,10 +111,11 @@ void main() {
     await tester.pumpAndSettle();
     expect(fake.callCount, 1);
 
-    await tester.tap(find.text('应急电源'));
+    await tester.tap(find.text('Jump starters'));
     await tester.pumpAndSettle();
 
     expect(fake.callCount, 2);
+    // API 查询关键词保持中文（拼多多搜索词）
     expect(fake.keywords, contains('应急电源'));
   });
 }

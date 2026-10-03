@@ -28,7 +28,7 @@ class LegalDocPage extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
-                    '更新日期：$legalUpdatedAt',
+                    'Last updated: $legalUpdatedAt',
                     style: TextStyle(fontSize: 12, color: palette.textHint),
                   ),
                   for (final section in sections) ...[

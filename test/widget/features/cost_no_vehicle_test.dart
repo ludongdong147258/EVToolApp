@@ -44,17 +44,17 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    // 无车：字段始终显示（值「暂不关联」），无提示行/去添加按钮
+    // 无车：字段始终显示（值「No vehicle」），无提示行/去添加按钮
     expect(find.byIcon(Icons.directions_car_rounded), findsOneWidget);
-    expect(find.text('暂不关联'), findsOneWidget);
-    expect(find.text('去添加'), findsNothing);
+    expect(find.text('No vehicle'), findsOneWidget);
+    expect(find.text('Add vehicle'), findsNothing);
 
-    // 点开弹层：无车时只有「暂不关联」可选
-    // （字段本身也显示「暂不关联」，弹层打开后共 2 处）
+    // 点开弹层：无车时只有「No vehicle」可选
+    // （字段本身也显示「No vehicle」，弹层打开后共 2 处）
     await tester.tap(find.byIcon(Icons.directions_car_rounded));
     await tester.pumpAndSettle();
-    expect(find.text('选择车辆'), findsOneWidget);
-    expect(find.text('暂不关联'), findsWidgets);
+    expect(find.text('Choose vehicle'), findsOneWidget);
+    expect(find.text('No vehicle'), findsWidgets);
   });
 
   testWidgets('添加车辆后字段自动预选默认车', (tester) async {
@@ -71,11 +71,11 @@ void main() {
     // 模拟用户在车辆页经 vehiclesProvider 添加了默认车
     await container
         .read(vehiclesProvider.notifier)
-        .add(_vehicle('v1', '小海豹', isDefault: true));
+        .add(_vehicle('v1', 'My EV', isDefault: true));
     await tester.pumpAndSettle();
 
-    // 字段值由「暂不关联」切换为默认车名
+    // 字段值由「No vehicle」切换为默认车名
     expect(find.byIcon(Icons.directions_car_rounded), findsOneWidget);
-    expect(find.text('小海豹'), findsOneWidget);
+    expect(find.text('My EV'), findsOneWidget);
   });
 }

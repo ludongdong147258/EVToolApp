@@ -68,13 +68,15 @@ class _WarrantyHandbookPageState extends State<WarrantyHandbookPage> {
         .length;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('三电质保政策手册')),
+      appBar: AppBar(title: const Text('EV Warranty Handbook')),
       body: ListView(
         controller: _scrollController,
         padding: const EdgeInsets.all(16),
         children: [
           Text(
-            '买车前先看三电质保：年限里程、终身质保门槛、电池衰减标准与过户权益一查便知。',
+            'Check battery/motor/electronics warranty before buying: term and '
+            'mileage limits, lifetime warranty conditions, degradation '
+            'standards, and transfer rights at a glance.',
             style: TextStyle(fontSize: 13, color: palette.textSecondary),
           ),
           const SizedBox(height: 12),
@@ -86,7 +88,7 @@ class _WarrantyHandbookPageState extends State<WarrantyHandbookPage> {
                   children: [
                     Expanded(
                       child: Text(
-                        '主流车企三电质保速查',
+                        'Warranty quick reference by brand',
                         style: TextStyle(
                           fontSize: 13,
                           color: AppColors.onPrimaryA85,
@@ -95,7 +97,7 @@ class _WarrantyHandbookPageState extends State<WarrantyHandbookPage> {
                       ),
                     ),
                     Text(
-                      '仅供参考 · $warrantyDataDate',
+                      'Reference only · $warrantyDataDate',
                       style: TextStyle(
                         fontSize: 11,
                         color: AppColors.onPrimaryA85,
@@ -104,24 +106,24 @@ class _WarrantyHandbookPageState extends State<WarrantyHandbookPage> {
                   ],
                 ),
                 const SizedBox(height: 8),
-                HeroValue(value: '${warrantyBrands.length}', unit: '家'),
+                HeroValue(value: '${warrantyBrands.length}', unit: 'brands'),
                 const SizedBox(height: 16),
                 HeroStatsRow(
                   items: [
                     HeroStatItem(
-                      label: '终身质保',
+                      label: 'Lifetime',
                       value: '$lifetimeCount',
-                      unit: '家',
+                      unit: 'brands',
                     ),
                     HeroStatItem(
-                      label: '过户失效',
+                      label: 'Void on transfer',
                       value: '$transferVoidCount',
-                      unit: '家',
+                      unit: 'brands',
                     ),
                     HeroStatItem(
-                      label: '衰减阈值',
+                      label: 'Degradation',
                       value: '$degradationCount',
-                      unit: '家',
+                      unit: 'brands',
                     ),
                   ],
                 ),

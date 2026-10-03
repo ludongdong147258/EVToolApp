@@ -25,8 +25,8 @@ import 'package:ev_tool_app/features/records/presentation/providers/records_prov
 
 /// 周期筛选（报表按月度或年度聚合）。
 const List<(String, String)> _modeFilters = <(String, String)>[
-  ('month', '月度'),
-  ('year', '年度'),
+  ('month', 'Monthly'),
+  ('year', 'Yearly'),
 ];
 
 /// 充电 + 养车两类账单的可用月份并集（降序去重），供月度切换确定边界。
@@ -138,10 +138,10 @@ class _CostReportPageState extends ConsumerState<CostReportPage> {
           text: buildReportTextLine(breakdown, total, periodLabel: periodLabel),
         ),
       );
-      if (mounted) showAppToast(context, '小结已复制');
+      if (mounted) showAppToast(context, 'Summary copied');
     } on Exception catch (err) {
-      appLogger.e('复制小结失败', error: err);
-      if (mounted) showAppToast(context, '复制失败，请重试');
+      appLogger.e('Failed to copy summary', error: err);
+      if (mounted) showAppToast(context, 'Copy failed, please try again');
     }
   }
 
@@ -157,15 +157,17 @@ class _CostReportPageState extends ConsumerState<CostReportPage> {
     /* 两类账单均无数据 → 整页空态（同年度报告页模式） */
     if (records.isEmpty && expenses.isEmpty) {
       return Scaffold(
-        appBar: AppBar(title: const Text('综合费用统计')),
+        appBar: AppBar(title: const Text('Cost Report')),
         body: ListView(
           padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
           children: [
             EmptyState(
               icon: Icons.bar_chart_rounded,
-              title: '暂无账单数据',
-              subtitle: '记一笔充电或养车支出后，这里将展示综合统计',
-              ctaText: '去记一笔',
+              title: 'No data yet',
+              subtitle:
+                  'Add a charge or expense record to see your '
+                  'combined stats here',
+              ctaText: 'Add a record',
               onCta: () => context.go(RouteNames.records),
             ),
           ],
@@ -208,7 +210,7 @@ class _CostReportPageState extends ConsumerState<CostReportPage> {
         ? ((summary.expenseTotal / summary.total) * 100).round()
         : 0;
     final monthLabel = formatMonthLabel(_monthKey);
-    final periodLabel = isMonthMode ? monthLabel : '$_year年度';
+    final periodLabel = isMonthMode ? monthLabel : '$_year';
 
     /* 年度模式：月度趋势柱状图数据（充电 + 养车按月合并） */
     final monthlyTotals = isMonthMode
@@ -216,7 +218,7 @@ class _CostReportPageState extends ConsumerState<CostReportPage> {
         : calcCombinedMonthlyTotals(chargeRecords, periodExpenses, _year);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('综合费用统计')),
+      appBar: AppBar(title: const Text('Cost Report')),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
         children: [
@@ -226,7 +228,7 @@ class _CostReportPageState extends ConsumerState<CostReportPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  '$periodLabel · 用车总花费',
+                  '$periodLabel · Total spend',
                   style: const TextStyle(
                     fontSize: 13,
                     color: AppColors.onPrimaryA85,
@@ -234,22 +236,20 @@ class _CostReportPageState extends ConsumerState<CostReportPage> {
                   ),
                 ),
                 const SizedBox(height: 8),
-                HeroValue(value: formatYuan(summary.total), unit: '¥'),
+                HeroValue(value: formatMoney(summary.total)),
                 const SizedBox(height: 16),
                 HeroStatsRow(
                   items: [
                     HeroStatItem(
-                      label: '充电',
-                      value: formatYuan(summary.chargeTotal),
-                      unit: '元',
+                      label: chargeTypeLabel,
+                      value: formatMoney(summary.chargeTotal),
                     ),
                     HeroStatItem(
-                      label: '养车支出',
-                      value: formatYuan(summary.expenseTotal),
-                      unit: '元',
+                      label: 'Maintenance',
+                      value: formatMoney(summary.expenseTotal),
                     ),
                     HeroStatItem(
-                      label: '养车占比',
+                      label: 'Maintenance share',
                       value: summary.total > 0 ? '$expensePercent%' : '--',
                     ),
                   ],
@@ -288,9 +288,9 @@ class _CostReportPageState extends ConsumerState<CostReportPage> {
           _PeriodCard(
             label: isMonthMode
                 ? (_monthKey == currentMonthKey
-                      ? '$monthLabel · 本月'
+                      ? '$monthLabel · This month'
                       : monthLabel)
-                : (_year == currentYear ? '$_year年 · 今年' : '$_year年'),
+                : (_year == currentYear ? '$_year · This year' : '$_year'),
             canGoPrev: isMonthMode ? canGoPrevMonth : canGoPrevYear,
             canGoNext: isMonthMode ? canGoNextMonth : canGoNextYear,
             onPrev: isMonthMode
@@ -303,9 +303,11 @@ class _CostReportPageState extends ConsumerState<CostReportPage> {
           if (summary.total == 0)
             EmptyState(
               icon: Icons.bar_chart_rounded,
-              title: '该周期暂无支出',
-              subtitle: '记一笔充电或养车支出后，这里将展示综合统计',
-              ctaText: '去记一笔',
+              title: 'No spend in this period',
+              subtitle:
+                  'Add a charge or expense record to see your '
+                  'combined stats here',
+              ctaText: 'Add a record',
               onCta: () => context.go(RouteNames.records),
             )
           else ...[
@@ -330,14 +332,14 @@ class _CostReportPageState extends ConsumerState<CostReportPage> {
                         const SizedBox(width: 6),
                         Expanded(
                           child: Text(
-                            '分项占比',
+                            'Breakdown',
                             style: context.textTheme.titleSmall?.copyWith(
                               fontWeight: FontWeight.w600,
                             ),
                           ),
                         ),
                         Text(
-                          '按金额',
+                          'By amount',
                           style: TextStyle(
                             fontSize: 12,
                             color: palette.textHint,
@@ -406,7 +408,7 @@ class _CostReportPageState extends ConsumerState<CostReportPage> {
                                 ),
                                 const SizedBox(width: 2),
                                 Text(
-                                  '复制',
+                                  'Copy',
                                   style: TextStyle(
                                     fontSize: 12,
                                     color: palette.textHint,
@@ -466,15 +468,11 @@ class _TrendCard extends StatelessWidget {
                 const SizedBox(width: 6),
                 Expanded(
                   child: Text(
-                    '月度趋势',
+                    'Monthly trend',
                     style: context.textTheme.titleSmall?.copyWith(
                       fontWeight: FontWeight.w600,
                     ),
                   ),
-                ),
-                Text(
-                  '单位：元',
-                  style: TextStyle(fontSize: 12, color: palette.textHint),
                 ),
               ],
             ),
@@ -487,7 +485,7 @@ class _TrendCard extends StatelessWidget {
                     percent: percents[i],
                     hasData: monthlyTotals[i].count > 0,
                     valueLabel: monthlyTotals[i].count > 0
-                        ? formatAmount(monthlyTotals[i].totalCost)
+                        ? formatMoney(monthlyTotals[i].totalCost)
                         : '',
                   ),
               ],
@@ -618,8 +616,9 @@ class _LegendRow extends StatelessWidget {
             const SizedBox(width: 8),
             Expanded(
               child: Text(
-                '${item.count}笔 · ¥${formatYuan(item.totalAmount)} · ${item.percent}%'
-                '${isCharge ? ' · 明细见充电记录' : ''}',
+                '${item.count} entries · ${formatMoney(item.totalAmount)}'
+                ' · ${item.percent}%'
+                '${isCharge ? ' · see charging records' : ''}',
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 textAlign: TextAlign.end,

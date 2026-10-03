@@ -21,7 +21,7 @@ class ToolUsageRepository {
     try {
       raw = _kv.getJsonList(storageKey);
     } on Exception catch (e) {
-      appLogger.e('读取工具使用记录失败', error: e);
+      appLogger.e('Failed to load recent tools', error: e);
       return const <String>[];
     }
     if (raw == null) return const <String>[];
@@ -40,7 +40,7 @@ class ToolUsageRepository {
     try {
       await _kv.setJson(storageKey, next);
     } on Exception catch (e) {
-      appLogger.e('保存工具使用记录失败', error: e);
+      appLogger.e('Failed to save recent tools', error: e);
     }
   }
 }

@@ -239,11 +239,11 @@ void main() {
         fail('breakdown should not be null');
       }
       expect(breakdown.items.length, 3);
-      expect(breakdown.items[0].label, '常温');
+      expect(breakdown.items[0].label, 'Mild');
       expect(breakdown.items[0].factor, 1);
-      expect(breakdown.items[1].label, '综合');
+      expect(breakdown.items[1].label, 'Mixed');
       expect(breakdown.items[1].factor, 0.9);
-      expect(breakdown.items[2].label, '关闭');
+      expect(breakdown.items[2].label, 'Off');
       expect(breakdown.items[2].factor, 1);
       expect(breakdown.total, 0.9);
     });
@@ -264,11 +264,11 @@ void main() {
         fail('breakdown should not be null');
       }
       expect(breakdown.items.length, 3);
-      expect(breakdown.items[0].label, '严寒 ≤-10℃');
+      expect(breakdown.items[0].label, 'Freezing ≤-10°C');
       expect(breakdown.items[0].factor, 0.65);
-      expect(breakdown.items[1].label, '高速');
+      expect(breakdown.items[1].label, 'Highway');
       expect(breakdown.items[1].factor, 0.75);
-      expect(breakdown.items[2].label, '开启');
+      expect(breakdown.items[2].label, 'On');
       expect(breakdown.items[2].factor, 0.92);
       expect(breakdown.total, 0.45);
     });

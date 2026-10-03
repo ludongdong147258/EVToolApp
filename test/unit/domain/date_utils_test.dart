@@ -112,4 +112,25 @@ void main() {
       expect(monthKeyRe.hasMatch('2025-08-01'), isFalse);
     });
   });
+
+  group('英文日期格式化 helper', () {
+    test('formatMonthDay → "Aug 28"', () {
+      expect(formatMonthDay('2026-08-28'), 'Aug 28');
+      expect(formatMonthDay('2026-01-01'), 'Jan 1');
+      expect(formatMonthDay('bad'), '');
+      expect(formatMonthDay(null), '');
+    });
+
+    test('formatFullDate → "Aug 28, 2026"', () {
+      expect(formatFullDate('2026-08-28'), 'Aug 28, 2026');
+      expect(formatFullDate(''), '');
+    });
+
+    test('formatMonthLabel → "Aug 2026"', () {
+      expect(formatMonthLabel('2026-08'), 'Aug 2026');
+      expect(formatMonthLabel('2026-12'), 'Dec 2026');
+      expect(formatMonthLabel('whatever'), 'whatever');
+      expect(formatMonthLabel(null), '');
+    });
+  });
 }

@@ -64,7 +64,7 @@ class _EquipmentPageState extends ConsumerState<EquipmentPage> {
     var dontShowAgain = false;
     await showAppSheet(
       context: context,
-      title: '温馨提醒',
+      title: 'Friendly reminder',
       builder: (sheetContext) => StatefulBuilder(
         builder: (sheetContext, setSheetState) => Column(
           mainAxisSize: MainAxisSize.min,
@@ -93,7 +93,7 @@ class _EquipmentPageState extends ConsumerState<EquipmentPage> {
                       ),
                     ),
                     const SizedBox(width: 8),
-                    const Text('不再提示'),
+                    const Text("Don't show again"),
                   ],
                 ),
               ),
@@ -106,7 +106,7 @@ class _EquipmentPageState extends ConsumerState<EquipmentPage> {
                 }
                 Navigator.of(sheetContext).pop();
               },
-              child: const Text('我已知晓'),
+              child: const Text('Got it'),
             ),
           ],
         ),
@@ -118,7 +118,7 @@ class _EquipmentPageState extends ConsumerState<EquipmentPage> {
     try {
       await _repo.markTipDismissed();
     } on Exception catch (e) {
-      appLogger.w('装备免责提示标记保存失败：$e');
+      appLogger.w('Failed to persist equipment tip dismissed flag: $e');
     }
   }
 
@@ -151,12 +151,12 @@ class _EquipmentPageState extends ConsumerState<EquipmentPage> {
         _loadingMap[tabIndex] = false;
       });
     } on GoodsException catch (e) {
-      appLogger.w('装备商品加载失败：$e');
+      appLogger.w('Failed to load goods: $e');
       if (!mounted) {
         return;
       }
       setState(() => _loadingMap[tabIndex] = false);
-      showAppToast(context, '加载失败');
+      showAppToast(context, 'Failed to load');
     }
   }
 
@@ -182,9 +182,9 @@ class _EquipmentPageState extends ConsumerState<EquipmentPage> {
         _hasMoreMap[_currentTab] = list.length >= goodsPageSize;
       });
     } on GoodsException catch (e) {
-      appLogger.w('装备商品刷新失败：$e');
+      appLogger.w('Failed to refresh goods: $e');
       if (mounted) {
-        showAppToast(context, '刷新失败，请检查网络');
+        showAppToast(context, 'Refresh failed — check your network');
       }
     }
   }
@@ -210,7 +210,7 @@ class _EquipmentPageState extends ConsumerState<EquipmentPage> {
     final isEmpty = !isLoading && (goods == null || goods.isEmpty);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('装备导购'), centerTitle: true),
+      appBar: AppBar(title: const Text('Charging Gear'), centerTitle: true),
       body: Column(
         children: [
           _buildTabs(context),
@@ -309,9 +309,9 @@ class _EquipmentPageState extends ConsumerState<EquipmentPage> {
       child: EmptyState(
         compact: true,
         icon: Icons.shopping_bag_outlined,
-        title: '暂无商品',
-        subtitle: '下拉可刷新，或点击重试',
-        ctaText: '重新加载',
+        title: 'No products yet',
+        subtitle: 'Pull down to refresh, or tap to retry',
+        ctaText: 'Reload',
         onCta: () => unawaited(_fetchGoods(_currentTab)),
       ),
     );
@@ -342,7 +342,7 @@ class _EquipmentPageState extends ConsumerState<EquipmentPage> {
             Padding(
               padding: const EdgeInsets.symmetric(vertical: 16),
               child: Text(
-                isLoading ? '加载中...' : (hasMore ? '' : '没有更多了'),
+                isLoading ? 'Loading...' : (hasMore ? '' : 'No more items'),
                 style: context.textTheme.bodySmall?.copyWith(
                   color: palette.textHint,
                 ),

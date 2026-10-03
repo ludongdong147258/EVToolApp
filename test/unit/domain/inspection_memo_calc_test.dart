@@ -75,8 +75,8 @@ void main() {
 
   group('formatCnDate', () {
     test('同年显示月日，跨年带年份', () {
-      expect(formatCnDate('2026-09-15', now), '9月15日');
-      expect(formatCnDate('2027-08-25', now), '2027年8月25日');
+      expect(formatCnDate('2026-09-15', now), 'Sep 15');
+      expect(formatCnDate('2027-08-25', now), 'Aug 25, 2027');
     });
 
     test('非法输入原样返回（兜底展示）', () {
@@ -103,7 +103,7 @@ void main() {
       }
       expect(next.key, 'y2');
       expect(next.type, 'badge');
-      expect(next.typeLabel, '申领检验标志');
+      expect(next.typeLabel, 'Inspection sticker application');
       expect(next.daysRemaining, 365);
       expect(next.status, 'normal');
       expect(schedule.latestPast, isNull);
@@ -130,7 +130,7 @@ void main() {
       }
       expect(next.key, 'y6');
       expect(next.type, 'online');
-      expect(next.typeLabel, '上线检测');
+      expect(next.typeLabel, 'In-person inspection');
     });
 
     test('距下次年检不超过 30 天时状态为 soon', () {
@@ -363,12 +363,15 @@ void main() {
       if (coolant == null) {
         fail('coolant should not be null');
       }
-      expect(coolant.hint, '每 4 万公里 / 2 年 · 再行驶 30500 公里或 2028-01-15 前');
+      expect(
+        coolant.hint,
+        'Every 40,000 km / 2 yr · in 30,500 km or by Jan 15',
+      );
       final tire = nodes.where((node) => node.id == 'tireReplace').firstOrNull;
       if (tire == null) {
         fail('tire should not be null');
       }
-      expect(tire.hint, '建议 5 年内更换 · 2031-01-15 前');
+      expect(tire.hint, 'Replace within 5 yr · by Jan 15');
     });
   });
 
@@ -376,7 +379,7 @@ void main() {
     const validMemo = MemoInput(
       id: 'memo-1',
       vehicleId: 'vehicle-1',
-      vehicleName: '我的电车',
+      vehicleName: 'My EV',
       registrationDate: '2024-06-01',
       mileageKm: 12345,
       createdAt: 1750000000000,
@@ -390,7 +393,7 @@ void main() {
       }
       expect(memo.id, 'memo-1');
       expect(memo.vehicleId, 'vehicle-1');
-      expect(memo.vehicleName, '我的电车');
+      expect(memo.vehicleName, 'My EV');
       expect(memo.registrationDate, '2024-06-01');
       expect(memo.mileageKm, 12345);
       expect(memo.insuranceExpiryDate, isNull);
@@ -514,7 +517,7 @@ void main() {
 
     test('MEMO_DISCLAIMER 非空且包含车管所提示', () {
       expect(memoDisclaimer.length, greaterThan(0));
-      expect(memoDisclaimer.contains('车管所'), isTrue);
+      expect(memoDisclaimer.contains('vehicle administration office'), isTrue);
     });
   });
 }

@@ -42,9 +42,9 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('养车支出'), findsWidgets);
-    expect(find.text('暂无养车支出'), findsOneWidget);
-    expect(find.text('记一笔支出'), findsOneWidget);
+    expect(find.text('Maintenance Costs'), findsWidgets);
+    expect(find.text('No expenses yet'), findsOneWidget);
+    expect(find.text('Add expense'), findsOneWidget);
   });
 
   testWidgets('cost_list_page 有支出时展示 hero 汇总与卡片', (tester) async {
@@ -58,7 +58,7 @@ void main() {
             'type': 'parking',
             'date': '$month-15',
             'amount': 20,
-            'note': '小区月停车费',
+            'note': 'Monthly parking fee',
             'vehicleId': null,
             'vehicleName': null,
             'createdAt': 1,
@@ -85,14 +85,14 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('本月 · 养车支出'), findsOneWidget);
-    expect(find.text('支出笔数'), findsOneWidget);
-    expect(find.text('最高单笔·保险费'), findsOneWidget);
-    expect(find.text('停车费'), findsWidgets); // 筛选 chip + 卡片各一处
-    expect(find.text('小区月停车费'), findsOneWidget);
-    expect(find.text('本月 · 2 条'), findsOneWidget);
-    expect(find.text('-¥20.00'), findsOneWidget);
-    expect(find.text('-¥3,600.00'), findsOneWidget);
+    expect(find.text('This Month · Expenses'), findsOneWidget);
+    expect(find.text('Count'), findsOneWidget);
+    expect(find.text('Largest · Insurance'), findsOneWidget);
+    expect(find.text('Parking'), findsWidgets); // 筛选 chip + 卡片各一处
+    expect(find.text('Monthly parking fee'), findsOneWidget);
+    expect(find.text('This Month · 2 entries'), findsOneWidget);
+    expect(find.text('-\$20.00'), findsOneWidget);
+    expect(find.text('-\$3,600.00'), findsOneWidget);
   });
 
   testWidgets('cost_add_page 金额校验：空金额保存报行内错误', (tester) async {
@@ -109,15 +109,15 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('新增养车支出'), findsOneWidget);
-    expect(find.text('保养维修'), findsOneWidget);
-    expect(find.text('保存账单'), findsOneWidget);
+    expect(find.text('Add Expense'), findsOneWidget);
+    expect(find.text('Maintenance & Repair'), findsOneWidget);
+    expect(find.text('Save'), findsOneWidget);
 
-    await tester.tap(find.text('保存账单'));
+    await tester.tap(find.text('Save'));
     await tester.pump();
 
-    expect(find.text('请输入有效金额'), findsOneWidget);
-    expect(find.text('请检查标红字段'), findsOneWidget);
+    expect(find.text('Enter a valid amount'), findsOneWidget);
+    expect(find.text('Please check the highlighted fields'), findsOneWidget);
     // 快进 toast 自动关闭，清掉挂起的 2s 定时器
     await tester.pump(const Duration(seconds: 2));
     await tester.pump();
@@ -138,7 +138,7 @@ void main() {
 
     await tester.enterText(find.byType(TextField).at(0), '20.5');
     await tester.pump();
-    await tester.tap(find.text('保存账单'));
+    await tester.tap(find.text('Save'));
     await tester.pump(); // 保存 + toast 弹出
     await tester.pump(const Duration(milliseconds: 100));
 

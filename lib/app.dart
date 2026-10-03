@@ -18,6 +18,8 @@ class EvToolApp extends ConsumerWidget {
     return MaterialApp.router(
       title: AppConstants.appName,
       debugShowCheckedModeBanner: false,
+      locale: const Locale('en'),
+      supportedLocales: const [Locale('en')],
       theme: AppTheme.light(accent),
       darkTheme: AppTheme.dark(accent),
       themeMode: settings.mode,

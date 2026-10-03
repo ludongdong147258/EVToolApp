@@ -1,31 +1,35 @@
-/// 附近充电桩纯函数（无 Flutter 依赖，可测）
+/// Pure functions for nearby charging stations (no Flutter dependency,
+/// testable).
 ///
-/// 移植自 EVTool 小程序 src/lib/stations.js。
-/// 数据流：腾讯位置服务 place/search POI → [normalizeStation] → Station
-/// → [sortStationsByDistance] → [buildMapMarkers]（地图 markers）。
+/// Ported from the EVTool mini-program src/lib/stations.js.
+/// Data flow: Tencent LBS place/search POI → [normalizeStation] → Station
+/// → [sortStationsByDistance] → [buildMapMarkers] (map markers).
 library;
 
 import 'dart:math' as math;
 
-/// 地球平均半径（米）
+/// Mean earth radius (meters).
 const double earthRadiusMeters = 6371000;
 
-/// 距离换算：km 以下展示米
+/// Distance formatting: below 1km show meters.
 const int _kmThreshold = 1000;
 
-/// 缓存有效期：充电桩变动慢，30 分钟内同位置直接复用
+/// Cache TTL: charging stations change slowly, reuse the same-position
+/// result for 30 minutes.
 const int cacheTtlMs = 30 * 60 * 1000;
 
-/// 坐标分格精度：2 位小数 ≈ 1.1km，与 1km 搜索半径匹配
+/// Coordinate cell precision: 2 decimals ≈ 1.1km, matching the 1km
+/// search radius.
 const int _cacheCellDecimals = 2;
 
-/// 品牌选中态气泡底色（与原项目 constants.js COLORS.PRIMARY_CONTAINER 对齐）
+/// Brand-selected callout background color (aligned with the original
+/// project constants.js COLORS.PRIMARY_CONTAINER).
 const String _primaryContainerColor = '#059669';
 
-/// 气泡文字/描边白色（与原项目 constants.js COLORS.WHITE 对齐）
+/// Callout text/border white (aligned with constants.js COLORS.WHITE).
 const String _whiteColor = '#FFFFFF';
 
-/// 经纬度坐标点
+/// A latitude/longitude coordinate point.
 class LatLng {
   const LatLng({required this.latitude, required this.longitude});
 
@@ -33,7 +37,7 @@ class LatLng {
   final double longitude;
 }
 
-/// 归一化后的充电站
+/// A normalized charging station.
 class Station {
   const Station({
     required this.id,
@@ -53,11 +57,11 @@ class Station {
   final double latitude;
   final double longitude;
 
-  /// 距原点距离（米）；无法计算时为 null（排序时排尾）
+  /// Distance from the origin (meters); null when uncomputable (sorted last).
   final double? distance;
   final String category;
 
-  /// 返回仅替换 distance 的新实例（不可变）
+  /// Returns a new instance with only distance replaced (immutable).
   Station copyWith({double? distance}) => Station(
     id: id,
     name: name,
@@ -70,7 +74,8 @@ class Station {
   );
 }
 
-/// 地图 marker 气泡（选中站点的品牌样式常显气泡）
+/// A map marker callout (brand-styled always-on bubble for the selected
+/// station).
 class MarkerCallout {
   const MarkerCallout({
     required this.content,
@@ -97,7 +102,8 @@ class MarkerCallout {
   final String textAlign;
 }
 
-/// 地图 marker（下标即 marker id，页面通过下标回查 station）
+/// A map marker (the array index is the marker id; the page looks the
+/// station back up by index).
 class StationMarker {
   const StationMarker({
     required this.id,
@@ -118,13 +124,14 @@ class StationMarker {
   final int width;
   final int height;
 
-  /// 圆形徽章锚点居中，打点精确压在坐标上
+  /// Circular badge anchor centered so the pin sits exactly on the
+  /// coordinate.
   final double anchorX;
   final double anchorY;
   final MarkerCallout? callout;
 }
 
-/// 坐标分格（同格即视为同位置，缓存命中条件）
+/// A coordinate cell (same cell means same position; cache hit condition).
 class CacheCell {
   const CacheCell({required this.latCell, required this.lngCell});
 
@@ -141,7 +148,7 @@ class CacheCell {
   int get hashCode => Object.hash(latCell, lngCell);
 }
 
-/// 附近充电站缓存（storage 读出，可能为空/脏数据）
+/// Nearby-station cache (read from storage; may be empty/dirty).
 class StationCache {
   const StationCache({
     required this.latCell,
@@ -156,7 +163,7 @@ class StationCache {
   final int savedAt;
 }
 
-/// 行政区信息（充电地点自动填充用）
+/// Administrative region info (for charging location auto-fill).
 class GeocoderRegion {
   const GeocoderRegion({
     required this.province,
@@ -169,13 +176,14 @@ class GeocoderRegion {
   final String city;
   final String address;
 
-  /// 最近 POI 标题（geocoder 携带 get_poi=1 时返回，按距离升序）；
-  /// 空串表示响应未包含 POI，调用方应回退 [address]。
+  /// Nearest POI title (returned when the geocoder call carries get_poi=1,
+  /// sorted by distance ascending); empty string means the response had no
+  /// POI and the caller should fall back to [address].
   final String poiTitle;
 }
 
-/// JS `Number()` 语义：null → NaN（Number(null) === 0 的场景由调用方处理），
-/// 字符串数值可被容忍，非法值返回 NaN
+/// JS `Number()` semantics: null → NaN (callers handle the case where
+/// Number(null) === 0), string numerics are tolerated, invalid → NaN.
 double _toNumber(dynamic value) {
   if (value == null) {
     return double.nan;
@@ -196,8 +204,8 @@ double _toNumber(dynamic value) {
   return double.nan;
 }
 
-/// 球面距离（Haversine 公式），单位米。
-/// 坐标系两侧均为 gcj02，展示与排序用途下误差可忽略。
+/// Spherical distance (Haversine formula), in meters.
+/// Both sides use gcj02; error is negligible for display and sorting.
 double haversineDistance(double lat1, double lng1, double lat2, double lng2) {
   final radLat1 = (lat1 * math.pi) / 180;
   final radLat2 = (lat2 * math.pi) / 180;
@@ -210,7 +218,7 @@ double haversineDistance(double lat1, double lng1, double lat2, double lng2) {
   return 2 * earthRadiusMeters * math.asin(math.min(1, math.sqrt(h)));
 }
 
-/// 距离格式化：850 → "850m"，1234 → "1.2km"，非法值 → ""
+/// Distance formatting: 850 → "850m", 1234 → "1.2km", invalid → "".
 String formatDistance(num? meters) {
   final value = _toNumber(meters);
   if (value.isNaN || value < 0) {
@@ -222,10 +230,11 @@ String formatDistance(num? meters) {
   return '${(value / _kmThreshold).toStringAsFixed(1)}km';
 }
 
-/// 腾讯位置服务 POI → [Station]。
-/// [poi] 为 place/search 返回的点位
-/// （id/title/address/tel/location/_distance/category）；
-/// [origin] 为距离原点（`_distance` 缺失时兜底重算）。非法点位返回 null。
+/// Tencent LBS POI → [Station].
+/// [poi] is a point returned by place/search
+/// (id/title/address/tel/location/_distance/category);
+/// [origin] is the distance origin (recomputed as a fallback when
+/// `_distance` is missing). Returns null for invalid points.
 Station? normalizeStation(Map<String, dynamic>? poi, LatLng origin) {
   final location = poi?['location'];
   if (poi == null || location is! Map) {
@@ -247,7 +256,7 @@ Station? normalizeStation(Map<String, dynamic>? poi, LatLng origin) {
         );
   return Station(
     id: '${poi['id']}',
-    name: _orDefault(poi['title'], '未命名充电站'),
+    name: _orDefault(poi['title'], 'Unnamed station'),
     address: _orDefault(poi['address'], ''),
     tel: _orDefault(poi['tel'], ''),
     latitude: latitude,
@@ -257,7 +266,8 @@ Station? normalizeStation(Map<String, dynamic>? poi, LatLng origin) {
   );
 }
 
-/// JS `poi.title || fallback` 语义：空串/空值均取兜底值
+/// JS `poi.title || fallback` semantics: empty string/null both take the
+/// fallback.
 String _orDefault(dynamic value, String fallback) {
   if (value is String && value.isNotEmpty) {
     return value;
@@ -268,13 +278,14 @@ String _orDefault(dynamic value, String fallback) {
   return fallback;
 }
 
-/// 按距离升序排列（null 距离排尾），返回新数组不修改原数组。
-/// 与 JS `Array#sort` 一致：相等元素保持原有相对顺序（稳定排序）。
+/// Sort by distance ascending (null distances last); returns a new array
+/// without modifying the original. Matches JS `Array#sort`: equal elements
+/// keep their relative order (stable sort).
 List<Station> sortStationsByDistance(List<Station>? stations) {
   if (stations == null) {
     return [];
   }
-  // 借助下标决胜保证稳定性（Dart List.sort 不保证稳定）
+  // Index tiebreaker for stability (Dart List.sort is not stable).
   final indices = List<int>.generate(stations.length, (i) => i);
   indices.sort((a, b) {
     final aDistance = stations[a].distance;
@@ -294,12 +305,13 @@ List<Station> sortStationsByDistance(List<Station>? stations) {
   return [for (final index in indices) stations[index]];
 }
 
-/// 构建地图 markers。
+/// Build map markers.
 ///
-/// 地图组件的 marker id 必须是数字，而 LBS 的 POI id 是字符串，
-/// 故用数组下标作 marker id；页面通过下标回查 station 处理点击。
-/// [calloutBgColor] 为选中站点气泡底色（品牌色，由调用方按当前主题传入，
-/// 缺省品牌绿保持向后兼容）。
+/// The map component requires numeric marker ids while LBS POI ids are
+/// strings, so the array index is the marker id; the page looks the station
+/// up by index on tap. [calloutBgColor] is the selected-station callout
+/// background (brand color, passed by the caller per the current theme;
+/// the default brand green keeps backward compatibility).
 List<StationMarker> buildMapMarkers(
   List<Station>? stations, {
   String? selectedId,
@@ -340,7 +352,8 @@ List<StationMarker> buildMapMarkers(
   });
 }
 
-/// 坐标四舍五入到分格精度，同格即视为同位置（缓存命中条件）
+/// Round coordinates to cell precision; same cell means same position
+/// (cache hit condition).
 CacheCell getCacheCell(LatLng coord) {
   final factor = math.pow(10, _cacheCellDecimals).toDouble();
   return CacheCell(
@@ -349,7 +362,7 @@ CacheCell getCacheCell(LatLng coord) {
   );
 }
 
-/// 缓存是否可直接使用：cell 匹配且未超过 TTL
+/// Whether the cache is directly usable: cell matches and within TTL.
 bool isCacheFresh(StationCache? cache, CacheCell cell, int now) {
   if (cache == null) {
     return false;
@@ -360,7 +373,9 @@ bool isCacheFresh(StationCache? cache, CacheCell cell, int now) {
   return isSameCell && isWithinTtl;
 }
 
-/// 按新原点重算各站距离（缓存命中时当前定位与缓存原点存在格内偏移），不可变
+/// Recompute each station's distance for a new origin (on cache hits the
+/// current position differs from the cache origin within the cell),
+/// immutable.
 List<Station> rebaseStationDistances(List<Station>? stations, LatLng origin) {
   if (stations == null) {
     return [];
@@ -378,12 +393,15 @@ List<Station> rebaseStationDistances(List<Station>? stations, LatLng origin) {
   ];
 }
 
-/// 腾讯位置服务 geocoder/v1 响应 → [GeocoderRegion]（充电地点自动填充用）。
+/// Tencent LBS geocoder/v1 response → [GeocoderRegion] (for charging
+/// location auto-fill).
 ///
-/// [body] 为 geocoder 接口响应（status 0 为成功）；
-/// province/city 取 result.address_component；address 取推荐地址
-/// （formatted_addresses.recommend）兜底 result.address，作为地点名默认值；
-/// status 非 0 / 结构缺失 / 直辖市 city 为空时用 province 补位，均无效返回 null。
+/// [body] is the geocoder response (status 0 means success);
+/// province/city come from result.address_component; address takes the
+/// recommended address (formatted_addresses.recommend) with result.address
+/// as fallback, used as the default location name; non-zero status /
+/// missing structure / empty municipality city filled with province all
+/// invalid → null.
 GeocoderRegion? normalizeGeocoderResult(Map<String, dynamic>? body) {
   if (body == null) {
     return null;
@@ -391,7 +409,7 @@ GeocoderRegion? normalizeGeocoderResult(Map<String, dynamic>? body) {
   final result = body['result'];
   final component = result is Map ? result['address_component'] : null;
   final status = body['status'];
-  // JS 语义：body.status !== 0（字符串 "0"、undefined 均视为非 0）
+  // JS semantics: body.status !== 0 (string "0", undefined are all non-zero).
   if (status is! num || status != 0) {
     return null;
   }
@@ -399,7 +417,7 @@ GeocoderRegion? normalizeGeocoderResult(Map<String, dynamic>? body) {
     return null;
   }
   final province = '${component['province']}';
-  // 直辖市 geocoder 的 city 可能返回空串，用 province 补位
+  // Municipality geocoder city may be an empty string; fill with province.
   final city = _isTruthy(component['city']) ? '${component['city']}' : province;
   final formatted = result is Map ? result['formatted_addresses'] : null;
   final recommend = formatted is Map ? formatted['recommend'] : null;
@@ -412,10 +430,11 @@ GeocoderRegion? normalizeGeocoderResult(Map<String, dynamic>? body) {
   return GeocoderRegion(province: province, city: city, address: address);
 }
 
-/// geocoder/v1（携带 get_poi=1）响应 → 最近 POI 标题。
+/// geocoder/v1 (with get_poi=1) response → nearest POI title.
 ///
-/// 腾讯侧 `result.pois` 按距离升序，取首个有效 `title`；
-/// 结构缺失 / 空 / 非法输入返回 null（纯函数不抛异常）。
+/// Tencent returns `result.pois` sorted by distance ascending; take the
+/// first valid `title`; missing structure / empty / invalid input → null
+/// (pure functions never throw).
 String? nearestPoiTitle(Map<String, dynamic>? body) {
   if (body == null) {
     return null;
@@ -438,7 +457,7 @@ String? nearestPoiTitle(Map<String, dynamic>? body) {
   return null;
 }
 
-/// JS truthiness：null / 空串视为假
+/// JS truthiness: null / empty string are falsy.
 bool _isTruthy(dynamic value) {
   if (value == null) {
     return false;

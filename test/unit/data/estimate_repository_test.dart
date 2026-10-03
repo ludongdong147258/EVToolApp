@@ -123,7 +123,11 @@ void main() {
       expect(
         failing.saveEstimate(buildEntry()),
         throwsA(
-          isA<StorageException>().having((e) => e.message, 'message', '保存失败'),
+          isA<StorageException>().having(
+            (e) => e.message,
+            'message',
+            'Failed to save',
+          ),
         ),
       );
     });

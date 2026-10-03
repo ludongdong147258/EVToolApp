@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import 'package:ev_tool_app/core/domain/date_utils.dart';
+import 'package:ev_tool_app/core/domain/numbers.dart';
 import 'package:ev_tool_app/core/domain/home_charger_calc.dart';
 import 'package:ev_tool_app/core/extensions/context_extensions.dart';
 import 'package:ev_tool_app/core/theme/app_colors.dart';
@@ -17,14 +18,14 @@ import 'package:ev_tool_app/features/tools/presentation/widgets/home_charger_wid
 const List<Map<String, Object>> _spotOptions = [
   {
     'id': 'undergroundGarage',
-    'title': '地下车库',
-    'subtitle': '走线增项 +¥200',
+    'title': 'Underground garage',
+    'subtitle': 'Extra wiring +\$200',
     'icon': Icons.directions_car,
   },
   {
     'id': 'groundSpot',
-    'title': '地面私有车位',
-    'subtitle': '一般无需增项',
+    'title': 'Ground private spot',
+    'subtitle': 'Usually no extras',
     'icon': Icons.landscape,
   },
 ];
@@ -32,14 +33,14 @@ const List<Map<String, Object>> _spotOptions = [
 /* 环境条件开关（仅记录状态，第 3 步统一计价） */
 const Map<String, Map<String, Object>> _toggleOptions = {
   'wallDrilling': {
-    'title': '需要穿墙打孔',
-    'subtitle': '走线需穿过承重或非承重墙体',
+    'title': 'Wall drilling needed',
+    'subtitle': 'Cable routing must pass through walls',
     'icon': Icons.build_outlined,
     'defaultOn': false,
   },
   'protectionBox': {
-    'title': '需安装保护箱',
-    'subtitle': '户外或公共区域防止破坏及恶劣天气',
+    'title': 'Install protection box',
+    'subtitle': 'Protects outdoor installs from damage and weather',
     'icon': Icons.verified_user_outlined,
     'defaultOn': true,
   },
@@ -47,18 +48,30 @@ const Map<String, Map<String, Object>> _toggleOptions = {
 
 /* 环境增项明细文案（key 与 conditionSurcharges 对应） */
 const Map<String, String> _surchargeLabels = {
-  'undergroundGarage': '地下车库走线难度',
-  'wallDrilling': '穿墙打孔施工',
-  'protectionBox': '室外防护箱配置',
+  'undergroundGarage': 'Underground garage wiring',
+  'wallDrilling': 'Wall drilling',
+  'protectionBox': 'Outdoor protection box',
 };
 
 /* 「查看所需文件」弹层内容：私桩报装通用材料清单 */
 const List<Map<String, String>> _requiredDocuments = [
-  {'name': '身份证原件', 'desc': '车主本人有效身份证件'},
-  {'name': '车位产权/使用证明', 'desc': '产权证或租赁合同（一年及以上）'},
-  {'name': '物业施工许可', 'desc': '物业出具的充电桩安装同意书'},
-  {'name': '购车证明', 'desc': '购车发票或车辆行驶证'},
-  {'name': '电表申请信息', 'desc': '向电网公司报装需提供的用电地址'},
+  {'name': "Owner's ID", 'desc': 'Valid ID of the vehicle owner'},
+  {
+    'name': 'Parking spot proof',
+    'desc': 'Property deed or lease (1 year or longer)',
+  },
+  {
+    'name': 'Property approval',
+    'desc': 'Written consent from property management',
+  },
+  {
+    'name': 'Proof of purchase',
+    'desc': 'Purchase invoice or vehicle registration',
+  },
+  {
+    'name': 'Meter application info',
+    'desc': 'Service address required by the grid company',
+  },
 ];
 
 /// 私桩安装测算页（移植小程序 home-charger-calc，3 步向导）。
@@ -104,7 +117,7 @@ class _HomeChargerCalcPageState extends ConsumerState<HomeChargerCalcPage> {
     if (_step != totalSteps || _isSaving) return;
     final estimate = _estimate;
     if (estimate == null) {
-      showAppToast(context, '测算数据异常，请返回检查');
+      showAppToast(context, 'Something went wrong. Please go back and check.');
       return;
     }
     setState(() => _isSaving = true);
@@ -119,9 +132,9 @@ class _HomeChargerCalcPageState extends ConsumerState<HomeChargerCalcPage> {
             estimate: estimate,
           );
       if (!mounted) return;
-      showSuccessToast(context, message: '已保存');
+      showSuccessToast(context, message: 'Saved');
     } on Exception {
-      if (mounted) showAppToast(context, '保存失败，请重试');
+      if (mounted) showAppToast(context, 'Failed to save. Please try again.');
     } finally {
       if (mounted) setState(() => _isSaving = false);
     }
@@ -131,19 +144,19 @@ class _HomeChargerCalcPageState extends ConsumerState<HomeChargerCalcPage> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('删除测算'),
-        content: const Text('确定删除这条测算记录吗？'),
+        title: const Text('Delete estimate'),
+        content: const Text('Delete this saved estimate?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: const Text('取消'),
+            child: const Text('Cancel'),
           ),
           TextButton(
             style: TextButton.styleFrom(
               foregroundColor: dialogContext.palette.error,
             ),
             onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: const Text('删除'),
+            child: const Text('Delete'),
           ),
         ],
       ),
@@ -152,7 +165,7 @@ class _HomeChargerCalcPageState extends ConsumerState<HomeChargerCalcPage> {
     try {
       await ref.read(estimatesProvider.notifier).remove(id);
     } on Exception {
-      if (mounted) showAppToast(context, '删除失败，请重试');
+      if (mounted) showAppToast(context, 'Failed to delete. Please try again.');
     }
   }
 
@@ -161,7 +174,7 @@ class _HomeChargerCalcPageState extends ConsumerState<HomeChargerCalcPage> {
     final estimates = ref.watch(estimatesProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('私桩安装测算')),
+      appBar: AppBar(title: const Text('Home Charger Setup')),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
         children: [
@@ -189,10 +202,11 @@ class _HomeChargerCalcPageState extends ConsumerState<HomeChargerCalcPage> {
     return Column(
       children: [
         CalcCard(
-          title: '线缆长度 (米)',
+          title: 'Cable length (m)',
           icon: Icons.ev_station,
           iconColor: palette.primary,
-          subtitle: '基础安装包通常包含$includedCableM米线缆，超出部分将额外计费。',
+          subtitle:
+              'The base package includes ${includedCableM}m of cable; extra length is billed separately.',
           child: Column(
             children: [
               Text(
@@ -220,10 +234,11 @@ class _HomeChargerCalcPageState extends ConsumerState<HomeChargerCalcPage> {
         ),
         const SizedBox(height: 12),
         CalcCard(
-          title: '充电功率',
+          title: 'Charging power',
           icon: Icons.bolt_rounded,
           iconColor: palette.info,
-          subtitle: '选择适合您车型的充电桩功率，不同功率需匹配不同规格线缆。',
+          subtitle:
+              'Pick a power level that suits your EV; higher power needs heavier cable.',
           child: Column(
             children: [
               for (final option in powerOptions)
@@ -250,7 +265,7 @@ class _HomeChargerCalcPageState extends ConsumerState<HomeChargerCalcPage> {
                       ),
                       const SizedBox(height: 4),
                       Text(
-                        '¥ ${formatAmount(option.basePrice)} 起',
+                        'from ${formatMoney(option.basePrice)}',
                         style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
@@ -265,17 +280,24 @@ class _HomeChargerCalcPageState extends ConsumerState<HomeChargerCalcPage> {
         ),
         const SizedBox(height: 12),
         TotalCard(
-          label: '当前预估总额',
+          label: 'Current estimate',
           total: estimate?.total ?? 0,
           lines: [
-            ('基础安装包 (含$includedCableM米)', estimate?.basePrice ?? 0),
+            (
+              'Base package (incl. ${includedCableM}m)',
+              estimate?.basePrice ?? 0,
+            ),
             if (estimate != null && estimate.extraCableLength > 0)
-              ('超长线缆 (${estimate.extraCableLength}米)', estimate.extraCableCost),
+              (
+                'Extra cable (${estimate.extraCableLength}m)',
+                estimate.extraCableCost,
+              ),
           ],
-          hint: '环境增项（车库/打孔/防护箱）将在下一步选择后计入',
+          hint:
+              'Site extras (garage, drilling, protection box) are added in the next step',
         ),
         const SizedBox(height: 12),
-        AppPrimaryButton(text: '下一步', onTap: () => _goToStep(2)),
+        AppPrimaryButton(text: 'Next', onTap: () => _goToStep(2)),
       ],
     );
   }
@@ -287,7 +309,7 @@ class _HomeChargerCalcPageState extends ConsumerState<HomeChargerCalcPage> {
     return Column(
       children: [
         CalcCard(
-          title: '安装位置与条件',
+          title: 'Location & conditions',
           icon: Icons.home_outlined,
           iconColor: palette.primary,
           child: Column(
@@ -339,14 +361,14 @@ class _HomeChargerCalcPageState extends ConsumerState<HomeChargerCalcPage> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    '环境增项合计',
+                    'Extras subtotal',
                     style: TextStyle(
                       fontSize: 13,
                       color: palette.textSecondary,
                     ),
                   ),
                   Text(
-                    '¥ ${formatAmount(surchargeTotal)}',
+                    formatMoney(surchargeTotal),
                     style: TextStyle(
                       fontSize: 16,
                       fontWeight: FontWeight.w700,
@@ -363,7 +385,7 @@ class _HomeChargerCalcPageState extends ConsumerState<HomeChargerCalcPage> {
           children: [
             Expanded(
               child: AppPrimaryButton(
-                text: '上一步',
+                text: 'Back',
                 backgroundColor: palette.surfaceContainerLow,
                 textColor: palette.onSurfaceVariant,
                 onTap: () => _goToStep(1),
@@ -371,7 +393,7 @@ class _HomeChargerCalcPageState extends ConsumerState<HomeChargerCalcPage> {
             ),
             const SizedBox(width: 12),
             Expanded(
-              child: AppPrimaryButton(text: '下一步', onTap: () => _goToStep(3)),
+              child: AppPrimaryButton(text: 'Next', onTap: () => _goToStep(3)),
             ),
           ],
         ),
@@ -386,8 +408,8 @@ class _HomeChargerCalcPageState extends ConsumerState<HomeChargerCalcPage> {
       return const Card(
         child: EmptyState(
           icon: Icons.error_outline,
-          title: '测算数据异常',
-          subtitle: '请返回上一步检查安装详情',
+          title: 'Estimate unavailable',
+          subtitle: 'Please go back and check the installation details',
           compact: true,
         ),
       );
@@ -396,66 +418,66 @@ class _HomeChargerCalcPageState extends ConsumerState<HomeChargerCalcPage> {
     return Column(
       children: [
         CalcCard(
-          title: '费用明细',
+          title: 'Cost breakdown',
           icon: Icons.payments_outlined,
           iconColor: palette.primary,
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               DetailLine(
-                label: '基础安装包',
-                value: '¥ ${formatAmount(estimate.basePrice)}',
+                label: 'Base package',
+                value: formatMoney(estimate.basePrice),
               ),
               const SizedBox(height: 2),
               Text(
-                '含$includedCableM标准线缆及基础人工费',
+                'Includes ${includedCableM}m standard cable and basic labor',
                 style: TextStyle(fontSize: 11, color: palette.textHint),
               ),
               if (estimate.extraCableLength > 0) ...[
                 const SizedBox(height: 10),
                 DetailLine(
-                  label: '超长线缆 (${estimate.extraCableLength}米)',
-                  value: '¥ ${formatAmount(estimate.extraCableCost)}',
+                  label: 'Extra cable (${estimate.extraCableLength}m)',
+                  value: formatMoney(estimate.extraCableCost),
                 ),
               ],
               const SizedBox(height: 10),
               DetailLine(
-                label: '环境增项',
-                value: '¥ ${formatAmount(estimate.surchargeTotal)}',
+                label: 'Site extras',
+                value: formatMoney(estimate.surchargeTotal),
               ),
               const SizedBox(height: 4),
               if (estimate.surcharges.isEmpty)
                 Text(
-                  '无增项',
+                  'No extras',
                   style: TextStyle(fontSize: 11, color: palette.textHint),
                 )
               else
                 for (final item in estimate.surcharges)
                   Text(
                     '• ${_surchargeLabels[item.id] ?? item.id}'
-                    ' +¥${formatAmount(item.price)}',
+                    ' +${formatMoney(item.price)}',
                     style: TextStyle(fontSize: 11, color: palette.textHint),
                   ),
             ],
           ),
         ),
         const SizedBox(height: 12),
-        TotalCard(label: '预估总费用 (元)', total: estimate.total),
+        TotalCard(label: 'Estimated total', total: estimate.total),
         const SizedBox(height: 12),
         AppPrimaryButton(
-          text: _isSaving ? '保存中…' : '保存预估结果',
+          text: _isSaving ? 'Saving…' : 'Save estimate',
           onTap: _isSaving ? null : _saveResult,
         ),
         const SizedBox(height: 12),
         AppPrimaryButton(
-          text: '查看所需文件',
+          text: 'Required documents',
           backgroundColor: Colors.transparent,
           textColor: palette.primaryContainer,
           onTap: _showFileSheet,
         ),
         const SizedBox(height: 8),
         const CalcDisclaimer(
-          '本页面提供的费用明细仅为系统预估，最终价格以实地勘测后出具的正式报价单为准。如有疑问请联系客服。',
+          'This breakdown is an estimate only; the final price follows the official quote after an on-site survey. Contact support with any questions.',
         ),
       ],
     );
@@ -464,7 +486,7 @@ class _HomeChargerCalcPageState extends ConsumerState<HomeChargerCalcPage> {
   void _showFileSheet() {
     showAppSheet(
       context: context,
-      title: '安装所需文件',
+      title: 'Required documents',
       builder: (sheetContext) {
         final palette = sheetContext.palette;
         return AppSheetScrollBody(
@@ -517,7 +539,7 @@ class _HomeChargerCalcPageState extends ConsumerState<HomeChargerCalcPage> {
   void _showHistorySheet(List<StoredEstimate> estimates) {
     showAppSheet(
       context: context,
-      title: '已保存的测算',
+      title: 'Saved estimates',
       builder: (sheetContext) {
         final palette = sheetContext.palette;
         return AppSheetScrollBody(
@@ -535,7 +557,7 @@ class _HomeChargerCalcPageState extends ConsumerState<HomeChargerCalcPage> {
                             Row(
                               children: [
                                 Text(
-                                  '¥ ${formatAmount(item.estimate.total)}',
+                                  formatMoney(item.estimate.total),
                                   style: TextStyle(
                                     fontSize: 16,
                                     fontWeight: FontWeight.w700,
@@ -554,9 +576,9 @@ class _HomeChargerCalcPageState extends ConsumerState<HomeChargerCalcPage> {
                             ),
                             const SizedBox(height: 2),
                             Text(
-                              '${powerLabelOf(item.powerId)} · 线缆 '
-                              '${item.cableLength} 米'
-                              '${item.estimate.surchargeTotal > 0 ? ' · 增项 ¥${formatAmount(item.estimate.surchargeTotal)}' : ''}',
+                              '${powerLabelOf(item.powerId)} · '
+                              '${item.cableLength}m cable'
+                              '${item.estimate.surchargeTotal > 0 ? ' · extras ${formatMoney(item.estimate.surchargeTotal)}' : ''}',
                               style: TextStyle(
                                 fontSize: 12,
                                 color: palette.textSecondary,

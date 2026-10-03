@@ -102,8 +102,8 @@ class CostRepository {
         for (final expense in expenses) expense.toJson(),
       ]);
     } on Exception catch (e) {
-      appLogger.e('保存养车支出失败', error: e);
-      throw const StorageException('支出保存失败');
+      appLogger.e('Failed to save expenses', error: e);
+      throw const StorageException('Failed to save expense');
     }
   }
 }

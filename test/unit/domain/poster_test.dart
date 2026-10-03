@@ -76,15 +76,15 @@ void main() {
   group('buildPosterModel 海报绘制模型', () {
     test('标题/大数字/三列指标文案完整', () {
       final model = buildPosterModel(buildReport(), null);
-      expect(model.titleText, '2025 年度充电报告');
-      expect(model.heroCostText, '¥660.00');
-      expect(model.statLines[0].label, '充电次数');
+      expect(model.titleText, '2025 Annual Charging Report');
+      expect(model.heroCostText, r'$660.00');
+      expect(model.statLines[0].label, 'Charges');
       expect(model.statLines[0].value, '6');
-      expect(model.statLines[0].unit, '次');
+      expect(model.statLines[0].unit, '');
       expect(model.statLines[1].value, '330.00');
       expect(model.statLines[1].unit, 'kWh');
       expect(model.statLines[2].value, '2.00');
-      expect(model.statLines[2].unit, '¥/kWh');
+      expect(model.statLines[2].unit, r'$/kWh');
     });
 
     test('12 个月柱项保留原始费用并以 count 判定空/实柱', () {
@@ -155,7 +155,7 @@ void main() {
 
     test('非法输入不抛错（空模型兜底）', () {
       final model = buildPosterModel(null, null);
-      expect(model.titleText, '-- 年度充电报告');
+      expect(model.titleText, '-- Annual Charging Report');
       expect(model.barItems, hasLength(12));
       expect(
         model.barItems.every((i) => i.value == 0 && !i.hasRecords),
@@ -195,43 +195,40 @@ void main() {
         null,
       );
       expect(model.bestItems, hasLength(3));
-      expect(model.bestItems[0].label, '单次最高花费');
-      expect(model.bestItems[0].value, '¥88.50');
+      expect(model.bestItems[0].label, 'Biggest single spend');
+      expect(model.bestItems[0].value, r'$88.50');
       expect(
         model.bestItems[0].sub,
-        '${formatRecordDate('2025-05-01')} · 快充 · 50.00kWh',
+        'May 1, 2025 · ${typeDefaultTitles['fast']} · 50.00 kWh',
       );
       expect(model.bestItems[1].value, '75.20 kWh');
-      expect(
-        model.bestItems[1].sub,
-        '${formatRecordDate('2025-07-12')} · ¥60.00',
-      );
-      expect(model.bestItems[2].value, '7月');
-      expect(model.bestItems[2].sub, '充电 5 次 · ¥200.00');
+      expect(model.bestItems[1].sub, 'Jul 12, 2025 · \$60.00');
+      expect(model.bestItems[2].value, 'Jul 2025');
+      expect(model.bestItems[2].sub, r'5 charges · $200.00');
     });
 
     test('年度之最缺省时兜底单条占位（不抛错）', () {
       final model = buildPosterModel(buildReport(), null);
       expect(model.bestItems, hasLength(1));
-      expect(model.bestItems[0].label, '年度之最');
+      expect(model.bestItems[0].label, 'Year highlights');
       expect(model.bestItems[0].value, '--');
-      expect(model.bestItems[0].sub, '暂无数据');
+      expect(model.bestItems[0].sub, 'No data yet');
     });
 
     test('slogan 带徽标身份文案，footer 为产品名落款', () {
       final model = buildPosterModel(buildReport(), null);
-      expect(model.sloganText, '见习车主 · 电车生活一年一度');
-      expect(model.footerText, 'EVTool 电车充电记录');
+      expect(model.sloganText, 'Rookie Owner · A year in EV life');
+      expect(model.footerText, 'EVTool · EV Charging Log');
     });
 
     test('slogan 徽标随累计记录条数晋级', () {
       final model = buildPosterModel(buildReport(), 60);
-      expect(model.sloganText, '资深车主 · 电车生活一年一度');
+      expect(model.sloganText, 'Veteran Owner · A year in EV life');
     });
 
     test('累计条数非法时徽标兜底最低档（不抛错）', () {
       final model = buildPosterModel(buildReport(), 'abc');
-      expect(model.sloganText, '见习车主 · 电车生活一年一度');
+      expect(model.sloganText, 'Rookie Owner · A year in EV life');
     });
   });
 

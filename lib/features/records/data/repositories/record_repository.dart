@@ -109,8 +109,8 @@ class RecordRepository {
         for (final record in records) record.toJson(),
       ]);
     } on Exception catch (e) {
-      appLogger.e('保存充电记录失败', error: e);
-      throw const StorageException('记录保存失败');
+      appLogger.e('Failed to save charge records', error: e);
+      throw const StorageException('Failed to save record');
     }
   }
 }

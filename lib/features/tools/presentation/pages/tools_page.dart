@@ -28,64 +28,64 @@ class ToolEntry {
 const List<ToolEntry> toolEntries = <ToolEntry>[
   ToolEntry(
     id: 'range-estimate',
-    title: '续航静态估算',
-    desc: '基于电池容量与电耗预估剩余续航里程。',
+    title: 'Range Estimate',
+    desc: 'Estimate remaining range from battery capacity and consumption.',
     icon: Icons.battery_charging_full,
     route: RouteNames.rangeCalc,
   ),
   ToolEntry(
     id: 'fuel-vs-ev',
-    title: '油电成本对比',
-    desc: '对比燃油车与电动车的年度费用节省情况。',
+    title: 'Fuel vs EV Cost',
+    desc: 'Compare annual running costs of gas vs. electric cars.',
     icon: Icons.calculate_outlined,
     route: RouteNames.fuelEvCalc,
   ),
   ToolEntry(
     id: 'peak-valley',
-    title: '峰谷电价优化',
-    desc: '基于分时电价计算充电成本及省钱策略。',
+    title: 'Time-of-Use Savings',
+    desc: 'Calculate charging costs and savings with time-of-use rates.',
     icon: Icons.bolt_rounded,
     route: RouteNames.peakValleyCalc,
   ),
   ToolEntry(
     id: 'home-charger',
-    title: '私桩安装测算',
-    desc: '预估家用充电桩的安装成本及运行费用。',
+    title: 'Home Charger Setup',
+    desc: 'Estimate installation and running costs of a home charger.',
     icon: Icons.ev_station,
     route: RouteNames.homeChargerCalc,
   ),
   ToolEntry(
     id: 'nearby-stations',
-    title: '附近充电站',
-    desc: '基于定位查找周边充电站并一键导航。',
+    title: 'Nearby Stations',
+    desc: 'Find charging stations nearby and navigate in one tap.',
     icon: Icons.map_outlined,
     route: RouteNames.nearbyStations,
   ),
   ToolEntry(
     id: 'inspection-memo',
-    title: '年检维保备忘录',
-    desc: '按上牌日期与里程推算年检和维保节点。',
+    title: 'Service & Inspection Memo',
+    desc: 'Track inspection and service dates by registration and mileage.',
     icon: Icons.verified_user_outlined,
     route: RouteNames.inspectionMemo,
   ),
   ToolEntry(
     id: 'mod-compliance',
-    title: '改装合规自查',
-    desc: '常见改装项目合法性、备案与风险速查。',
+    title: 'Mod Compliance Check',
+    desc: 'Quick check on legality, filing, and risks of common mods.',
     icon: Icons.tune,
     route: RouteNames.modificationCompliance,
   ),
   ToolEntry(
     id: 'warranty-handbook',
-    title: '三电质保手册',
-    desc: '主流车企三电质保、终身质保条件与过户权益速查。',
+    title: 'EV Warranty Handbook',
+    desc: 'EV warranty, lifetime coverage, and transfer rules by brand.',
     icon: Icons.menu_book_outlined,
     route: RouteNames.warrantyHandbook,
   ),
   ToolEntry(
     id: 'equipment',
-    title: '充电装备',
-    desc: '充电桩、随车充与应急装备选购指南。',
+    title: 'Charging Gear',
+    desc: 'Buying guide for chargers, portable cables, and emergency gear.',
     icon: Icons.shopping_bag_outlined,
     route: RouteNames.equipment,
   ),
@@ -101,7 +101,7 @@ class ToolGroup {
 
 const List<ToolGroup> toolGroups = <ToolGroup>[
   ToolGroup(
-    title: '省钱计算',
+    title: 'Savings Calculators',
     toolIds: <String>[
       'range-estimate',
       'fuel-vs-ev',
@@ -109,10 +109,10 @@ const List<ToolGroup> toolGroups = <ToolGroup>[
       'home-charger',
     ],
   ),
-  ToolGroup(title: '地图服务', toolIds: <String>['nearby-stations']),
-  ToolGroup(title: '装备导购', toolIds: <String>['equipment']),
+  ToolGroup(title: 'Maps', toolIds: <String>['nearby-stations']),
+  ToolGroup(title: 'Shopping', toolIds: <String>['equipment']),
   ToolGroup(
-    title: '备忘与手册',
+    title: 'Memos & Handbooks',
     toolIds: <String>['inspection-memo', 'mod-compliance', 'warranty-handbook'],
   ),
 ];
@@ -164,7 +164,7 @@ class _ToolsPageState extends ConsumerState<ToolsPage> {
     final recentTools = resolveTools(recentIds.take(3).toList());
 
     return Scaffold(
-      appBar: AppBar(title: const Text('实用工具')),
+      appBar: AppBar(title: const Text('Tools')),
       body: ListView(
         padding: const EdgeInsets.only(
           left: 16,
@@ -174,13 +174,13 @@ class _ToolsPageState extends ConsumerState<ToolsPage> {
         ),
         children: [
           Text(
-            '探索各类实用工具，优化您的用车体验。',
+            'Explore handy tools to get more out of your EV.',
             style: TextStyle(fontSize: 13, color: palette.textSecondary),
           ),
           const SizedBox(height: 12),
           if (recentTools.isNotEmpty) ...[
             _ToolGroup(
-              title: '最近使用',
+              title: 'Recently used',
               tools: recentTools,
               onTap: _handleToolTap,
             ),

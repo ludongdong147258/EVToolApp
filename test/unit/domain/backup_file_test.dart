@@ -26,7 +26,7 @@ void main() {
       // JS new Date(2026, 9, 1) 月份 0 基 → 2026-10-01
       expect(
         buildBackupFileName(DateTime(2026, 10, 1)),
-        'EVTool备份-2026-10-01.json',
+        'EVTool-Backup-2026-10-01.json',
       );
     });
 
@@ -34,7 +34,7 @@ void main() {
       // JS new Date(2026, 0, 5) → 2026-01-05
       expect(
         buildBackupFileName(DateTime(2026, 1, 5)),
-        'EVTool备份-2026-01-05.json',
+        'EVTool-Backup-2026-01-05.json',
       );
     });
   });
@@ -57,7 +57,7 @@ void main() {
 
   group('isJsonFilePath json 路径校验', () {
     test('接受 .json 结尾路径，大小写不敏感', () {
-      expect(isJsonFilePath('wxfile://tmp/EVTool备份.json'), isTrue);
+      expect(isJsonFilePath('wxfile://tmp/EVTool-Backup.json'), isTrue);
       expect(isJsonFilePath('/tmp/backup.JSON'), isTrue);
     });
 

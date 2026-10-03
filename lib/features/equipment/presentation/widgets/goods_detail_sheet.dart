@@ -61,7 +61,7 @@ class GoodsDetailSheet extends StatelessWidget {
             textBaseline: TextBaseline.alphabetic,
             children: [
               Text(
-                '¥',
+                '\$',
                 style: context.textTheme.titleMedium?.copyWith(
                   color: AppColors.goodsPrice,
                   fontWeight: FontWeight.w600,
@@ -77,7 +77,7 @@ class GoodsDetailSheet extends StatelessWidget {
               if (item.hasCoupon) ...[
                 const SizedBox(width: 6),
                 Text(
-                  '¥${formatPrice(item.originalPrice)}',
+                  '\$${formatPrice(item.originalPrice)}',
                   style: context.textTheme.bodyMedium?.copyWith(
                     color: palette.textHint,
                     decoration: TextDecoration.lineThrough,
@@ -86,7 +86,7 @@ class GoodsDetailSheet extends StatelessWidget {
                 ),
                 const SizedBox(width: 8),
                 Text(
-                  '优惠券立减${formatPrice(item.couponAmount)}元',
+                  'Coupon saves \$${formatPrice(item.couponAmount)}',
                   style: context.textTheme.bodySmall?.copyWith(
                     color: palette.onErrorContainer,
                   ),
@@ -110,7 +110,7 @@ class GoodsDetailSheet extends StatelessWidget {
                 borderRadius: BorderRadius.circular(AppColors.radiusLg),
               ),
             ),
-            child: const Text('前往拼多多购买'),
+            child: const Text('Buy on Pinduoduo'),
           ),
         ],
       ),
@@ -120,7 +120,10 @@ class GoodsDetailSheet extends StatelessWidget {
   Future<void> _buy(BuildContext context) async {
     final url = item.shortUrl;
     if (url.isEmpty) {
-      showAppToast(context, '商品链接生成中，请稍后重试');
+      showAppToast(
+        context,
+        'Product link is being generated — try again shortly',
+      );
       return;
     }
     final uri = Uri.tryParse(url);
@@ -129,7 +132,7 @@ class GoodsDetailSheet extends StatelessWidget {
       try {
         canLaunch = await canLaunchUrl(uri);
       } on Exception catch (e) {
-        appLogger.w('检查购买链接失败：$e');
+        appLogger.w('Failed to check purchase link: $e');
       }
     }
     if (uri != null && canLaunch) {
@@ -137,12 +140,12 @@ class GoodsDetailSheet extends StatelessWidget {
         await launchUrl(uri, mode: LaunchMode.externalApplication);
         return;
       } on Exception catch (e) {
-        appLogger.w('打开购买链接失败：$e');
+        appLogger.w('Failed to open purchase link: $e');
       }
     }
     await Clipboard.setData(ClipboardData(text: url));
     if (context.mounted) {
-      showAppToast(context, '链接已复制，请在浏览器打开');
+      showAppToast(context, 'Link copied — open it in your browser');
     }
   }
 }
@@ -151,7 +154,7 @@ class GoodsDetailSheet extends StatelessWidget {
 Future<void> showGoodsDetailSheet(BuildContext context, GoodsItem item) {
   return showAppSheet(
     context: context,
-    title: '商品详情',
+    title: 'Product details',
     builder: (sheetContext) => GoodsDetailSheet(item: item),
   );
 }

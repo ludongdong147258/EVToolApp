@@ -11,15 +11,15 @@ void main() {
   group('resolveBadgeLabel 等级徽标分档', () {
     test('按门槛分档', () {
       final cases = <List<Object>>[
-        [0, '见习车主'],
-        [1, '见习车主'],
-        [9, '见习车主'],
-        [10, '充电达人'],
-        [49, '充电达人'],
-        [50, '资深车主'],
-        [199, '资深车主'],
-        [200, '元老车主'],
-        [9999, '元老车主'],
+        [0, 'Rookie Owner'],
+        [1, 'Rookie Owner'],
+        [9, 'Rookie Owner'],
+        [10, 'Charging Pro'],
+        [49, 'Charging Pro'],
+        [50, 'Veteran Owner'],
+        [199, 'Veteran Owner'],
+        [200, 'Legend Owner'],
+        [9999, 'Legend Owner'],
       ];
       for (final testCase in cases) {
         expect(
@@ -31,16 +31,16 @@ void main() {
     });
 
     test('null 输入兜底为 0 档', () {
-      expect(resolveBadgeLabel(null), '见习车主');
+      expect(resolveBadgeLabel(null), 'Rookie Owner');
     });
 
     test('非法数值兜底为最低档', () {
-      expect(resolveBadgeLabel(-5), '见习车主');
-      expect(resolveBadgeLabel(double.nan), '见习车主');
-      expect(resolveBadgeLabel('abc'), '见习车主');
+      expect(resolveBadgeLabel(-5), 'Rookie Owner');
+      expect(resolveBadgeLabel(double.nan), 'Rookie Owner');
+      expect(resolveBadgeLabel('abc'), 'Rookie Owner');
       // 宽松字符串不解析（防脏输入意外晋级）
-      expect(resolveBadgeLabel('10'), '见习车主');
-      expect(resolveBadgeLabel('10abc'), '见习车主');
+      expect(resolveBadgeLabel('10'), 'Rookie Owner');
+      expect(resolveBadgeLabel('10abc'), 'Rookie Owner');
     });
 
     test('BADGE_TIERS 按门槛升序且首档门槛为 0', () {
@@ -110,21 +110,21 @@ void main() {
   });
 
   group('buildBadgeProgress 徽标进度钩子', () {
-    test('0 条 → 差 10 条升充电达人', () {
+    test('0 条 → 差 10 条升Charging Pro', () {
       expect(
         buildBadgeProgress(0),
-        const BadgeProgress(nextLabel: '充电达人', remaining: 10),
+        const BadgeProgress(nextLabel: 'Charging Pro', remaining: 10),
       );
     });
 
     test('中间档位给出下一档与差值', () {
       expect(
         buildBadgeProgress(10),
-        const BadgeProgress(nextLabel: '资深车主', remaining: 40),
+        const BadgeProgress(nextLabel: 'Veteran Owner', remaining: 40),
       );
       expect(
         buildBadgeProgress(49),
-        const BadgeProgress(nextLabel: '资深车主', remaining: 1),
+        const BadgeProgress(nextLabel: 'Veteran Owner', remaining: 1),
       );
     });
 
@@ -136,11 +136,11 @@ void main() {
     test('非法输入按 0 条处理', () {
       expect(
         buildBadgeProgress('abc'),
-        const BadgeProgress(nextLabel: '充电达人', remaining: 10),
+        const BadgeProgress(nextLabel: 'Charging Pro', remaining: 10),
       );
       expect(
         buildBadgeProgress(null),
-        const BadgeProgress(nextLabel: '充电达人', remaining: 10),
+        const BadgeProgress(nextLabel: 'Charging Pro', remaining: 10),
       );
     });
   });

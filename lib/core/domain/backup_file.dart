@@ -11,7 +11,7 @@ import 'package:ev_tool_app/core/domain/date_utils.dart';
 const int clipboardExportMaxLength = 32 * 1024;
 
 /// 备份文件名前缀
-const String backupFilePrefix = 'EVTool备份';
+const String backupFilePrefix = 'EVTool-Backup';
 
 /// 备份文本是否超出剪贴板可靠长度
 ///

@@ -84,7 +84,10 @@ class _LocationPickerPageState extends ConsumerState<LocationPickerPage> {
     } on Exception catch (e) {
       region = null; // 无 Key / 网络失败 → 本地降级
       geocodeFailed = true;
-      appLogger.w('逆地理解析失败，降级本地城市匹配', error: e);
+      appLogger.w(
+        'Reverse geocode failed, falling back to local city match',
+        error: e,
+      );
     }
     if (!mounted || _latitude != latitude || _longitude != longitude) return;
     setState(() {
@@ -136,7 +139,7 @@ class _LocationPickerPageState extends ConsumerState<LocationPickerPage> {
     final hasPicked = latitude != null && longitude != null;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('选择充电地点')),
+      appBar: AppBar(title: const Text('Choose Location')),
       body: Column(
         children: [
           Expanded(
@@ -177,7 +180,9 @@ class _LocationPickerPageState extends ConsumerState<LocationPickerPage> {
                       borderRadius: BorderRadius.circular(AppColors.radiusMd),
                     ),
                     child: Text(
-                      hasPicked ? '点击地图调整位置' : '点击地图选择充电位置',
+                      hasPicked
+                          ? 'Tap the map to adjust'
+                          : 'Tap the map to choose a location',
                       style: TextStyle(
                         fontSize: 13,
                         color: palette.textSecondary,
@@ -207,7 +212,7 @@ class _LocationPickerPageState extends ConsumerState<LocationPickerPage> {
                   const SizedBox(height: 10),
                   FilledButton(
                     onPressed: _resolved == null ? null : _confirm,
-                    child: Text(_resolving == null ? '确定' : '识别地点中…'),
+                    child: Text(_resolving == null ? 'Confirm' : 'Resolving…'),
                   ),
                 ],
               ),
@@ -221,7 +226,7 @@ class _LocationPickerPageState extends ConsumerState<LocationPickerPage> {
   String _bottomText() {
     final resolved = _resolved;
     if (_resolving == '') {
-      return '正在识别所选位置的地址…';
+      return 'Resolving the address of the selected spot…';
     }
     if (resolved != null) {
       final parts = [
@@ -229,10 +234,12 @@ class _LocationPickerPageState extends ConsumerState<LocationPickerPage> {
           [resolved.province, resolved.city].whereType<String>().join(' · '),
         if (resolved.locationName != null) resolved.locationName,
       ];
-      final text = parts.join('　');
-      if (text.isEmpty) return '已选择位置';
-      return _geocodeFailed ? '$text（未获取到详细地址，仅保存城市）' : text;
+      final text = parts.join(' ');
+      if (text.isEmpty) return 'Location selected';
+      return _geocodeFailed
+          ? '$text (no detailed address found; only the city will be saved)'
+          : text;
     }
-    return '尚未选择位置';
+    return 'No location selected yet';
   }
 }

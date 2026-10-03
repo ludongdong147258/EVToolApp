@@ -27,7 +27,7 @@ import 'package:ev_tool_app/features/profile/presentation/widgets/accent_swatch.
 import 'package:ev_tool_app/features/records/presentation/providers/records_provider.dart';
 
 /// 昵称兜底文案（用户未设置昵称时显示）。
-const String _nicknameFallback = '电车用户';
+const String _nicknameFallback = 'EV Owner';
 
 /// 我的页（Tab 3）：渐变用户卡 + 统计 + 功能菜单 + 主题配色弹层。
 ///
@@ -39,7 +39,7 @@ class ProfilePage extends ConsumerWidget {
   void _openThemePicker(BuildContext context) {
     showAppSheet(
       context: context,
-      title: '主题配色',
+      title: 'Theme Colors',
       builder: (_) => Consumer(
         builder: (context, sheetRef, _) {
           final accentId = sheetRef.watch(themeSettingsProvider).accentId;
@@ -63,7 +63,7 @@ class ProfilePage extends ConsumerWidget {
                                 sheetRef
                                     .read(themeSettingsProvider.notifier)
                                     .setAccentId(accent.id);
-                                showAppToast(context, '已切换');
+                                showAppToast(context, 'Applied');
                               },
                             ),
                           ),
@@ -82,7 +82,7 @@ class ProfilePage extends ConsumerWidget {
   Future<void> _openProfileEditor(BuildContext context) {
     return showAppSheet(
       context: context,
-      title: '编辑资料',
+      title: 'Edit Profile',
       builder: (_) => const _ProfileEditorSheet(),
     );
   }
@@ -99,7 +99,7 @@ class ProfilePage extends ConsumerWidget {
     final displayName = nickname.isEmpty ? _nicknameFallback : nickname;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('我的')),
+      appBar: AppBar(title: const Text('Profile')),
       body: ListView(
         padding: const EdgeInsets.only(
           left: 16,
@@ -159,16 +159,20 @@ class ProfilePage extends ConsumerWidget {
                                   ),
                                 ),
                                 const SizedBox(width: 8),
-                                _HeroBadge(label: badgeLabel),
+                                Flexible(child: _HeroBadge(label: badgeLabel)),
                                 if (recordDays > 0) ...[
                                   const SizedBox(width: 4),
-                                  _HeroBadge(label: '记录 $recordDays 天'),
+                                  Flexible(
+                                    child: _HeroBadge(
+                                      label: '$recordDays days logged',
+                                    ),
+                                  ),
                                 ],
                               ],
                             ),
                             const SizedBox(height: 4),
                             Text(
-                              '累计花费 ¥${formatYuan(total.totalCost)}',
+                              'Total spent ${formatMoney(total.totalCost)}',
                               style: const TextStyle(
                                 fontSize: 12,
                                 color: AppColors.onPrimaryA85,
@@ -184,17 +188,12 @@ class ProfilePage extends ConsumerWidget {
                 HeroStatsRow(
                   items: [
                     HeroStatItem(
-                      label: '充电记录',
+                      label: 'Charge Records',
                       value: '${total.count}',
-                      unit: '次',
                     ),
+                    HeroStatItem(label: 'This Month', value: '${month.count}'),
                     HeroStatItem(
-                      label: '本月充电',
-                      value: '${month.count}',
-                      unit: '次',
-                    ),
-                    HeroStatItem(
-                      label: '累计电量',
+                      label: 'Total Energy',
                       value: formatYuan(total.totalEnergy),
                       unit: 'kWh',
                     ),
@@ -205,42 +204,42 @@ class ProfilePage extends ConsumerWidget {
           ),
           const SizedBox(height: 16),
           _MenuGroup(
-            title: '我的服务',
+            title: 'My Services',
             items: [
               _MenuItem(
                 icon: Icons.directions_car_rounded,
-                text: '我的车辆',
+                text: 'My Vehicles',
                 onTap: (context) => context.push(RouteNames.vehicles),
               ),
               _MenuItem(
                 icon: Icons.insights_rounded,
-                text: '充电统计',
+                text: 'Charge Stats',
                 onTap: (context) => context.push(RouteNames.chargeStats),
               ),
               _MenuItem(
                 icon: Icons.place_rounded,
-                text: '充电点位地图',
+                text: 'Charging Map',
                 onTap: (context) => context.push(RouteNames.chargeMap),
               ),
               _MenuItem(
                 icon: Icons.save_rounded,
-                text: '数据备份',
+                text: 'Backup & Restore',
                 onTap: (context) => context.push(RouteNames.backupRestore),
               ),
             ],
           ),
           const SizedBox(height: 16),
           _MenuGroup(
-            title: '关于应用',
+            title: 'About the App',
             items: [
               _MenuItem(
                 icon: Icons.tune_rounded,
-                text: '主题配色',
+                text: 'Theme Colors',
                 onTap: _openThemePicker,
               ),
               _MenuItem(
                 icon: Icons.info_rounded,
-                text: '关于',
+                text: 'About',
                 onTap: (context) => context.push(RouteNames.about),
               ),
             ],
@@ -265,12 +264,16 @@ class _HeroBadge extends StatelessWidget {
         color: AppColors.onPrimaryA22,
         borderRadius: BorderRadius.circular(AppColors.radiusSm),
       ),
-      child: Text(
-        label,
-        style: const TextStyle(
-          fontSize: 10,
-          color: Colors.white,
-          fontWeight: FontWeight.w600,
+      // 英文徽标文案更长：窄屏下单行缩放，避免溢出
+      child: FittedBox(
+        fit: BoxFit.scaleDown,
+        child: Text(
+          label,
+          style: const TextStyle(
+            fontSize: 10,
+            color: Colors.white,
+            fontWeight: FontWeight.w600,
+          ),
         ),
       ),
     );
@@ -457,10 +460,10 @@ class _ProfileEditorSheetState extends ConsumerState<_ProfileEditorSheet> {
       if (picked == null) return; // 用户取消不算错误
       setState(() => _isSaving = true);
       await ref.read(userProfileProvider.notifier).saveAvatar(picked.path);
-      if (mounted) showAppToast(context, '头像已更新');
+      if (mounted) showAppToast(context, 'Avatar updated');
     } on Exception catch (e) {
-      appLogger.e('选头像失败: $e');
-      if (mounted) showAppToast(context, '头像保存失败');
+      appLogger.e('Failed to pick avatar: $e');
+      if (mounted) showAppToast(context, 'Failed to save avatar');
     } finally {
       if (mounted) setState(() => _isSaving = false);
     }
@@ -476,10 +479,10 @@ class _ProfileEditorSheetState extends ConsumerState<_ProfileEditorSheet> {
           .saveNickname(_nicknameCtrl.text);
       if (mounted) {
         Navigator.of(context).pop();
-        showAppToast(context, '已保存');
+        showAppToast(context, 'Saved');
       }
     } on Exception {
-      if (mounted) showAppToast(context, '保存失败，请重试');
+      if (mounted) showAppToast(context, 'Save failed, please try again');
     } finally {
       if (mounted) setState(() => _isSaving = false);
     }
@@ -526,7 +529,7 @@ class _ProfileEditorSheetState extends ConsumerState<_ProfileEditorSheet> {
                 ),
                 const SizedBox(height: 8),
                 Text(
-                  '点击更换头像',
+                  'Tap to change avatar',
                   style: TextStyle(fontSize: 12, color: palette.textHint),
                 ),
               ],
@@ -537,7 +540,7 @@ class _ProfileEditorSheetState extends ConsumerState<_ProfileEditorSheet> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(
-                '昵称',
+                'Nickname',
                 style: TextStyle(fontSize: 12, color: palette.textSecondary),
               ),
               const SizedBox(height: 6),
@@ -552,13 +555,16 @@ class _ProfileEditorSheetState extends ConsumerState<_ProfileEditorSheet> {
                     horizontal: 16,
                     vertical: 10,
                   ),
-                  hintText: '点击输入昵称',
+                  hintText: 'Enter a nickname',
                 ),
               ),
             ],
           ),
           const SizedBox(height: 20),
-          AppPrimaryButton(text: '保存', onTap: _isSaving ? null : _saveNickname),
+          AppPrimaryButton(
+            text: 'Save',
+            onTap: _isSaving ? null : _saveNickname,
+          ),
         ],
       ),
     );

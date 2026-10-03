@@ -56,8 +56,8 @@ class UserProfileRepository {
     try {
       await _kv.setJson(storageKey, next.toJson());
     } on Exception catch (e) {
-      appLogger.e('保存用户资料失败', error: e);
-      throw const ProfileStorageException('保存失败');
+      appLogger.e('Failed to save user profile', error: e);
+      throw const ProfileStorageException('Failed to save');
     }
     return next;
   }
@@ -67,7 +67,7 @@ class UserProfileRepository {
   /// 抛 [ProfileStorageException]（路径无效/落盘失败）供页面 toast。
   Future<UserProfile> saveAvatar(String sourcePath) async {
     if (sourcePath.trim().isEmpty) {
-      throw const ProfileStorageException('头像路径无效');
+      throw const ProfileStorageException('Invalid avatar path');
     }
     final store = await _avatarStore;
     final prevAvatarUrl = getProfile().avatarUrl;
@@ -77,8 +77,8 @@ class UserProfileRepository {
     } on PhotoStoreException {
       rethrow;
     } on Exception catch (e) {
-      appLogger.e('保存头像文件失败', error: e);
-      throw const ProfileStorageException('头像保存失败');
+      appLogger.e('Failed to save avatar file', error: e);
+      throw const ProfileStorageException('Failed to save avatar');
     }
     final next = await saveProfile(ProfilePatch(avatarUrl: filename));
     // 清理被替换的旧头像（尽力而为，失败不阻塞主流程）

@@ -1,21 +1,24 @@
 import 'package:flutter/material.dart';
 
 import 'package:ev_tool_app/core/extensions/context_extensions.dart';
-import 'package:ev_tool_app/core/domain/home_charger_calc.dart'
-    show formatAmount;
+import 'package:ev_tool_app/core/domain/numbers.dart' show formatMoney;
 import 'package:ev_tool_app/core/theme/app_colors.dart';
 
 /* 向导共 3 步：1 安装详情 → 2 环境条件 → 3 估算结果 */
 const int totalSteps = 3;
 
-const Map<int, String> stepTitles = {1: '安装详情', 2: '环境条件', 3: '估算结果'};
+const Map<int, String> stepTitles = {
+  1: 'Installation',
+  2: 'Site conditions',
+  3: 'Estimate',
+};
 
 const Map<int, int> stepPercent = {1: 33, 2: 66, 3: 100};
 
 /* 进度卡副文案（仅第 2/3 步有） */
 const Map<int, String> stepNotes = {
-  2: '请选择您的安装环境条件，以便我们为您更精准地测算成本。',
-  3: '基于您填写的安装环境及选配项自动计算',
+  2: 'Tell us about your install site for a more accurate estimate.',
+  3: 'Calculated automatically from your site conditions and add-ons',
 };
 
 /// 步骤进度卡：x/3 + 标题 + 百分比 + 进度条。
@@ -125,7 +128,7 @@ class HistoryEntry extends StatelessWidget {
             const SizedBox(width: 8),
             Expanded(
               child: Text(
-                '已保存的测算 · $count 条',
+                'Saved estimates ($count)',
                 style: TextStyle(fontSize: 13, color: palette.onSurface),
               ),
             ),
@@ -238,7 +241,7 @@ class ConditionRow extends StatelessWidget {
             ),
           ),
           Text(
-            '+¥$price',
+            '+${formatMoney(price)}',
             style: TextStyle(fontSize: 12, color: palette.textSecondary),
           ),
           Switch(value: value, onChanged: onChanged),
@@ -282,7 +285,7 @@ class TotalCard extends StatelessWidget {
             ),
             const SizedBox(height: 4),
             Text(
-              '¥ ${formatAmount(total)}',
+              formatMoney(total),
               style: TextStyle(
                 fontSize: 28,
                 fontWeight: FontWeight.w700,
@@ -302,7 +305,7 @@ class TotalCard extends StatelessWidget {
                     ),
                   ),
                   Text(
-                    '¥ ${formatAmount(line.$2)}',
+                    formatMoney(line.$2),
                     style: TextStyle(
                       fontSize: 12,
                       color: palette.onSurfaceVariant,

@@ -9,7 +9,7 @@ ScaffoldFeatureController<SnackBar, SnackBarClosedReason> showUndoBar(
   BuildContext context, {
   required String text,
   required VoidCallback onUndo,
-  String actionText = '撤销',
+  String actionText = 'Undo',
   Duration duration = const Duration(seconds: 5),
 }) {
   final messenger = ScaffoldMessenger.of(context);

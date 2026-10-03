@@ -30,23 +30,27 @@ class WorkConditionOption {
 
 /// 温度工况选项
 const List<WorkConditionOption> temperatureOptions = [
-  WorkConditionOption(value: 'freezing', label: '严寒 ≤-10℃', factor: 0.65),
-  WorkConditionOption(value: 'cold', label: '低温 0~10℃', factor: 0.8),
-  WorkConditionOption(value: 'mild', label: '常温', factor: 1),
-  WorkConditionOption(value: 'hot', label: '高温 ≥35℃', factor: 0.9),
+  WorkConditionOption(
+    value: 'freezing',
+    label: 'Freezing ≤-10°C',
+    factor: 0.65,
+  ),
+  WorkConditionOption(value: 'cold', label: 'Cold 0-10°C', factor: 0.8),
+  WorkConditionOption(value: 'mild', label: 'Mild', factor: 1),
+  WorkConditionOption(value: 'hot', label: 'Hot ≥35°C', factor: 0.9),
 ];
 
 /// 路况选项
 const List<WorkConditionOption> roadOptions = [
-  WorkConditionOption(value: 'city', label: '市区', factor: 1),
-  WorkConditionOption(value: 'mixed', label: '综合', factor: 0.9),
-  WorkConditionOption(value: 'highway', label: '高速', factor: 0.75),
+  WorkConditionOption(value: 'city', label: 'City', factor: 1),
+  WorkConditionOption(value: 'mixed', label: 'Mixed', factor: 0.9),
+  WorkConditionOption(value: 'highway', label: 'Highway', factor: 0.75),
 ];
 
 /// 空调选项
 const List<WorkConditionOption> acOptions = [
-  WorkConditionOption(value: 'off', label: '关闭', factor: 1),
-  WorkConditionOption(value: 'on', label: '开启', factor: 0.92),
+  WorkConditionOption(value: 'off', label: 'Off', factor: 1),
+  WorkConditionOption(value: 'on', label: 'On', factor: 0.92),
 ];
 
 class RangeEstimateInputs {

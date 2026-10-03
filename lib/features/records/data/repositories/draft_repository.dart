@@ -31,8 +31,8 @@ class DraftRepository {
     try {
       await _kv.setString('$keyPrefix$page', jsonEncode(draft));
     } on Exception catch (e) {
-      appLogger.e('草稿保存失败', error: e);
-      throw const StorageException('草稿保存失败');
+      appLogger.e('Failed to save draft', error: e);
+      throw const StorageException('Failed to save draft');
     }
   }
 
@@ -41,7 +41,7 @@ class DraftRepository {
     try {
       await _kv.remove('$keyPrefix$page');
     } on Exception catch (e) {
-      appLogger.w('草稿清除失败', error: e);
+      appLogger.w('Failed to clear draft', error: e);
     }
   }
 }

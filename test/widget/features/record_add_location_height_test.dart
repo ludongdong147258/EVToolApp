@@ -70,11 +70,11 @@ void main() {
     }
 
     // 滚动到充电地点字段可见
-    await tester.ensureVisible(find.text('点击地图选择地点'));
+    await tester.ensureVisible(find.text('Choose on map'));
     await tester.pumpAndSettle();
-    final placeholderHeight = fieldHeight(find.text('点击地图选择地点'));
+    final placeholderHeight = fieldHeight(find.text('Choose on map'));
 
-    await tester.tap(find.text('点击地图选择地点'));
+    await tester.tap(find.text('Choose on map'));
     await tester.pumpAndSettle();
 
     final filledFinder = find.textContaining('深圳市 · 深圳市南山区');

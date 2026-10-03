@@ -22,7 +22,7 @@ Future<void> showCostDetailSheet(
 
   return showAppSheet(
     context: context,
-    title: '支出详情',
+    title: 'Expense details',
     builder: (context) => AppSheetScrollBody(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -46,7 +46,7 @@ Future<void> showCostDetailSheet(
               ),
               const SizedBox(height: 8),
               Text(
-                '¥${formatYuan(expense.amount)}',
+                formatMoney(expense.amount),
                 style: TextStyle(
                   fontSize: 28,
                   fontWeight: FontWeight.w700,
@@ -75,15 +75,15 @@ Future<void> showCostDetailSheet(
           ),
           const SizedBox(height: 16),
           // 行式信息：label 左 / value 右对齐，末行（备注）无分割线
-          _SheetRow(label: '支出日期', value: formatDateCn(expense.date)),
+          _SheetRow(label: 'Expense date', value: formatDateCn(expense.date)),
           _SheetRow(
-            label: '车辆',
+            label: 'Vehicle',
             value: (expense.vehicleName ?? '').isNotEmpty
                 ? expense.vehicleName!
-                : '未关联',
+                : 'None',
           ),
           _SheetRow(
-            label: '备注',
+            label: 'Note',
             value: expense.note.isEmpty ? '—' : expense.note,
             isLast: true,
           ),
@@ -94,7 +94,7 @@ Future<void> showCostDetailSheet(
               Expanded(
                 child: _SheetAction(
                   icon: Icons.edit_outlined,
-                  label: '编辑这条支出',
+                  label: 'Edit',
                   iconColor: palette.textSecondary,
                   textColor: palette.onSurface,
                   background: palette.surfaceContainerLow,
@@ -108,7 +108,7 @@ Future<void> showCostDetailSheet(
               Expanded(
                 child: _SheetAction(
                   icon: Icons.delete_outline_rounded,
-                  label: '删除这条支出',
+                  label: 'Delete',
                   iconColor: palette.error,
                   textColor: palette.onErrorContainer,
                   background: palette.errorContainer,

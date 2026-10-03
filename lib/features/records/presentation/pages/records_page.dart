@@ -64,19 +64,21 @@ class _RecordsPageState extends ConsumerState<RecordsPage> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('删除记录'),
-        content: const Text('删除后 5 秒内可在底部提示条撤销，确定删除这条记录吗？'),
+        title: const Text('Delete Record'),
+        content: const Text(
+          'You can undo from the bar at the bottom for 5 seconds. Delete this record?',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: const Text('取消'),
+            child: const Text('Cancel'),
           ),
           TextButton(
             style: TextButton.styleFrom(
               foregroundColor: dialogContext.palette.error,
             ),
             onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: const Text('删除'),
+            child: const Text('Delete'),
           ),
         ],
       ),
@@ -98,8 +100,11 @@ class _RecordsPageState extends ConsumerState<RecordsPage> {
   void _showUndoBar() {
     showUndoBar(
       context,
-      text: _undoFailed ? '恢复失败，点此重试' : '已删除 ${_deletedPending.length} 条充电记录',
-      actionText: _undoFailed ? '重试' : '撤销',
+      text: _undoFailed
+          ? 'Restore failed — tap to retry'
+          : 'Deleted ${_deletedPending.length} '
+                '${_deletedPending.length == 1 ? 'record' : 'records'}',
+      actionText: _undoFailed ? 'Retry' : 'Undo',
       onUndo: _undoDelete,
     ).closed.whenComplete(() {
       // 窗口关闭（超时或撤销后）即放弃剩余待恢复项
@@ -121,7 +126,7 @@ class _RecordsPageState extends ConsumerState<RecordsPage> {
     if (allOk) {
       ScaffoldMessenger.of(context)
         ..hideCurrentSnackBar()
-        ..showSnackBar(const SnackBar(content: Text('已恢复')));
+        ..showSnackBar(const SnackBar(content: Text('Restored')));
       _deletedPending = [];
     }
   }
@@ -136,14 +141,13 @@ class _RecordsPageState extends ConsumerState<RecordsPage> {
     final prevSummary = calcMonthSummary(records, shiftMonthKey(monthKey, -1));
     final showMonthCompare = prevSummary.count > 0 && summary.count > 0;
     final monthDiff = summary.totalCost - prevSummary.totalCost;
-    final monthLabel =
-        '${monthKey.substring(0, 4)}年${int.parse(monthKey.substring(5))}月';
+    final monthLabel = formatMonthLabel(monthKey);
     final badgeProgress = buildBadgeProgress(records.length);
 
     final recent = records.take(_recentLimit).toList();
 
     return Scaffold(
-      appBar: AppBar(title: const Text('充电记录')),
+      appBar: AppBar(title: const Text('Charging Records')),
       body: ListView(
         padding: const EdgeInsets.only(
           left: 16,
@@ -165,7 +169,7 @@ class _RecordsPageState extends ConsumerState<RecordsPage> {
                     children: [
                       Expanded(
                         child: Text(
-                          '$monthLabel · 本月',
+                          '$monthLabel · This Month',
                           // hero-label--strong：纯白 14px（对齐小程序）
                           style: const TextStyle(
                             fontSize: 14,
@@ -180,26 +184,22 @@ class _RecordsPageState extends ConsumerState<RecordsPage> {
                     ],
                   ),
                   const SizedBox(height: 8),
-                  HeroValue(value: formatYuan(summary.totalCost), unit: '¥'),
+                  HeroValue(value: formatYuan(summary.totalCost), unit: '\$'),
                   const SizedBox(height: 20),
                   HeroStatsRow(
                     items: [
+                      HeroStatItem(label: 'Charges', value: '${summary.count}'),
                       HeroStatItem(
-                        label: '充电次数',
-                        value: '${summary.count}',
-                        unit: '次',
-                      ),
-                      HeroStatItem(
-                        label: '总电量',
+                        label: 'Energy',
                         value: formatYuan(summary.totalEnergy),
                         unit: 'kWh',
                       ),
                       HeroStatItem(
-                        label: '度电成本',
+                        label: 'Avg Cost',
                         value: summary.costPerKwh == null
                             ? '--'
                             : formatYuan(summary.costPerKwh!),
-                        unit: '¥/kWh',
+                        unit: '\$/kWh',
                       ),
                     ],
                   ),
@@ -212,8 +212,9 @@ class _RecordsPageState extends ConsumerState<RecordsPage> {
             _HintBar(
               icon: Icons.compare_arrows_rounded,
               text:
-                  '上月充电 ${prevSummary.count} 次 · ¥${formatYuan(prevSummary.totalCost)}，'
-                  '本月${monthDiff >= 0 ? '多花 ¥${formatYuan(monthDiff)}' : '少花 ¥${formatYuan(-monthDiff)}'}',
+                  'Last month: ${prevSummary.count} charges · \$'
+                  '${formatYuan(prevSummary.totalCost)} · this month '
+                  '${monthDiff >= 0 ? 'spent \$${formatYuan(monthDiff)} more' : 'spent \$${formatYuan(-monthDiff)} less'}',
             ),
             const SizedBox(height: 8),
           ],
@@ -221,8 +222,8 @@ class _RecordsPageState extends ConsumerState<RecordsPage> {
             _HintBar(
               icon: Icons.star_rounded,
               text:
-                  '再记 ${badgeProgress.remaining} 条充电记录，'
-                  '升级「${badgeProgress.nextLabel}」',
+                  'Log ${badgeProgress.remaining} more charges to reach '
+                  '"${badgeProgress.nextLabel}"',
             ),
             const SizedBox(height: 8),
           ],
@@ -234,7 +235,7 @@ class _RecordsPageState extends ConsumerState<RecordsPage> {
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   Text(
-                    '最近记录 · ${recent.length} 条',
+                    'Recent · ${recent.length}',
                     style: context.textTheme.titleSmall?.copyWith(
                       fontWeight: FontWeight.w600,
                     ),
@@ -242,7 +243,7 @@ class _RecordsPageState extends ConsumerState<RecordsPage> {
                   if (records.isNotEmpty) ...[
                     const SizedBox(width: 6),
                     Text(
-                      '长按可删除',
+                      'Long-press to delete',
                       style: TextStyle(
                         fontSize: 12,
                         color: context.palette.textHint,
@@ -264,7 +265,7 @@ class _RecordsPageState extends ConsumerState<RecordsPage> {
                       mainAxisSize: MainAxisSize.min,
                       children: [
                         Text(
-                          '查看全部',
+                          'View All',
                           style: TextStyle(
                             fontSize: 12,
                             color: context.palette.textHint,
@@ -285,9 +286,10 @@ class _RecordsPageState extends ConsumerState<RecordsPage> {
           if (records.isEmpty)
             EmptyState(
               icon: Icons.ev_station_rounded,
-              title: '暂无充电记录',
-              subtitle: '添加第一条充电记录，开始追踪充电支出',
-              ctaText: '添加记录',
+              title: 'No records yet',
+              subtitle:
+                  'Add your first charging record to start tracking costs',
+              ctaText: 'Add Record',
               onCta: () => context.push(RouteNames.recordAdd),
             )
           else

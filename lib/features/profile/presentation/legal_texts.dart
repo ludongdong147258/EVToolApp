@@ -1,6 +1,6 @@
-/// 用户协议 / 隐私政策静态文案（移植小程序 agreement / privacy 页 SECTIONS）。
+/// 用户协议 / 隐私政策静态文案（英文出海版，结构对齐小程序 agreement / privacy 页）。
 ///
-/// 文本逐字保留小程序原文；更新日期同步展示在页面顶部。
+/// 更新日期同步展示在页面顶部。
 library;
 
 /// 联系邮箱（与小程序 src/lib/constants.js CONTACT_EMAIL 一致）。
@@ -20,140 +20,149 @@ class LegalSection {
 /// 用户协议正文。
 const List<LegalSection> agreementSections = <LegalSection>[
   LegalSection(
-    title: '一、协议的接受',
+    title: '1. Acceptance of These Terms',
     paragraphs: [
-      '欢迎使用电车充电记录（以下简称「本服务」）。本协议是您与本服务之间就使用本服务所订立的协议。',
-      '您在开始使用本服务前，应当仔细阅读并充分理解本协议的全部内容。您点击进入本服务、注册、登录或以任何方式使用本服务，即表示您已阅读并同意接受本协议的全部条款。',
-      '若您不同意本协议的任何内容，请停止使用本服务。',
+      'Welcome to VoltMate (the "Service"). These Terms constitute the agreement between you and the Service regarding your use of the Service.',
+      'Before using the Service, you should read and understand these Terms in their entirety. By downloading, opening, or using the Service in any way, you acknowledge that you have read and agree to be bound by all of these Terms.',
+      'If you do not agree with any part of these Terms, please stop using the Service.',
     ],
   ),
   LegalSection(
-    title: '二、服务说明',
+    title: '2. About the Service',
     paragraphs: [
-      '本服务是一款面向电车（新能源车辆）用户的实用工具小程序，当前提供充电记录管理、充电统计、费用与峰谷电价计算、油电成本对比等功能。',
-      '本服务中的各项计算结果（包括但不限于费用估算、成本对比、充电成本统计）均基于您输入的数据与默认参数得出，仅供参考，不构成任何消费建议或决策依据。',
-      '本服务可能不定期更新功能界面、调整服务内容，具体以小程序实际提供的功能为准。',
+      'VoltMate is a practical companion app for electric vehicle owners. It currently provides charging record management, charging statistics, cost and time-of-use electricity pricing calculators, and fuel-versus-EV cost comparison tools.',
+      'All calculation results produced by the Service (including, without limitation, cost estimates, cost comparisons, and charging cost statistics) are derived from the data you enter and default parameters. They are provided for reference only and do not constitute purchasing advice or a basis for any decision.',
+      'The Service may be updated from time to time with new features, interface changes, or adjusted content. The features actually provided in the app shall prevail.',
     ],
   ),
   LegalSection(
-    title: '三、账号与登录',
+    title: '3. No Account Required',
     paragraphs: [
-      '本服务通过微信授权方式登录。您授权登录即视为同意本服务获取微信提供的公开信息（如昵称、头像）用于账号识别与展示。',
-      '您应妥善保管自己的微信账号，因账号保管不善导致的责任由您自行承担。',
-      '若您退出登录或停止使用本服务，可自行清除本地缓存数据，具体方式见《隐私政策》。',
+      'VoltMate does not require registration, sign-in, or an account. There is no login flow, and the Service does not collect account credentials.',
+      'Your nickname, avatar, and preferences are optional profile details stored only on your device, and you may clear or change them at any time.',
+      'Because no account exists, you remain in full control of your data at all times, as described in the Privacy Policy.',
     ],
   ),
   LegalSection(
-    title: '四、用户行为规范',
+    title: '4. Acceptable Use',
     paragraphs: [
-      '您在使用本服务时，应遵守相关法律法规，不得利用本服务从事任何违法违规活动。',
-      '您不得通过技术手段破坏本服务的正常运行，或尝试获取其他用户的数据。',
-      '您录入的数据内容应由您自行负责，请勿录入违反法律法规或侵犯他人权益的内容。',
+      'When using the Service, you agree to comply with all applicable laws and regulations, and not to use the Service for any unlawful purpose.',
+      'You may not disrupt the normal operation of the Service through technical means or attempt to access data belonging to other users.',
+      'You are solely responsible for the content you enter. Do not enter content that violates laws and regulations or infringes the rights of others.',
     ],
   ),
   LegalSection(
-    title: '五、数据的存储与删除',
+    title: '5. Data Storage and Deletion',
     paragraphs: [
-      '您的充电记录等数据会存储在本地缓存与服务端，用于向您提供记录管理与统计功能，详见《隐私政策》。',
-      '您可以在应用内自行删除已录入的记录。记录删除后不可恢复，请在删除前确认无误。',
+      'Your charging records, expenses, vehicle profiles, and other data are stored locally on your device. The Service does not operate a server copy of your data, except for the third-party service calls explicitly described in the Privacy Policy.',
+      'You may delete any record you have entered within the app at any time. Deletions are permanent and cannot be undone, so please confirm before deleting.',
+      'Backup files you export contain your own data. Once exported, they are under your control, and you are responsible for storing them safely.',
     ],
   ),
   LegalSection(
-    title: '六、免责声明',
+    title: '6. Disclaimer of Warranty',
     paragraphs: [
-      '本服务提供的所有计算结果与统计信息仅供参考，可能因电价政策、参数设置、数据录入误差等原因与实际情况存在偏差，您据此做出的任何决策由您自行承担责任。',
-      '本服务不保证服务持续不中断，因系统维护、升级或其他不可抗力导致服务暂停或中断的，本服务不承担由此造成的损失。',
-      '对于因您自行删除数据、清除缓存或卸载小程序导致的数据丢失，本服务不承担恢复责任。',
+      'All calculations and statistics provided by the Service are for reference only. They may differ from actual results due to electricity pricing policies, parameter settings, or data entry errors. Any decision you make based on them is your own responsibility.',
+      'The Service is provided on an "as is" and "as available" basis, without warranties of any kind. The Service does not guarantee uninterrupted operation and is not liable for losses caused by suspension or interruption due to maintenance, upgrades, or other causes beyond its reasonable control.',
+      'The Service is not responsible for recovering data lost as a result of your own deletion of records, clearing of app data, or uninstallation of the app.',
     ],
   ),
   LegalSection(
-    title: '七、知识产权',
+    title: '7. Intellectual Property',
     paragraphs: [
-      '本服务的界面设计、代码、图标及相关内容的知识产权归本服务运营者所有。',
-      '未经许可，任何人不得复制、转载或用于其他商业用途。',
+      'The interface design, code, icons, and related content of the Service are the intellectual property of the operator of the Service.',
+      'No one may copy, republish, or use them for other commercial purposes without permission.',
     ],
   ),
   LegalSection(
-    title: '八、协议的修改与终止',
+    title: '8. Changes to These Terms and Termination',
     paragraphs: [
-      '本服务可能根据功能调整或法律法规要求不定期修订本协议，修订后的协议会在本页面发布并更新日期。',
-      '若您在协议修订后继续使用本服务，即视为接受修订后的协议。',
-      '若您违反本协议约定，本服务有权暂停或终止向您提供服务。',
+      'The Service may revise these Terms from time to time to reflect feature adjustments or legal requirements. Revised Terms will be published on this page with an updated date.',
+      'If you continue to use the Service after the Terms are revised, you are deemed to have accepted the revised Terms.',
+      'If you breach these Terms, the Service reserves the right to suspend or terminate the provision of the Service to you.',
     ],
   ),
   LegalSection(
-    title: '九、联系方式',
-    paragraphs: ['若您对本协议有任何疑问或建议，可通过邮箱 $contactEmail 与我们联系。'],
+    title: '9. Contact Us',
+    paragraphs: [
+      'If you have any questions or suggestions about these Terms, you may contact us by email at $contactEmail.',
+    ],
   ),
 ];
 
 /// 隐私政策正文。
 const List<LegalSection> privacySections = <LegalSection>[
   LegalSection(
-    title: '一、引言',
+    title: '1. Introduction',
     paragraphs: [
-      '电车充电记录（以下简称「本服务」）非常重视用户隐私。本政策说明本服务收集哪些信息、如何使用和存储这些信息，以及您拥有的相关权利。',
-      '请在使用本服务前仔细阅读本政策。您使用本服务，即表示同意本政策所述的信息处理方式。',
+      'VoltMate (the "Service") takes your privacy seriously. This Policy explains what information the Service handles, how it is used and stored, and the rights you have in connection with it.',
+      'Please read this Policy carefully before using the Service. By using the Service, you agree to the information practices described in this Policy.',
     ],
   ),
   LegalSection(
-    title: '二、我们收集的信息',
+    title: '2. Information We Handle',
     paragraphs: [
-      '您主动录入的数据：为使用充电记录、费用统计等功能，您可能主动录入充电金额、电量、时间等数据。',
-      '账号信息：当您通过微信授权登录时，本服务会获取微信提供的昵称、头像等公开信息，用于账号识别与页面展示。',
-      '设备与运行信息：为适配界面与保障服务正常运行，本服务可能收集设备型号、操作系统版本、屏幕尺寸等信息。',
-      '本服务不会收集与你提供服务无关的身份敏感信息，如身份证号、银行卡号等。',
+      'Data you enter: To use features such as charging records and cost statistics, you may voluntarily enter data such as charging amounts, energy, dates, and vehicle details. This data is stored locally on your device and is not uploaded to any server.',
+      'Optional profile information: If you choose to set a nickname or avatar, it is stored only on your device for display purposes. No account or sign-in is required.',
+      'Device and runtime information: The Service may use basic device characteristics (such as screen size and operating system version) solely to lay out its interface correctly.',
+      'The Service does not collect sensitive identity information that is unrelated to providing the Service, such as government ID numbers or bank card numbers.',
     ],
   ),
   LegalSection(
-    title: '三、信息的使用',
+    title: '3. How Information Is Used',
     paragraphs: [
-      '向您提供核心功能：保存与展示您的充电记录，计算统计指标（累计费用、度电成本等），以及油电对比、峰谷电价计算等工具。',
-      '账号鉴权：登录凭证（token）用于识别您的身份并保持登录状态。',
-      '服务优化：汇总分析功能使用情况，用于改进产品体验。',
+      'Providing core features: Saving and displaying your charging records, computing statistics (cumulative cost, cost per kWh, and so on), and running tools such as fuel-versus-EV comparison and time-of-use pricing calculations. These computations run on your device using the data you enter.',
+      'Third-party feature calls: When you use a feature that requires an external service, the necessary data is sent to that service to fulfill your request. Specifically: a map and location service receives your coordinates to find nearby charging stations or convert coordinates into place names, and, if you use receipt scanning, the receipt image is sent to an optical character recognition service. These calls only occur when you actively trigger the corresponding feature.',
+      'Service improvement: We may analyze aggregated, anonymized usage patterns to improve the product experience.',
     ],
   ),
   LegalSection(
-    title: '四、信息的存储',
+    title: '4. Information Storage',
     paragraphs: [
-      '本地存储：部分数据（如充电记录缓存、登录凭证）通过微信小程序本地存储能力保存在您的设备上。',
-      '服务端存储：为实现账号体系下的数据同步，您的相关数据会存储在服务端。',
-      '存储期限：您的数据仅在为您提供服务所必需的期间内保留。您删除记录或注销账号后，我们将在合理期限内删除或匿名化处理相关数据。',
+      'Local storage: All of your data — charging records, expenses, vehicle profiles, memos, and preferences — is stored locally on your device using the app\'s local storage. The Service operates no user-facing server database.',
+      'Backups: Backup files you export contain your own data and are saved wherever you choose to save them. The Service cannot access files after you share or store them.',
+      'Storage duration: Because your data resides on your device, it is retained for as long as you keep the app and its data. Removing the app removes the data stored on your device.',
     ],
   ),
   LegalSection(
-    title: '五、信息的共享与披露',
+    title: '5. Sharing and Disclosure',
     paragraphs: [
-      '本服务不会向任何第三方出售您的个人信息。',
-      '除以下情形外，我们不会共享您的个人信息：经您明确同意；根据法律法规或主管部门的强制性要求；为保护用户或公众的合法权益所必需。',
+      'The Service does not sell your personal information to any third party.',
+      'Except in the following situations, we do not share your personal information: with your explicit consent; where required by law or by a competent authority; or where necessary to protect the lawful rights and interests of users or the public.',
     ],
   ),
   LegalSection(
-    title: '六、微信小程序相关',
+    title: '6. Third-Party Services and Permissions',
     paragraphs: [
-      '本服务运行于微信小程序平台，请您同时了解微信官方的隐私保护指引。',
-      '若功能涉及调用设备权限（如位置、相册等），本服务会在使用时向您说明用途，并遵循微信官方的授权机制，您可随时在微信设置中管理授权。',
+      'Some features rely on third-party services, including map and location services, receipt recognition, and product search and affiliate links. When you use these features, the data described in Section 3 is transmitted to the corresponding service provider and is subject to that provider\'s own privacy policy.',
+      'If a feature requires a device permission (such as location, camera, or photo library), the Service explains the purpose at the time of use. You may grant or revoke these permissions at any time in your device settings; related features will degrade gracefully when a permission is denied.',
     ],
   ),
   LegalSection(
-    title: '七、您的权利',
+    title: '7. Your Rights',
     paragraphs: [
-      '查询与更正：您可以在应用内查看和修改自己录入的充电记录等信息。',
-      '删除：您可以随时在应用内删除指定记录，删除后不可恢复。',
-      '清除本地数据：您可以通过微信小程序设置或卸载小程序清除本地缓存。',
-      '注销：若您希望注销账号并删除服务端数据，可通过联系方式与我们取得联系。',
+      'Access and correction: You can view and modify the charging records and other information you have entered at any time within the app.',
+      'Deletion: You may delete specific records in the app at any time. Deletion is permanent and cannot be undone.',
+      'Clearing local data: You can clear all locally stored data at any time by deleting the app\'s data or uninstalling the app.',
+      'No account deletion is needed because the Service does not create accounts or store your data on any server.',
     ],
   ),
   LegalSection(
-    title: '八、未成年人保护',
-    paragraphs: ['本服务主要面向成年用户。若您是未成年人，请在监护人指导下使用本服务，并在录入信息前征得监护人同意。'],
+    title: '8. Children',
+    paragraphs: [
+      'The Service is intended for adult users. If you are a minor, please use the Service under the guidance of a parent or guardian and obtain their consent before entering any information.',
+    ],
   ),
   LegalSection(
-    title: '九、政策的更新',
-    paragraphs: ['本政策可能不时更新，更新后会在本页面发布并更新日期。若您在政策更新后继续使用本服务，即视为接受更新后的政策。'],
+    title: '9. Updates to This Policy',
+    paragraphs: [
+      'This Policy may be updated from time to time. Updates will be published on this page with an updated date. If you continue to use the Service after an update, you are deemed to accept the updated Policy.',
+    ],
   ),
   LegalSection(
-    title: '十、联系方式',
-    paragraphs: ['若您对本政策有任何疑问、意见或诉求，可通过邮箱 $contactEmail 与我们联系，我们将在合理期限内予以回复。'],
+    title: '10. Contact Us',
+    paragraphs: [
+      'If you have any questions, comments, or requests regarding this Policy, you may contact us by email at $contactEmail, and we will respond within a reasonable time.',
+    ],
   ),
 ];

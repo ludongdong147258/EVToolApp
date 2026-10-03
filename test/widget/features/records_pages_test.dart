@@ -42,9 +42,9 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('充电记录'), findsWidgets);
-    expect(find.text('暂无充电记录'), findsOneWidget);
-    expect(find.text('添加记录'), findsOneWidget);
+    expect(find.text('Charging Records'), findsWidgets);
+    expect(find.text('No records yet'), findsOneWidget);
+    expect(find.text('Add Record'), findsOneWidget);
   });
 
   testWidgets('records_page 有记录时展示月度 hero 与最近记录', (tester) async {
@@ -81,9 +81,9 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('快充'), findsOneWidget);
-    expect(find.text('家充'), findsOneWidget);
-    expect(find.text('最近记录 · 2 条'), findsOneWidget);
+    expect(find.text('Fast (DC)'), findsOneWidget);
+    expect(find.text('Home (AC)'), findsOneWidget);
+    expect(find.text('Recent · 2'), findsOneWidget);
     expect(find.byType(RecordAddPage), findsNothing);
   });
 
@@ -98,14 +98,14 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('添加充电记录'), findsOneWidget);
-    expect(find.text('快充'), findsOneWidget);
+    expect(find.text('Add Charging Record'), findsOneWidget);
+    expect(find.text('Fast (DC)'), findsOneWidget);
 
     // 输入费用与电量 → 出现度电成本提示
     await tester.enterText(find.byType(TextField).at(0), '30');
     await tester.enterText(find.byType(TextField).at(1), '40');
     await tester.pump();
 
-    expect(find.textContaining('度电成本约 0.75 元/kWh'), findsOneWidget);
+    expect(find.textContaining('Est. \$0.75/kWh'), findsOneWidget);
   });
 }

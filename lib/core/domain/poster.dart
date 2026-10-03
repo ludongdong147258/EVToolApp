@@ -1,5 +1,6 @@
 import 'package:ev_tool_app/core/domain/annual_report.dart';
 import 'package:ev_tool_app/core/domain/charge_records.dart';
+import 'package:ev_tool_app/core/domain/date_utils.dart';
 import 'package:ev_tool_app/core/domain/numbers.dart';
 import 'package:ev_tool_app/core/domain/user_badges.dart';
 
@@ -139,12 +140,12 @@ List<PosterBestItem> _buildBestItems(AnnualReport report) {
   if (maxCostRecord != null) {
     items.add(
       PosterBestItem(
-        label: '单次最高花费',
-        value: '¥${formatYuan(maxCostRecord.cost)}',
+        label: 'Biggest single spend',
+        value: formatMoney(maxCostRecord.cost),
         sub: _joinParts([
-          formatRecordDate(maxCostRecord.date),
-          typeDefaultTitles[maxCostRecord.type] ?? '充电',
-          '${formatYuan(maxCostRecord.energy)}kWh',
+          formatFullDate(maxCostRecord.date),
+          typeDefaultTitles[maxCostRecord.type] ?? 'Charge',
+          '${formatYuan(maxCostRecord.energy)} kWh',
         ]),
       ),
     );
@@ -153,11 +154,11 @@ List<PosterBestItem> _buildBestItems(AnnualReport report) {
   if (maxEnergyRecord != null) {
     items.add(
       PosterBestItem(
-        label: '单次最多电量',
+        label: 'Most energy in one charge',
         value: '${formatYuan(maxEnergyRecord.energy)} kWh',
         sub: _joinParts([
-          formatRecordDate(maxEnergyRecord.date),
-          '¥${formatYuan(maxEnergyRecord.cost)}',
+          formatFullDate(maxEnergyRecord.date),
+          formatMoney(maxEnergyRecord.cost),
         ]),
       ),
     );
@@ -166,14 +167,16 @@ List<PosterBestItem> _buildBestItems(AnnualReport report) {
   if (topMonth != null) {
     items.add(
       PosterBestItem(
-        label: '最活跃月份',
-        value: '${int.tryParse(topMonth.monthKey?.substring(5) ?? '') ?? 0}月',
-        sub: '充电 ${topMonth.count} 次 · ¥${formatYuan(topMonth.totalCost)}',
+        label: 'Most active month',
+        value: formatMonthLabel(topMonth.monthKey),
+        sub: '${topMonth.count} charges · ${formatMoney(topMonth.totalCost)}',
       ),
     );
   }
   if (items.isEmpty) {
-    return const [PosterBestItem(label: '年度之最', value: '--', sub: '暂无数据')];
+    return const [
+      PosterBestItem(label: 'Year highlights', value: '--', sub: 'No data yet'),
+    ];
   }
   return items;
 }
@@ -194,21 +197,21 @@ PosterModel buildPosterModel(AnnualReport? report, Object? totalRecordCount) {
       : List.generate(12, (_) => const PosterBar(value: 0, hasRecords: false));
 
   return PosterModel(
-    titleText: '${source.year?.toString() ?? '--'} 年度充电报告',
-    heroCostText: '¥${formatYuan(source.totalCost)}',
+    titleText: '${source.year?.toString() ?? '--'} Annual Charging Report',
+    heroCostText: formatMoney(source.totalCost),
     statLines: [
-      PosterStatLine(label: '充电次数', value: '$count', unit: '次'),
+      PosterStatLine(label: 'Charges', value: '$count', unit: ''),
       PosterStatLine(
-        label: '总电量',
+        label: 'Total Energy',
         value: formatYuan(source.totalEnergy),
         unit: 'kWh',
       ),
       PosterStatLine(
-        label: '度电均价',
+        label: 'Avg Price',
         value: source.costPerKwh == null
             ? '--'
             : formatYuan(source.costPerKwh!),
-        unit: '¥/kWh',
+        unit: '\$/kWh',
       ),
     ],
     barItems: months,
@@ -216,8 +219,8 @@ PosterModel buildPosterModel(AnnualReport? report, Object? totalRecordCount) {
     homePercent: count > 0 ? 100 - fastPercent : 0,
     bestItems: _buildBestItems(source),
     // 底部身份文案：徽标（充电达人等）+ 固定 slogan。
-    sloganText: '${resolveBadgeLabel(totalRecordCount)} · 电车生活一年一度',
-    footerText: 'EVTool 电车充电记录',
+    sloganText: '${resolveBadgeLabel(totalRecordCount)} · A year in EV life',
+    footerText: 'EVTool · EV Charging Log',
   );
 }
 

@@ -30,15 +30,15 @@ class VehiclesPage extends ConsumerWidget {
     final vehicles = ref.watch(vehiclesProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('我的车辆')),
+      appBar: AppBar(title: const Text('My Vehicles')),
       body: vehicles.isEmpty
           ? ListView(
               children: [
                 EmptyState(
                   icon: Icons.directions_car_rounded,
-                  title: '暂无车辆',
-                  subtitle: '添加车辆信息，方便后续计算充电花费',
-                  ctaText: '添加车辆',
+                  title: 'No vehicles yet',
+                  subtitle: 'Add a vehicle to track your charging costs',
+                  ctaText: 'Add Vehicle',
                   onCta: () => _openVehicleSheet(context, ref),
                 ),
               ],
@@ -67,7 +67,7 @@ Future<void> _openVehicleSheet(
 ]) {
   return showAppSheet(
     context: context,
-    title: vehicle == null ? '添加车辆' : '编辑车辆',
+    title: vehicle == null ? 'Add Vehicle' : 'Edit Vehicle',
     builder: (_) => _VehicleFormSheet(vehicle: vehicle),
   );
 }
@@ -87,7 +87,7 @@ Future<void> _showMoreMenu(
           if (!vehicle.isDefault)
             ListTile(
               leading: const Icon(Icons.star_rounded),
-              title: const Text('设为默认'),
+              title: const Text('Set as Default'),
               onTap: () {
                 Navigator.of(sheetContext).pop();
                 _confirmSetDefault(context, ref, vehicle);
@@ -98,7 +98,10 @@ Future<void> _showMoreMenu(
               Icons.delete_outline_rounded,
               color: context.palette.error,
             ),
-            title: Text('删除', style: TextStyle(color: context.palette.error)),
+            title: Text(
+              'Delete',
+              style: TextStyle(color: context.palette.error),
+            ),
             onTap: () {
               Navigator.of(sheetContext).pop();
               _confirmRemove(context, ref, vehicle);
@@ -118,16 +121,16 @@ Future<void> _confirmSetDefault(
   final confirmed = await showDialog<bool>(
     context: context,
     builder: (dialogContext) => AlertDialog(
-      title: const Text('设为默认'),
-      content: Text('将「${vehicle.name}」设为默认车辆？'),
+      title: const Text('Set as Default'),
+      content: Text('Set "${vehicle.name}" as your default vehicle?'),
       actions: [
         TextButton(
           onPressed: () => Navigator.of(dialogContext).pop(false),
-          child: const Text('取消'),
+          child: const Text('Cancel'),
         ),
         TextButton(
           onPressed: () => Navigator.of(dialogContext).pop(true),
-          child: const Text('设为默认'),
+          child: const Text('Set Default'),
         ),
       ],
     ),
@@ -135,9 +138,9 @@ Future<void> _confirmSetDefault(
   if (confirmed != true || !context.mounted) return;
   try {
     await ref.read(vehiclesProvider.notifier).setDefault(vehicle.id);
-    if (context.mounted) showAppToast(context, '已设为默认');
+    if (context.mounted) showAppToast(context, 'Set as default');
   } on Exception {
-    if (context.mounted) showAppToast(context, '设置失败，请重试');
+    if (context.mounted) showAppToast(context, 'Failed, please try again');
   }
 }
 
@@ -149,19 +152,19 @@ Future<void> _confirmRemove(
   final confirmed = await showDialog<bool>(
     context: context,
     builder: (dialogContext) => AlertDialog(
-      title: const Text('删除车辆'),
-      content: Text('删除后不可恢复，确定删除“${vehicle.name}”吗？'),
+      title: const Text('Delete Vehicle'),
+      content: Text('This cannot be undone. Delete "${vehicle.name}"?'),
       actions: [
         TextButton(
           onPressed: () => Navigator.of(dialogContext).pop(false),
-          child: const Text('取消'),
+          child: const Text('Cancel'),
         ),
         TextButton(
           style: TextButton.styleFrom(
             foregroundColor: dialogContext.palette.error,
           ),
           onPressed: () => Navigator.of(dialogContext).pop(true),
-          child: const Text('删除'),
+          child: const Text('Delete'),
         ),
       ],
     ),
@@ -176,9 +179,11 @@ Future<void> _confirmRemove(
       final store = await ref.read(photoStoreProvider.future);
       unawaited(store.delete(photoPath));
     }
-    if (context.mounted) showAppToast(context, '已删除');
+    if (context.mounted) showAppToast(context, 'Deleted');
   } on Exception {
-    if (context.mounted) showAppToast(context, '删除失败，请重试');
+    if (context.mounted) {
+      showAppToast(context, 'Delete failed, please try again');
+    }
   }
 }
 
@@ -239,7 +244,7 @@ class _VehicleCard extends StatelessWidget {
                           ),
                           const SizedBox(width: 2),
                           Text(
-                            '默认',
+                            'Default',
                             style: TextStyle(
                               fontSize: 11,
                               color: palette.onSecondaryContainer,
@@ -277,7 +282,7 @@ class _VehicleCard extends StatelessWidget {
                   ),
                   const SizedBox(width: 4),
                   Text(
-                    '电池容量',
+                    'Battery',
                     style: TextStyle(
                       fontSize: 12,
                       color: palette.textSecondary,
@@ -339,7 +344,7 @@ class _AddVehicleTile extends StatelessWidget {
               Icon(Icons.add_rounded, size: 18, color: palette.textSecondary),
               const SizedBox(width: 4),
               Text(
-                '添加车辆',
+                'Add Vehicle',
                 style: TextStyle(
                   fontSize: 14,
                   color: palette.textSecondary,
@@ -417,16 +422,16 @@ class _VehicleFormSheetState extends ConsumerState<_VehicleFormSheet> {
     final discard = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('放弃编辑'),
-        content: const Text('内容尚未保存，确定放弃？'),
+        title: const Text('Discard Changes'),
+        content: const Text('Your changes are not saved. Discard them?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: const Text('继续编辑'),
+            child: const Text('Keep Editing'),
           ),
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: const Text('放弃'),
+            child: const Text('Discard'),
           ),
         ],
       ),
@@ -448,8 +453,10 @@ class _VehicleFormSheetState extends ConsumerState<_VehicleFormSheet> {
       if (picked == null) return; // 用户取消不算错误
       setState(() => _photoDraft = picked.path);
     } on Exception catch (e) {
-      appLogger.e('选图失败(vehicle): $e');
-      if (mounted) showAppToast(context, '选择图片失败，请重试');
+      appLogger.e('Failed to pick image (vehicle): $e');
+      if (mounted) {
+        showAppToast(context, 'Failed to pick an image, please try again');
+      }
     }
   }
 
@@ -458,10 +465,10 @@ class _VehicleFormSheetState extends ConsumerState<_VehicleFormSheet> {
   /// 前置校验给出精确文案；buildVehicleFromForm 作最终守卫兜底。
   bool _showValidationErrors() {
     final nameError = normalizeVehicleName(_nameCtrl.text) == null
-        ? '请输入 1-20 字的昵称'
+        ? 'Enter a nickname of 1-20 characters'
         : null;
     final batteryError = parseBattery(_batteryCtrl.text) == null
-        ? '请输入 15-200 的电池容量'
+        ? 'Enter a battery capacity of 15-200'
         : null;
     setState(() {
       _nameError = nameError;
@@ -484,7 +491,7 @@ class _VehicleFormSheetState extends ConsumerState<_VehicleFormSheet> {
       now,
     );
     if (vehicle == null) {
-      showAppToast(context, '请检查输入内容');
+      showAppToast(context, 'Please check your input');
       return;
     }
     setState(() => _isSaving = true);
@@ -527,7 +534,7 @@ class _VehicleFormSheetState extends ConsumerState<_VehicleFormSheet> {
       }
       if (mounted) {
         Navigator.of(context).pop();
-        showAppToast(context, '已保存');
+        showAppToast(context, 'Saved');
       }
     } on PhotoStoreException catch (e) {
       if (mounted) {
@@ -537,7 +544,7 @@ class _VehicleFormSheetState extends ConsumerState<_VehicleFormSheet> {
     } on Exception {
       if (mounted) {
         setState(() => _isSaving = false);
-        showAppToast(context, '保存失败，请重试');
+        showAppToast(context, 'Save failed, please try again');
       }
     }
   }
@@ -560,7 +567,7 @@ class _VehicleFormSheetState extends ConsumerState<_VehicleFormSheet> {
             mainAxisSize: MainAxisSize.min,
             children: [
               _FieldLabel(
-                label: '昵称',
+                label: 'Nickname',
                 errorText: _nameError,
                 child: TextField(
                   controller: _nameCtrl,
@@ -568,7 +575,7 @@ class _VehicleFormSheetState extends ConsumerState<_VehicleFormSheet> {
                   decoration: const InputDecoration(
                     counterText: '',
                     isDense: true,
-                    hintText: '如：小白',
+                    hintText: 'e.g. Bolt',
                     contentPadding: EdgeInsets.symmetric(
                       horizontal: 16,
                       vertical: 9,
@@ -583,7 +590,7 @@ class _VehicleFormSheetState extends ConsumerState<_VehicleFormSheet> {
               ),
               const SizedBox(height: 14),
               _FieldLabel(
-                label: '电池容量（kWh）',
+                label: 'Battery (kWh)',
                 errorText: _batteryError,
                 child: TextField(
                   controller: _batteryCtrl,
@@ -592,7 +599,7 @@ class _VehicleFormSheetState extends ConsumerState<_VehicleFormSheet> {
                   ),
                   decoration: const InputDecoration(
                     isDense: true,
-                    hintText: '如 60',
+                    hintText: 'e.g. 60',
                     contentPadding: EdgeInsets.symmetric(
                       horizontal: 16,
                       vertical: 9,
@@ -607,7 +614,7 @@ class _VehicleFormSheetState extends ConsumerState<_VehicleFormSheet> {
               ),
               const SizedBox(height: 14),
               _FieldLabel(
-                label: '备注（选填）',
+                label: 'Note (Optional)',
                 child: TextField(
                   controller: _noteCtrl,
                   maxLength: vehicleNoteMaxLength,
@@ -615,7 +622,7 @@ class _VehicleFormSheetState extends ConsumerState<_VehicleFormSheet> {
                   decoration: const InputDecoration(
                     counterText: '',
                     isDense: true,
-                    hintText: '例如：家充为主、白色 Model 3',
+                    hintText: 'e.g. Home charging, white Model 3',
                     contentPadding: EdgeInsets.symmetric(
                       horizontal: 16,
                       vertical: 9,
@@ -634,7 +641,7 @@ class _VehicleFormSheetState extends ConsumerState<_VehicleFormSheet> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          '车辆照片（选填）',
+                          'Photo (Optional)',
                           style: TextStyle(
                             fontSize: 12,
                             color: palette.textSecondary,
@@ -646,16 +653,16 @@ class _VehicleFormSheetState extends ConsumerState<_VehicleFormSheet> {
                           runSpacing: 8,
                           children: [
                             _PhotoActionText(
-                              text: '拍照',
+                              text: 'Take Photo',
                               onTap: () => _pickPhoto(ImageSource.camera),
                             ),
                             _PhotoActionText(
-                              text: '从相册选择',
+                              text: 'Choose from Library',
                               onTap: () => _pickPhoto(ImageSource.gallery),
                             ),
                             if (_photoDraft.isNotEmpty)
                               _PhotoActionText(
-                                text: '移除',
+                                text: 'Remove',
                                 isDestructive: true,
                                 onTap: _clearPhoto,
                               ),
@@ -667,7 +674,7 @@ class _VehicleFormSheetState extends ConsumerState<_VehicleFormSheet> {
                 ],
               ),
               const SizedBox(height: 20),
-              AppPrimaryButton(text: '保存', onTap: _isSaving ? null : _save),
+              AppPrimaryButton(text: 'Save', onTap: _isSaving ? null : _save),
             ],
           ),
         ),

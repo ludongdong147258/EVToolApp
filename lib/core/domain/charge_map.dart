@@ -4,22 +4,25 @@ import 'package:ev_tool_app/core/domain/charge_records.dart';
 import 'package:ev_tool_app/core/domain/data/city_coords.dart';
 import 'package:ev_tool_app/core/domain/stations.dart';
 
-/// 充电点位地图纯函数（移植小程序 src/lib/chargeMap.js）。
+/// Pure functions for the charging locations map (ported from the
+/// mini-program src/lib/chargeMap.js).
 ///
-/// 数据流：充电记录 → [groupRecordsByLocation]（点位聚合）→
-/// [buildLocationMarkers]（地图标注）→ [calcCityTop]/[calcLocationStats]。
-/// 坐标系：GCJ-02。
+/// Data flow: charging records → [groupRecordsByLocation] (location
+/// aggregation) → [buildLocationMarkers] (map markers) →
+/// [calcCityTop]/[calcLocationStats]. Coordinate system: GCJ-02.
 
-/// 城市名匹配时需要剥离的行政后缀（region 选择器返回"广州市"等全称）。
+/// Administrative suffixes to strip when matching city names (the region
+/// picker / Tencent geocoder return full Chinese administrative names).
 const List<String> _cityNameSuffixes = ['自治州', '地区', '盟', '市'];
 
-/// 点位聚合时兜底展示名（只有城市无具体地点名）。
-const String cityPointName = '城市充电点';
+/// Fallback display name for aggregation when only the city is known
+/// (no concrete location name).
+const String cityPointName = 'City charging point';
 
-/// 同坐标散开半径（度）：约 1.1km。
+/// Scatter radius for coincident points (degrees): about 1.1km.
 const double scatterRadiusDeg = 0.01;
 
-/// fit-all 缩放上下限。
+/// fit-all zoom bounds.
 const int fitScaleMin = 4;
 const int fitScaleMax = 14;
 
@@ -27,7 +30,7 @@ const double _mapViewWidthPx = 375;
 const double _mapViewHeightPx = 350;
 const double _fitPaddingRatio = 1.2;
 
-/// 点位聚合结果。
+/// Result of location aggregation.
 class LocationGroup {
   const LocationGroup({
     required this.key,
@@ -58,7 +61,7 @@ class LocationGroup {
   final List<ChargeRecord> records;
 }
 
-/// 地图标注（数据字段；具体渲染由地图封装 widget 决定）。
+/// A map marker (data fields only; rendering is up to the map wrapper widget).
 class LocationMarker {
   const LocationMarker({
     required this.id,
@@ -77,7 +80,7 @@ class LocationMarker {
   final String? calloutText;
 }
 
-/// fit-all 视口。
+/// fit-all viewport.
 class MapViewport {
   const MapViewport({
     required this.latitude,
@@ -88,8 +91,18 @@ class MapViewport {
   final double latitude;
   final double longitude;
 
-  /// Web 墨卡托 zoom（Apple MapKit 的 camera zoom 语义近似）。
+  /// Web Mercator zoom (approximately Apple MapKit camera zoom semantics).
   final double zoom;
+}
+
+/// Province input may be an English map key (e.g. "Guangdong") or the
+/// Chinese name returned by Tencent reverse geocoding — resolve to the city
+/// list either way.
+List<CityCoord>? _provinceCities(String province) {
+  final direct = cityCoords[province];
+  if (direct != null) return direct;
+  final englishKey = provinceZhKeys[province];
+  return englishKey == null ? null : cityCoords[englishKey];
 }
 
 bool _matchCityName(String presetName, String pickerName) {
@@ -103,29 +116,31 @@ bool _matchCityName(String presetName, String pickerName) {
   return presetName == stripped || pickerName.contains(presetName);
 }
 
-/// 省市 → 预设城市条目（归一到预设简称，统一存储口径）。
+/// Province/city → preset city entry name (normalized to the preset short
+/// name for a unified storage vocabulary). Matching uses the Chinese [CityCoord.zh]
+/// key because picker/geocoder inputs are Chinese; the returned name is English.
 ///
-/// 未收录返回 null（调用方回退原值）。
+/// Returns null when not found (caller keeps the original value).
 String? matchCity(String province, String city) {
-  final cities = cityCoords[province];
+  final cities = _provinceCities(province);
   if (cities == null) return null;
   for (final entry in cities) {
-    if (_matchCityName(entry.name, city)) return entry.name;
+    if (_matchCityName(entry.zh, city)) return entry.name;
   }
   return null;
 }
 
-/// 省市 → 城市中心点坐标；未收录返回 null。
+/// Province/city → city center coordinates; null when not found.
 CityCoord? getCityCoord(String province, String city) {
-  final cities = cityCoords[province];
+  final cities = _provinceCities(province);
   if (cities == null) return null;
   for (final entry in cities) {
-    if (_matchCityName(entry.name, city)) return entry;
+    if (_matchCityName(entry.zh, city)) return entry;
   }
   return null;
 }
 
-/// 坐标 → 最近城市（地图选点后补 province/city 用）。
+/// Coordinates → nearest city (used to fill province/city after map picking).
 _CityHit? _findNearestCity(double latitude, double longitude) {
   _CityHit? best;
   var bestDistance = double.infinity;
@@ -146,7 +161,8 @@ _CityHit? _findNearestCity(double latitude, double longitude) {
   return best;
 }
 
-/// 坐标 → 最近城市（含该城市中心坐标）；非法坐标返回 null。
+/// Coordinates → nearest city (including its center coordinates);
+/// null for invalid coordinates.
 NearestCity? findNearestCity(num? latitude, num? longitude) {
   final lat = latitude?.toDouble();
   final lng = longitude?.toDouble();
@@ -190,15 +206,18 @@ bool _hasLocation(ChargeRecord record) =>
     record.latitude!.isFinite &&
     record.longitude!.isFinite;
 
-/// 按地点聚合记录（地图页散点数据源）。
+/// Aggregate records by location (data source for the map page scatter).
 ///
-/// 聚合键：城市 + 地点名（无地点名按"城市充电点"），同键点位取首条记录坐标，
-/// 按次数降序。
+/// Aggregation key: city + location name (records without a location name
+/// fall back to [cityPointName]); coincident keys take the first record's
+/// coordinates; sorted by count descending.
 List<LocationGroup> groupRecordsByLocation(List<ChargeRecord> records) {
   final groups = <String, _MutableGroup>{};
   for (final record in records) {
     if (!_hasLocation(record)) continue;
-    final city = (record.city?.isNotEmpty ?? false) ? record.city! : '未知城市';
+    final city = (record.city?.isNotEmpty ?? false)
+        ? record.city!
+        : 'Unknown city';
     final locationName = (record.locationName?.isNotEmpty ?? false)
         ? record.locationName!
         : cityPointName;
@@ -227,7 +246,7 @@ List<LocationGroup> groupRecordsByLocation(List<ChargeRecord> records) {
     group.records.add(record);
   }
   final result = groups.values.map((g) => g.freeze()).toList();
-  // JS: Array#sort 稳定；Dart sort 不稳定，加 key 次序稳定化。
+  // JS: Array#sort is stable; Dart sort is not, so add a key tiebreaker.
   result.sort((a, b) {
     final byCount = b.count.compareTo(a.count);
     if (byCount != 0) return byCount;
@@ -275,7 +294,8 @@ class _MutableGroup {
   );
 }
 
-/// 同坐标点位散开：按经纬度分桶，桶内多于 1 个时圆形排布加偏移。
+/// Scatter coincident points: bucket by lat/lng, and when a bucket has more
+/// than one member, arrange them in a circle with an offset.
 List<({double latitude, double longitude})> _scatterCoincident(
   List<LocationGroup> groups,
 ) {
@@ -304,7 +324,8 @@ List<({double latitude, double longitude})> _scatterCoincident(
   ];
 }
 
-/// 构建点位标注：下标即 id；家充为主 → 绿点，否则橙点；选中放大带气泡。
+/// Build location markers: the array index is the id; home-dominant → green
+/// dot, otherwise orange; the selected one is enlarged with a callout.
 List<LocationMarker> buildLocationMarkers(
   List<LocationGroup> groups, {
   String? selectedKey,
@@ -319,13 +340,13 @@ List<LocationMarker> buildLocationMarkers(
         isHome: groups[i].homeCount > groups[i].fastCount,
         isSelected: groups[i].key == selectedKey,
         calloutText: groups[i].key == selectedKey
-            ? '${groups[i].locationName} · ${groups[i].count}次'
+            ? '${groups[i].locationName} · ${groups[i].count} charge${groups[i].count == 1 ? '' : 's'}'
             : null,
       ),
   ];
 }
 
-/// 高频充电城市 TOP N（按有城市名的记录计数）。
+/// Top N most-charged cities (counted over records that have a city name).
 List<({String city, int count})> calcCityTop(
   List<ChargeRecord> records, [
   int topN = 3,
@@ -347,7 +368,7 @@ List<({String city, int count})> calcCityTop(
   return entries.take(topN).toList();
 }
 
-/// 点位统计面板数据（按有地点的记录计；比例 0-100 整数）。
+/// Location stats panel data (records with a location; ratios 0-100 integers).
 LocationStats calcLocationStats(List<ChargeRecord> records) {
   final located = records.where(_hasLocation).toList();
   final homeCount = located.where((r) => r.type == 'home').length;
@@ -379,11 +400,11 @@ class LocationStats {
   final int fastRatio;
 }
 
-/// 地图初始视野：包围盒自适应。
+/// Initial map viewport: bounding-box fit.
 ///
-/// 无点位 → fallback + 全国视野(4)；单点位 → 该点 + 城市视野(11)；
-/// 多点位 → 包围盒中心 + Web 墨卡托 zoom 换算（外扩 1.2 留白，
-/// 向下取整，clamp [4, 14]）。
+/// No points → fallback + country-wide view (4); single point → that point +
+/// city view (11); multiple points → bounding-box center + Web Mercator zoom
+/// conversion (1.2 padding ratio, floor, clamp [4, 14]).
 MapViewport getMapCenter(
   List<ChargeRecord> records, {
   required double fallbackLatitude,

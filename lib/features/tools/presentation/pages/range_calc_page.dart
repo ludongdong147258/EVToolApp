@@ -104,12 +104,12 @@ class _RangeCalcPageState extends ConsumerState<RangeCalcPage> {
     final liveResult = calcRangeEstimate(_inputs);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('续航静态估算')),
+      appBar: AppBar(title: const Text('Range Estimate')),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
         children: [
           Text(
-            '基于电池容量与电耗，预估当前电量可行驶里程。',
+            'Estimate how far you can go on the current charge.',
             style: TextStyle(fontSize: 13, color: palette.textSecondary),
           ),
           const SizedBox(height: 12),
@@ -126,7 +126,7 @@ class _RangeCalcPageState extends ConsumerState<RangeCalcPage> {
                     ),
                     SizedBox(width: 4),
                     Text(
-                      '预估续航',
+                      'Estimated range',
                       style: TextStyle(
                         fontSize: 16,
                         color: AppColors.onPrimaryA85,
@@ -164,13 +164,13 @@ class _RangeCalcPageState extends ConsumerState<RangeCalcPage> {
                 const SizedBox(height: 8),
                 _HeroDetailLine(
                   icon: Icons.bolt_rounded,
-                  label: '可用电量',
+                  label: 'Available energy',
                   value:
                       '${formatPlainNumber(result?.availableEnergy ?? 0)} kWh',
                 ),
                 _HeroDetailLine(
                   icon: Icons.speed,
-                  label: '基准续航',
+                  label: 'Base range',
                   value: '${formatPlainNumber(result?.baseRange ?? 0)} km',
                 ),
                 // 工况系数行图标按序对应 温度/路况/空调
@@ -187,7 +187,7 @@ class _RangeCalcPageState extends ConsumerState<RangeCalcPage> {
                   ),
                 _HeroDetailLine(
                   icon: Icons.tune,
-                  label: '综合折扣',
+                  label: 'Overall factor',
                   value: formatDiscount(result?.totalFactor ?? 1),
                 ),
               ],
@@ -195,7 +195,7 @@ class _RangeCalcPageState extends ConsumerState<RangeCalcPage> {
           ),
           const SizedBox(height: 12),
           CalcCard(
-            title: '车辆与当前电量',
+            title: 'Vehicle & charge',
             icon: Icons.battery_charging_full,
             iconColor: palette.primary,
             child: Column(
@@ -221,7 +221,7 @@ class _RangeCalcPageState extends ConsumerState<RangeCalcPage> {
                       mainAxisAlignment: MainAxisAlignment.spaceBetween,
                       children: [
                         Text(
-                          '电池容量 (kWh)',
+                          'Battery capacity (kWh)',
                           style: TextStyle(
                             fontSize: 14,
                             color: palette.onSurface,
@@ -240,7 +240,7 @@ class _RangeCalcPageState extends ConsumerState<RangeCalcPage> {
                             ),
                             const SizedBox(width: 2),
                             Text(
-                              '度',
+                              'kWh',
                               style: TextStyle(
                                 fontSize: 12,
                                 color: palette.textSecondary,
@@ -262,7 +262,7 @@ class _RangeCalcPageState extends ConsumerState<RangeCalcPage> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      '当前电量',
+                      'Current charge',
                       style: TextStyle(
                         fontSize: 12,
                         color: palette.textSecondary,
@@ -290,7 +290,7 @@ class _RangeCalcPageState extends ConsumerState<RangeCalcPage> {
                 const SliderScaleRow(start: '$socMin%', end: '$socMax%'),
                 const SizedBox(height: 4),
                 Text(
-                  '可用电量: ${liveResult == null ? '--' : formatPlainNumber(liveResult.availableEnergy)} 度电',
+                  'Available energy: ${liveResult == null ? '--' : formatPlainNumber(liveResult.availableEnergy)} kWh',
                   style: TextStyle(fontSize: 12, color: palette.textHint),
                 ),
               ],
@@ -298,20 +298,20 @@ class _RangeCalcPageState extends ConsumerState<RangeCalcPage> {
           ),
           const SizedBox(height: 12),
           CalcCard(
-            title: '电耗与工况',
+            title: 'Consumption & conditions',
             icon: Icons.speed,
             iconColor: palette.info,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 CalcTextField(
-                  label: '百公里电耗 (kWh/100km)',
+                  label: 'Consumption (kWh/100km)',
                   hint: '14',
                   controller: _consumptionController,
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  '建议填车机标称 / 工信部电耗（如 14）；填实测电耗时请选常温 / 市区 / 关闭，避免重复折扣',
+                  'Use the rated value from your car (e.g. 14); if you enter a real-world figure, pick Mild / City / Off to avoid double discounts',
                   style: TextStyle(fontSize: 11, color: palette.textHint),
                 ),
                 const SizedBox(height: 8),
@@ -332,7 +332,7 @@ class _RangeCalcPageState extends ConsumerState<RangeCalcPage> {
                 ),
                 const SizedBox(height: 16),
                 _ConditionChips(
-                  label: '温度',
+                  label: 'Temperature',
                   options: temperatureOptions,
                   current: _temperature,
                   onSelect: (value) =>
@@ -340,7 +340,7 @@ class _RangeCalcPageState extends ConsumerState<RangeCalcPage> {
                 ),
                 const SizedBox(height: 12),
                 _ConditionChips(
-                  label: '路况',
+                  label: 'Road',
                   inline: true,
                   options: roadOptions,
                   current: _road,
@@ -348,7 +348,7 @@ class _RangeCalcPageState extends ConsumerState<RangeCalcPage> {
                 ),
                 const SizedBox(height: 12),
                 _ConditionChips(
-                  label: '空调',
+                  label: 'A/C',
                   inline: true,
                   options: acOptions,
                   current: _ac,
@@ -359,7 +359,7 @@ class _RangeCalcPageState extends ConsumerState<RangeCalcPage> {
           ),
           const SizedBox(height: 8),
           const CalcDisclaimer(
-            '* 测算结果仅供参考：电耗按标称口径估算，实际续航受驾驶习惯、载重、电池可用容量等因素影响。',
+            '* Estimates only: based on rated consumption; actual range depends on driving style, load, usable capacity, and more.',
           ),
         ],
       ),

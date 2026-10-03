@@ -94,7 +94,8 @@ class StationRepository {
   static const num _statusDailyQuota = 121;
 
   static const String _quotaExceededMessage =
-      '今日位置服务调用次数已达上限，请明日再试或在腾讯位置服务控制台提升配额';
+      'Location service daily quota reached. Please try again tomorrow or '
+      'raise the quota in the Tencent LBS console';
 
   final Dio _dio;
   final KeyValueStore _kv;
@@ -151,7 +152,7 @@ class StationRepository {
     try {
       raw = _kv.getJson(nearbyStationsCacheKey);
     } on Exception catch (e) {
-      appLogger.e('读取充电桩缓存失败', error: e);
+      appLogger.e('Failed to read station cache', error: e);
       return null;
     }
     if (raw is! Map) {
@@ -195,7 +196,7 @@ class StationRepository {
         'savedAt': DateTime.now().millisecondsSinceEpoch,
       });
     } on Exception catch (e) {
-      appLogger.e('保存充电桩缓存失败', error: e);
+      appLogger.e('Failed to save station cache', error: e);
     }
   }
 
@@ -204,7 +205,10 @@ class StationRepository {
   Future<List<Station>> _fetchNearbyStations(LatLng origin) async {
     final keys = _availableKeys();
     if (keys.isEmpty) {
-      throw const StationServiceException('未配置地图服务 Key', isKeyMissing: true);
+      throw const StationServiceException(
+        'Map service key not configured',
+        isKeyMissing: true,
+      );
     }
     return _withKeyRotation(keys, (key) => _searchOnce(origin, key));
   }
@@ -216,7 +220,10 @@ class StationRepository {
   ) async {
     final keys = _availableKeys();
     if (keys.isEmpty) {
-      throw const StationServiceException('未配置地图服务 Key', isKeyMissing: true);
+      throw const StationServiceException(
+        'Map service key not configured',
+        isKeyMissing: true,
+      );
     }
     final result = await _withKeyRotation(
       keys,
@@ -244,7 +251,10 @@ class StationRepository {
         if (isLastKey) {
           throw const StationServiceException(_quotaExceededMessage);
         }
-        appLogger.w('位置服务 Key 配额超限，切换备用 Key 重试', error: e);
+        appLogger.w(
+          'Location service key quota exceeded, retrying with backup key',
+          error: e,
+        );
       }
     }
     // keys 非空时循环必 return / throw，此处仅为类型收口
@@ -312,7 +322,9 @@ class StationRepository {
     }
     _throwForBusinessStatus(body);
     // status 为 0 但 result 结构缺失
-    throw const StationServiceException('位置服务错误：响应数据异常（code 0）');
+    throw const StationServiceException(
+      'Location service error: malformed response (code 0)',
+    );
   }
 
   /// 无鉴权 GET（LBS 接口专用）；网络失败归一化为中文 [StationServiceException]。
@@ -346,8 +358,10 @@ class StationRepository {
       }
       return const <String, dynamic>{};
     } on DioException catch (e) {
-      appLogger.e('位置服务请求失败', error: e);
-      throw const StationServiceException('位置服务请求失败，请检查网络后重试');
+      appLogger.e('Location service request failed', error: e);
+      throw const StationServiceException(
+        'Location service request failed, please check your network and retry',
+      );
     }
   }
 
@@ -361,14 +375,15 @@ class StationRepository {
     if (status is num &&
         (status == _statusRateLimit || status == _statusDailyQuota)) {
       appLogger.w(
-        '位置服务返回业务错误',
+        'Location service returned a business error',
         error: {'status': status, 'message': body['message']},
       );
       throw _QuotaExceededException(status);
     }
     final dynamic message = body['message'];
     throw StationServiceException(
-      '位置服务错误：${_orText(message, '未知错误')}（code ${_orText(status, '无响应')}）',
+      'Location service error: ${_orText(message, 'Unknown error')} '
+      '(code ${_orText(status, 'no response')})',
     );
   }
 
@@ -392,7 +407,7 @@ class StationRepository {
     final dynamic distance = json['distance'];
     return Station(
       id: _orText(json['id'], '').toString(),
-      name: _orText(json['name'], '未命名充电站').toString(),
+      name: _orText(json['name'], 'Unnamed station').toString(),
       address: _orText(json['address'], '').toString(),
       tel: _orText(json['tel'], '').toString(),
       latitude: latitude,

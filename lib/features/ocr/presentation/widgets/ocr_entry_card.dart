@@ -54,9 +54,9 @@ class OcrEntryCardState extends ConsumerState<OcrEntryCard> {
     }
     final palette = context.palette;
     final title = _isRecognizing
-        ? '正在识别小票…'
+        ? 'Recognizing receipt…'
               '${_elapsedSeconds >= _elapsedVisibleDelaySeconds ? ' $_elapsedSeconds s' : ''}'
-        : '拍照识别小票';
+        : 'Scan charging receipt';
 
     return IgnorePointer(
       ignoring: _isRecognizing,
@@ -97,7 +97,8 @@ class OcrEntryCardState extends ConsumerState<OcrEntryCard> {
                             ),
                             const SizedBox(height: 2),
                             Text(
-                              '拍摄或选择充电小票，自动填充费用、电量、时长',
+                              'Take or pick a charging receipt photo to '
+                              'auto-fill cost, energy, and duration',
                               style: TextStyle(
                                 fontSize: 12,
                                 color: palette.textHint,
@@ -129,12 +130,12 @@ class OcrEntryCardState extends ConsumerState<OcrEntryCard> {
           children: [
             ListTile(
               leading: const Icon(Icons.camera_alt_outlined),
-              title: const Text('拍照'),
+              title: const Text('Take photo'),
               onTap: () => Navigator.of(sheetContext).pop(ImageSource.camera),
             ),
             ListTile(
               leading: const Icon(Icons.photo_library_outlined),
-              title: const Text('从相册选择'),
+              title: const Text('Choose from library'),
               onTap: () => Navigator.of(sheetContext).pop(ImageSource.gallery),
             ),
           ],
@@ -162,9 +163,9 @@ class OcrEntryCardState extends ConsumerState<OcrEntryCard> {
       }
       await _recognize(picked.path);
     } on Exception catch (e) {
-      appLogger.w('选择识别图片失败：$e');
+      appLogger.w('Failed to pick receipt image: $e');
       if (mounted) {
-        showAppToast(context, '图片选择失败，请重试');
+        showAppToast(context, 'Failed to pick an image — try again');
       }
     }
   }
@@ -188,19 +189,21 @@ class OcrEntryCardState extends ConsumerState<OcrEntryCard> {
         return;
       }
       if (result == null || result.filledFields.isEmpty) {
-        widget.onError?.call('未能识别出有效信息，请重试或手动填写');
+        widget.onError?.call(
+          'No valid details recognized — try again or fill in manually',
+        );
         return;
       }
       widget.onResult?.call(result);
     } on OcrException catch (e) {
-      appLogger.w('小票识别失败：${e.message}');
+      appLogger.w('Receipt recognition failed: ${e.message}');
       if (mounted) {
         widget.onError?.call(e.message);
       }
     } on Exception catch (e) {
-      appLogger.w('小票识别异常：$e');
+      appLogger.w('Receipt recognition error: $e');
       if (mounted) {
-        widget.onError?.call('识别失败，请重试');
+        widget.onError?.call('Recognition failed — try again');
       }
     } finally {
       _elapsedTimer?.cancel();

@@ -19,7 +19,7 @@ ChargeRecord _record(Map<String, dynamic> overrides) {
 Vehicle _vehicle(Map<String, dynamic> overrides) {
   final vehicle = Vehicle.fromJson({
     'id': 'v1',
-    'name': '小海豹',
+    'name': 'Seal',
     'battery': 82,
     'createdAt': 1,
     'updatedAt': 1,
@@ -38,14 +38,20 @@ void main() {
           'cost': 30,
           'energy': 40.5,
           'durationMinutes': 85,
-          'vehicleName': '我的车',
-          'note': '服务区快充',
+          'vehicleName': 'My Car',
+          'note': 'Highway fast charge',
         }),
       ]);
       expect(csv.startsWith(csvBom), isTrue);
       final lines = csv.substring(1).trim().split('\n');
-      expect(lines[0], '日期,类型,费用(元),电量(kWh),时长(分钟),度电成本(元/kWh),车辆,备注');
-      expect(lines[1], '2026-08-01,快充,30,40.5,85,0.74,我的车,服务区快充');
+      expect(
+        lines[0],
+        'Date,Type,Cost (\$),Energy (kWh),Duration (min),Cost per kWh (\$/kWh),Vehicle,Note',
+      );
+      expect(
+        lines[1],
+        '2026-08-01,${typeDefaultTitles['fast']},30,40.5,85,0.74,My Car,Highway fast charge',
+      );
     });
 
     test('时长/车辆/备注缺失时对应单元格为空串', () {
@@ -64,11 +70,11 @@ void main() {
           'type': 'home',
           'cost': 5,
           'energy': 8,
-          'note': '含,逗号 和"引号"\n换行',
+          'note': 'with,comma and"quote"\nnewline',
         }),
       ]);
       // 引号包裹 + 内部引号翻倍（换行保留在引号内，是合法 CSV）
-      expect(csv, contains('"含,逗号 和""引号""\n换行"'));
+      expect(csv, contains('"with,comma and""quote""\nnewline"'));
     });
 
     test('空数组只输出表头；null 输入同空数组', () {
@@ -82,12 +88,17 @@ void main() {
     test('表头 + 数据行（默认车标记为是）', () {
       final csv = vehiclesToCsv([
         _vehicle({'note': '', 'isDefault': true}),
-        _vehicle({'id': 'v2', 'name': '老车', 'battery': 60, 'note': '备用'}),
+        _vehicle({
+          'id': 'v2',
+          'name': 'Old Car',
+          'battery': 60,
+          'note': 'Spare',
+        }),
       ]);
       final lines = csv.substring(1).trim().split('\n');
-      expect(lines[0], '车辆名称,电池容量(kWh),备注,默认车');
-      expect(lines[1], '小海豹,82,,是');
-      expect(lines[2], '老车,60,备用,否');
+      expect(lines[0], 'Vehicle Name,Battery (kWh),Note,Default');
+      expect(lines[1], 'Seal,82,,Yes');
+      expect(lines[2], 'Old Car,60,Spare,No');
     });
 
     test('空数组 / null 只输出表头', () {
@@ -140,7 +151,7 @@ void main() {
       const backup =
           '{"version":1,"exportedAt":1756000000000,'
           '"records":[{"id":"r1","date":"2026-08-01","type":"fast","cost":30,"energy":40},{"junk":true}],'
-          '"vehicles":[{"id":"v1","name":"小海豹","battery":82,"isDefault":true},{"id":"bad","name":"","battery":0}],'
+          '"vehicles":[{"id":"v1","name":"Seal","battery":82,"isDefault":true},{"id":"bad","name":"","battery":0}],'
           '"expenses":[{"id":"e1","type":"insurance","amount":3000,"date":"2026-01-01"},{"id":"bad","type":"unknown","amount":-1}],'
           '"memos":[{"id":"m1","vehicleId":"v1","registrationDate":"2024-06-01","mileageKm":10000,"createdAt":1,"updatedAt":2},'
           '{"id":"bad","vehicleId":"v1","registrationDate":"x","mileageKm":10000}]}';
@@ -163,7 +174,7 @@ void main() {
     test('导入的车辆剥离 photoPath（换机后为死路径，照片不随 JSON 迁移）', () {
       // Arrange
       const backup =
-          '{"version":1,"records":[],"vehicles":[{"id":"v1","name":"小海豹","battery":82,"photoPath":"wxfile://tmp_old"}]}';
+          '{"version":1,"records":[],"vehicles":[{"id":"v1","name":"Seal","battery":82,"photoPath":"wxfile://tmp_old"}]}';
 
       // Act
       final parsed = parseExportJson(backup);

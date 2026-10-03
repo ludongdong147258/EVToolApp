@@ -41,7 +41,7 @@ void main() {
     return container;
   }
 
-  testWidgets('tools_page 渲染分组与全部工具入口', (tester) async {
+  testWidgets('tools_page renders groups and all tool entries', (tester) async {
     final container = await bootstrap();
 
     await pumpPage(
@@ -53,25 +53,27 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('实用工具'), findsOneWidget);
-    expect(find.text('省钱计算'), findsOneWidget);
-    expect(find.text('地图服务'), findsOneWidget);
-    expect(find.text('装备导购'), findsOneWidget);
-    expect(find.text('备忘与手册'), findsOneWidget);
-    expect(find.text('续航静态估算'), findsOneWidget);
-    expect(find.text('油电成本对比'), findsOneWidget);
-    expect(find.text('峰谷电价优化'), findsOneWidget);
-    expect(find.text('私桩安装测算'), findsOneWidget);
-    expect(find.text('附近充电站'), findsOneWidget);
-    expect(find.text('充电装备'), findsOneWidget);
-    expect(find.text('年检维保备忘录'), findsOneWidget);
-    expect(find.text('改装合规自查'), findsOneWidget);
-    expect(find.text('三电质保手册'), findsOneWidget);
+    expect(find.text('Tools'), findsOneWidget);
+    expect(find.text('Savings Calculators'), findsOneWidget);
+    expect(find.text('Maps'), findsOneWidget);
+    expect(find.text('Shopping'), findsOneWidget);
+    expect(find.text('Memos & Handbooks'), findsOneWidget);
+    expect(find.text('Range Estimate'), findsOneWidget);
+    expect(find.text('Fuel vs EV Cost'), findsOneWidget);
+    expect(find.text('Time-of-Use Savings'), findsOneWidget);
+    expect(find.text('Home Charger Setup'), findsOneWidget);
+    expect(find.text('Nearby Stations'), findsOneWidget);
+    expect(find.text('Charging Gear'), findsOneWidget);
+    expect(find.text('Service & Inspection Memo'), findsOneWidget);
+    expect(find.text('Mod Compliance Check'), findsOneWidget);
+    expect(find.text('EV Warranty Handbook'), findsOneWidget);
     // 无使用记录时不渲染最近使用组
-    expect(find.text('最近使用'), findsNothing);
+    expect(find.text('Recently used'), findsNothing);
   });
 
-  testWidgets('tools_page 有使用记录时置顶最近使用组', (tester) async {
+  testWidgets('tools_page pins recently used group when history exists', (
+    tester,
+  ) async {
     final container = await bootstrap(
       store: {
         'toolsRecentUse': ['fuel-vs-ev', 'home-charger'],
@@ -87,13 +89,15 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('最近使用'), findsOneWidget);
+    expect(find.text('Recently used'), findsOneWidget);
     // 最近使用组 + 省钱计算组各渲染一次
-    expect(find.text('油电成本对比'), findsNWidgets(2));
-    expect(find.text('私桩安装测算'), findsNWidgets(2));
+    expect(find.text('Fuel vs EV Cost'), findsNWidgets(2));
+    expect(find.text('Home Charger Setup'), findsNWidgets(2));
   });
 
-  testWidgets('fuel_ev_calc_page 默认输入直接展示结果', (tester) async {
+  testWidgets('fuel_ev_calc_page shows results for default inputs', (
+    tester,
+  ) async {
     final container = await bootstrap();
 
     await pumpPage(
@@ -105,56 +109,62 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('年度成本对比'), findsOneWidget);
-    // 默认 15000 km · 8.5L/8 元 → 燃油 ¥10,200；15kWh/1.2 元 → 电动 ¥2,700
-    expect(find.text('¥ 10,200'), findsOneWidget);
-    expect(find.text('¥ 2,700'), findsOneWidget);
-    expect(find.text('年度节省'), findsOneWidget);
-    expect(find.textContaining('每万公里节省 ¥ 5,000'), findsOneWidget);
+    expect(find.text('Annual cost comparison'), findsOneWidget);
+    // 默认 15000 km · 8.5L/8 元 → 燃油 \$10,200；15kWh/1.2 元 → 电动 \$2,700
+    expect(find.text('\$10,200.00'), findsOneWidget);
+    expect(find.text('\$2,700.00'), findsOneWidget);
+    expect(find.text('Annual savings'), findsOneWidget);
+    expect(
+      find.textContaining('Saves \$5,000.00 per 10,000 km'),
+      findsOneWidget,
+    );
 
     // 改电价为非法输入：保留旧结果 + 红框提示
     await tester.enterText(find.byType(TextField).at(3), '0');
     await tester.pump();
-    expect(find.text('¥ 10,200'), findsOneWidget);
+    expect(find.text('\$10,200.00'), findsOneWidget);
   });
 
-  testWidgets('home_charger_calc_page 向导三步推进并计算总额', (tester) async {
-    final container = await bootstrap();
+  testWidgets(
+    'home_charger_calc_page advances three steps and computes total',
+    (tester) async {
+      final container = await bootstrap();
 
-    await pumpPage(
-      tester,
-      UncontrolledProviderScope(
-        container: container,
-        child: const MaterialApp(home: HomeChargerCalcPage()),
-      ),
-    );
-    await tester.pumpAndSettle();
+      await pumpPage(
+        tester,
+        UncontrolledProviderScope(
+          container: container,
+          child: const MaterialApp(home: HomeChargerCalcPage()),
+        ),
+      );
+      await tester.pumpAndSettle();
 
-    // 第 1 步：默认 7kW + 30m 线缆 → 基础包 ¥2,850
-    expect(find.text('1 / 3'), findsOneWidget);
-    expect(find.text('安装详情'), findsOneWidget);
-    expect(find.text('¥ 2,850'), findsOneWidget);
+      // 第 1 步：默认 7kW + 30m 线缆 → 基础包 \$2,850
+      expect(find.text('1 / 3'), findsOneWidget);
+      expect(find.text('Installation'), findsOneWidget);
+      expect(find.text('\$2,850.00'), findsOneWidget);
 
-    await tester.ensureVisible(find.text('下一步'));
-    await tester.tap(find.text('下一步'));
-    await tester.pumpAndSettle();
+      await tester.ensureVisible(find.text('Next'));
+      await tester.tap(find.text('Next'));
+      await tester.pumpAndSettle();
 
-    // 第 2 步：默认地下车库（+200）+ 保护箱（+230）
-    expect(find.text('2 / 3'), findsOneWidget);
-    expect(find.text('环境条件'), findsOneWidget);
-    expect(find.text('地下车库'), findsOneWidget);
-    expect(find.text('需安装保护箱'), findsOneWidget);
-    expect(find.text('¥ 430'), findsOneWidget);
+      // 第 2 步：默认地下车库（+200）+ 保护箱（+230）
+      expect(find.text('2 / 3'), findsOneWidget);
+      expect(find.text('Site conditions'), findsOneWidget);
+      expect(find.text('Underground garage'), findsOneWidget);
+      expect(find.text('Install protection box'), findsOneWidget);
+      expect(find.text('\$430.00'), findsOneWidget);
 
-    await tester.ensureVisible(find.text('下一步'));
-    await tester.tap(find.text('下一步'));
-    await tester.pumpAndSettle();
+      await tester.ensureVisible(find.text('Next'));
+      await tester.tap(find.text('Next'));
+      await tester.pumpAndSettle();
 
-    // 第 3 步：总额 = 2850 + 430 = ¥3,280
-    expect(find.text('3 / 3'), findsOneWidget);
-    expect(find.text('费用明细'), findsOneWidget);
-    expect(find.text('¥ 3,280'), findsOneWidget);
-    expect(find.text('保存预估结果'), findsOneWidget);
-    expect(find.text('查看所需文件'), findsOneWidget);
-  });
+      // 第 3 步：总额 = 2850 + 430 = \$3,280
+      expect(find.text('3 / 3'), findsOneWidget);
+      expect(find.text('Cost breakdown'), findsOneWidget);
+      expect(find.text('\$3,280.00'), findsOneWidget);
+      expect(find.text('Save estimate'), findsOneWidget);
+      expect(find.text('Required documents'), findsOneWidget);
+    },
+  );
 }

@@ -8,9 +8,9 @@ import 'package:ev_tool_app/core/widgets/gradient_hero_card.dart';
 
 /// Hero 三列短标签（category.title 6 字在小屏三列内可能换行）。
 const Map<String, String> _heroStatLabel = {
-  'legal': '合法',
-  'register': '需备案',
-  'illegal': '违法',
+  'legal': 'Legal',
+  'register': 'Registration',
+  'illegal': 'Illegal',
 };
 
 /// 备案要求胶囊语义色：按合规等级映射
@@ -46,9 +46,9 @@ Color _toneColor(_Tone tone, EvPalette palette) => switch (tone) {
 };
 
 _Tone _riskTone(String level) => switch (level) {
-  '低' => _Tone.info,
-  '中' => _Tone.warn,
-  '高' => _Tone.bad,
+  'Low' => _Tone.info,
+  'Medium' => _Tone.warn,
+  'High' => _Tone.bad,
   _ => _Tone.neutral,
 };
 
@@ -125,13 +125,15 @@ class _ModificationCompliancePageState
     final totalCount = modificationItems.length;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('改装合规查询')),
+      appBar: AppBar(title: const Text('Mod Compliance Check')),
       body: ListView(
         controller: _scrollController,
         padding: const EdgeInsets.all(16),
         children: [
           Text(
-            '改装前先查合规等级：合法可直接改，需备案先备案，违法项别碰。',
+            'Check compliance before modifying: legal items are safe to install, '
+            'registration-required items must be filed first, and illegal items '
+            'are best avoided.',
             style: TextStyle(fontSize: 13, color: palette.textSecondary),
           ),
           const SizedBox(height: 12),
@@ -140,7 +142,7 @@ class _ModificationCompliancePageState
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
-                  '常见改装项目速查',
+                  'Common modifications at a glance',
                   style: TextStyle(
                     fontSize: 13,
                     color: AppColors.onPrimaryA85,
@@ -148,7 +150,7 @@ class _ModificationCompliancePageState
                   ),
                 ),
                 const SizedBox(height: 8),
-                HeroValue(value: '$totalCount', unit: '项'),
+                HeroValue(value: '$totalCount', unit: 'items'),
                 const SizedBox(height: 16),
                 HeroStatsRow(
                   items: [
@@ -156,7 +158,7 @@ class _ModificationCompliancePageState
                       HeroStatItem(
                         label: _heroStatLabel[category.id] ?? category.id,
                         value: '${getItemsByCategory(category.id).length}',
-                        unit: '项',
+                        unit: 'items',
                       ),
                   ],
                 ),
@@ -335,13 +337,18 @@ class _ItemCard extends StatelessWidget {
                     ),
                   ),
                 ),
-                _ToneBadge(text: item.needRegister, tone: tone),
+                Flexible(
+                  child: _ToneBadge(text: item.needRegister, tone: tone),
+                ),
               ],
             ),
             const SizedBox(height: 10),
-            _RiskRow(label: '年审风险', level: item.inspectionRisk),
+            _RiskRow(
+              label: 'Annual inspection risk',
+              level: item.inspectionRisk,
+            ),
             const SizedBox(height: 6),
-            _RiskRow(label: '交警查处风险', level: item.policeRisk),
+            _RiskRow(label: 'Enforcement risk', level: item.policeRisk),
             const SizedBox(height: 10),
             Text(
               item.note,
@@ -365,9 +372,12 @@ class _RiskRow extends StatelessWidget {
     final palette = context.palette;
     return Row(
       children: [
-        Text(
-          label,
-          style: TextStyle(fontSize: 12, color: palette.textSecondary),
+        Flexible(
+          child: Text(
+            label,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(fontSize: 12, color: palette.textSecondary),
+          ),
         ),
         const Spacer(),
         _ToneBadge(text: level, tone: _riskTone(level)),

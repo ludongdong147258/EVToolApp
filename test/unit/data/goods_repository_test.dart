@@ -111,12 +111,12 @@ void main() {
       expect(a.hasCoupon, true);
       expect(a.couponPrice, 109900);
       expect(a.shortUrl, 'https://pdd.example/a');
-      expect(a.salesTip, '已售12万+');
+      expect(a.salesTip, '120k+ sold');
       final b = items[1];
       expect(b.hasCoupon, false);
       expect(b.couponPrice, 45900);
       expect(b.shortUrl, 'https://pdd.example/b');
-      expect(b.salesTip, '已售8000');
+      expect(b.salesTip, '8k sold');
     });
 
     test('接口响应缺字段时兜底为空列表', () async {
@@ -191,6 +191,25 @@ void main() {
       expect(items[1].shortUrl, '');
     });
 
+    test('salesTip 解析中文 sales_tip 并折 k 展示', () {
+      GoodsItem mk(String salesTip, [int sales = 0]) => GoodsItem(
+        id: 's',
+        title: 't',
+        thumbUrl: '',
+        originalPrice: 0,
+        couponAmount: 0,
+        sales: sales,
+        salesTipRaw: salesTip,
+      );
+
+      expect(mk('10万+').salesTip, '100k+ sold');
+      expect(mk('1.2万').salesTip, '12k sold');
+      expect(mk('8500').salesTip, '8.5k sold');
+      expect(mk('999').salesTip, '999 sold');
+      // 无法解析的文案回退到数值 sales
+      expect(mk('n/a', 3000).salesTip, '3k sold');
+    });
+
     test('非 2xx 抛中文 GoodsException', () async {
       final calls = <RequestOptions>[];
       final repo = GoodsRepository(
@@ -204,7 +223,7 @@ void main() {
           isA<GoodsException>().having(
             (e) => e.message,
             'message',
-            '商品加载失败，请稍后重试',
+            'Failed to load products, please try again later',
           ),
         ),
       );

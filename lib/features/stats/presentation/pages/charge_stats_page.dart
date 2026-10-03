@@ -29,9 +29,9 @@ import 'package:ev_tool_app/features/records/presentation/widgets/record_detail_
 
 /// 类型筛选 chips（null = 全部）。
 const List<(String?, String)> _typeFilters = <(String?, String)>[
-  (null, '全部'),
-  ('fast', '快充'),
-  ('home', '家充'),
+  (null, 'All'),
+  ('fast', 'Fast (DC)'),
+  ('home', 'Home (AC)'),
 ];
 
 /// 充电统计页（子页，从「我的 → 充电统计」进入）：
@@ -96,19 +96,21 @@ class _ChargeStatsPageState extends ConsumerState<ChargeStatsPage> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('删除记录'),
-        content: const Text('删除后 5 秒内可在底部提示条撤销，确定删除这条记录吗？'),
+        title: const Text('Delete Record'),
+        content: const Text(
+          'You can undo from the bottom bar within 5 seconds. Delete this record?',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: const Text('取消'),
+            child: const Text('Cancel'),
           ),
           TextButton(
             style: TextButton.styleFrom(
               foregroundColor: dialogContext.palette.error,
             ),
             onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: const Text('删除'),
+            child: const Text('Delete'),
           ),
         ],
       ),
@@ -130,8 +132,11 @@ class _ChargeStatsPageState extends ConsumerState<ChargeStatsPage> {
   void _showUndoBar() {
     showUndoBar(
       context,
-      text: _undoFailed ? '恢复失败，点此重试' : '已删除 ${_deletedPending.length} 条充电记录',
-      actionText: _undoFailed ? '重试' : '撤销',
+      text: _undoFailed
+          ? 'Restore failed. Tap to retry'
+          : 'Deleted ${_deletedPending.length} charging '
+                '${_deletedPending.length == 1 ? 'record' : 'records'}',
+      actionText: _undoFailed ? 'Retry' : 'Undo',
       onUndo: _undoDelete,
     ).closed.whenComplete(() {
       // 窗口关闭（超时或撤销后）即放弃剩余待恢复项
@@ -153,7 +158,7 @@ class _ChargeStatsPageState extends ConsumerState<ChargeStatsPage> {
     if (allOk) {
       ScaffoldMessenger.of(context)
         ..hideCurrentSnackBar()
-        ..showSnackBar(const SnackBar(content: Text('已恢复')));
+        ..showSnackBar(const SnackBar(content: Text('Restored')));
       _deletedPending = [];
     }
   }
@@ -198,7 +203,7 @@ class _ChargeStatsPageState extends ConsumerState<ChargeStatsPage> {
   ) async {
     await showAppSheet<void>(
       context: context,
-      title: '导出数据',
+      title: 'Export Data',
       builder: (sheetContext) => Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -207,8 +212,10 @@ class _ChargeStatsPageState extends ConsumerState<ChargeStatsPage> {
               Icons.grid_on_rounded,
               color: sheetContext.palette.primary,
             ),
-            title: const Text('导出全部 CSV'),
-            subtitle: const Text('充电记录与车辆，通过系统分享导出'),
+            title: const Text('Export all as CSV'),
+            subtitle: const Text(
+              'Charging records and vehicles, shared via the system share sheet',
+            ),
             onTap: () {
               Navigator.of(sheetContext).pop();
               unawaited(_exportCsv(records, vehicles));
@@ -219,7 +226,7 @@ class _ChargeStatsPageState extends ConsumerState<ChargeStatsPage> {
               Icons.content_copy_rounded,
               color: sheetContext.palette.primary,
             ),
-            title: const Text('复制本月小结'),
+            title: const Text('Copy month summary'),
             onTap: () {
               Navigator.of(sheetContext).pop();
               unawaited(_copyMonthSummary(records));
@@ -248,18 +255,18 @@ class _ChargeStatsPageState extends ConsumerState<ChargeStatsPage> {
         XFile(vehicleFile.path),
       ]);
     } on Exception catch (err) {
-      appLogger.e('导出 CSV 失败', error: err);
-      if (mounted) showAppToast(context, '导出失败，请重试');
+      appLogger.e('CSV export failed', error: err);
+      if (mounted) showAppToast(context, 'Export failed. Please try again');
     }
   }
 
   Future<void> _copyMonthSummary(List<ChargeRecord> records) async {
     try {
       await Clipboard.setData(ClipboardData(text: _buildMonthText(records)));
-      if (mounted) showAppToast(context, '已复制到剪贴板');
+      if (mounted) showAppToast(context, 'Copied to clipboard');
     } on Exception catch (err) {
-      appLogger.e('复制本月小结失败', error: err);
-      if (mounted) showAppToast(context, '复制失败，请重试');
+      appLogger.e('Copy month summary failed', error: err);
+      if (mounted) showAppToast(context, 'Copy failed. Please try again');
     }
   }
 
@@ -285,7 +292,7 @@ class _ChargeStatsPageState extends ConsumerState<ChargeStatsPage> {
     final month = calcMonthSummary(monthRecords, _monthKey);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('充电统计')),
+      appBar: AppBar(title: const Text('Charging Stats')),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 16, 16, 32),
         children: [
@@ -295,30 +302,26 @@ class _ChargeStatsPageState extends ConsumerState<ChargeStatsPage> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 const Text(
-                  '累计充电支出',
+                  'Total Charging Spend',
                   style: TextStyle(fontSize: 14, color: AppColors.onPrimaryA85),
                 ),
                 const SizedBox(height: 8),
-                HeroValue(value: formatYuan(total.totalCost), unit: '¥'),
+                HeroValue(value: formatMoney(total.totalCost)),
                 const SizedBox(height: 20),
                 HeroStatsRow(
                   items: [
+                    HeroStatItem(label: 'Sessions', value: '${total.count}'),
                     HeroStatItem(
-                      label: '充电次数',
-                      value: '${total.count}',
-                      unit: '次',
-                    ),
-                    HeroStatItem(
-                      label: '累计电量',
+                      label: 'Total Energy',
                       value: formatYuan(total.totalEnergy),
                       unit: 'kWh',
                     ),
                     HeroStatItem(
-                      label: '度电成本',
+                      label: 'Cost per kWh',
                       value: total.costPerKwh == null
                           ? '--'
-                          : formatYuan(total.costPerKwh!),
-                      unit: '¥/kWh',
+                          : formatMoney(total.costPerKwh!),
+                      unit: '/kWh',
                     ),
                   ],
                 ),
@@ -379,7 +382,8 @@ class _ChargeStatsPageState extends ConsumerState<ChargeStatsPage> {
             children: [
               Expanded(
                 child: Text(
-                  '$monthLabel · ${monthRecords.length} 条',
+                  '$monthLabel · ${monthRecords.length} '
+                  '${monthRecords.length == 1 ? 'record' : 'records'}',
                   // section-title：18px w700（对齐小程序）
                   style: TextStyle(
                     fontSize: 18,
@@ -406,7 +410,7 @@ class _ChargeStatsPageState extends ConsumerState<ChargeStatsPage> {
                         ),
                         const SizedBox(width: 2),
                         Text(
-                          '导出',
+                          'Export',
                           style: TextStyle(
                             fontSize: 12,
                             color: palette.textHint,
@@ -422,16 +426,16 @@ class _ChargeStatsPageState extends ConsumerState<ChargeStatsPage> {
           if (records.isEmpty)
             EmptyState(
               icon: Icons.insights_rounded,
-              title: '暂无充电数据',
-              subtitle: '去充电记录页添加记录，这里将展示统计',
-              ctaText: '去添加',
+              title: 'No charging data yet',
+              subtitle: 'Add records in Charging Records to see stats here',
+              ctaText: 'Add Now',
               onCta: () => context.go(RouteNames.records),
             )
           else if (monthRecords.isEmpty)
             const EmptyState(
               compact: true,
               icon: Icons.search_off_rounded,
-              title: '本月暂无符合条件的记录',
+              title: 'No matching records this month',
             )
           else ...[
             for (final record in monthRecords.take(_renderLimit))
@@ -514,7 +518,7 @@ class _MonthCard extends StatelessWidget {
                 const SizedBox(width: 8),
                 Expanded(
                   child: Text(
-                    isCurrentMonth ? '$monthLabel · 本月' : monthLabel,
+                    isCurrentMonth ? '$monthLabel · This month' : monthLabel,
                     style: TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w600,
@@ -539,21 +543,18 @@ class _MonthCard extends StatelessWidget {
             Row(
               children: [
                 Expanded(
-                  child: _StatCol(
-                    label: '费用',
-                    value: '¥${formatYuan(totalCost)}',
-                  ),
+                  child: _StatCol(label: 'Cost', value: formatMoney(totalCost)),
                 ),
                 _statDivider(palette.divider),
                 Expanded(
-                  child: _StatCol(label: '次数', value: '$count', unit: '次'),
+                  child: _StatCol(label: 'Sessions', value: '$count'),
                 ),
                 _statDivider(palette.divider),
                 Expanded(
                   child: _StatCol(
-                    label: '度电成本',
-                    value: costPerKwh == null ? '--' : formatYuan(costPerKwh!),
-                    unit: costPerKwh == null ? null : '¥/kWh',
+                    label: 'Cost per kWh',
+                    value: costPerKwh == null ? '--' : formatMoney(costPerKwh!),
+                    unit: costPerKwh == null ? null : '/kWh',
                   ),
                 ),
               ],
@@ -702,7 +703,7 @@ class _ReportEntryCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        '充电年度报告',
+                        'Annual Charging Report',
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w600,
@@ -711,7 +712,7 @@ class _ReportEntryCard extends StatelessWidget {
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        '回顾这一年的充电足迹与花费',
+                        'Look back at your year of charging',
                         style: TextStyle(fontSize: 12, color: palette.textHint),
                       ),
                     ],
@@ -797,7 +798,7 @@ class _LoadMorePill extends StatelessWidget {
               borderRadius: BorderRadius.circular(20),
             ),
             child: Text(
-              '再显示 ${remaining < _renderBatch ? remaining : _renderBatch} 条',
+              'Show ${remaining < _renderBatch ? remaining : _renderBatch} more',
               style: TextStyle(fontSize: 12, color: palette.textSecondary),
             ),
           ),

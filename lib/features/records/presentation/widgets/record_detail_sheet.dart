@@ -21,11 +21,13 @@ Future<void> showRecordDetailSheet(
       ? record.energy / (record.durationMinutes! / 60)
       : null;
   final durationFormatted = formatDuration(record.durationMinutes);
-  final durationText = durationFormatted.isEmpty ? '未记录' : durationFormatted;
+  final durationText = durationFormatted.isEmpty
+      ? 'Not recorded'
+      : durationFormatted;
 
   return showAppSheet(
     context: context,
-    title: '记录详情',
+    title: 'Record Details',
     builder: (context) => AppSheetScrollBody(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -49,7 +51,7 @@ Future<void> showRecordDetailSheet(
               ),
               const SizedBox(height: 8),
               Text(
-                '¥${formatYuan(record.cost)}',
+                formatMoney(record.cost),
                 style: TextStyle(
                   fontSize: 28,
                   fontWeight: FontWeight.w700,
@@ -78,29 +80,29 @@ Future<void> showRecordDetailSheet(
           ),
           const SizedBox(height: 16),
           // 行式信息：label 左 / value 右对齐，末行（备注）无分割线
-          _SheetRow(label: '充电日期', value: formatRecordDate(record.date)),
+          _SheetRow(label: 'Date', value: formatRecordDate(record.date)),
           if (record.vehicleName?.isNotEmpty == true)
-            _SheetRow(label: '车辆', value: record.vehicleName!),
-          _SheetRow(label: '充电电量', value: '${formatYuan(record.energy)} kWh'),
+            _SheetRow(label: 'Vehicle', value: record.vehicleName!),
+          _SheetRow(label: 'Energy', value: '${formatYuan(record.energy)} kWh'),
           _SheetRow(
-            label: '度电单价',
-            value: costPerKwh == null ? '--' : '¥${formatYuan(costPerKwh)}/kWh',
+            label: 'Price per kWh',
+            value: costPerKwh == null ? '--' : '${formatMoney(costPerKwh)}/kWh',
           ),
-          _SheetRow(label: '充电时长', value: durationText),
+          _SheetRow(label: 'Duration', value: durationText),
           _SheetRow(
-            label: '平均功率',
+            label: 'Avg Power',
             value: avgPower == null ? '—' : '${formatYuan(avgPower)} kW',
           ),
           if (record.locationName?.isNotEmpty == true)
             _SheetRow(
-              label: '地点',
+              label: 'Location',
               value: [
                 record.city,
                 record.locationName,
               ].whereType<String>().join(' · '),
             ),
           _SheetRow(
-            label: '备注',
+            label: 'Note',
             value: record.note.isNotEmpty ? record.note : '—',
             isLast: true,
           ),
@@ -111,7 +113,7 @@ Future<void> showRecordDetailSheet(
               Expanded(
                 child: _SheetAction(
                   icon: Icons.edit_outlined,
-                  label: '编辑这条记录',
+                  label: 'Edit',
                   iconColor: palette.textSecondary,
                   textColor: palette.onSurface,
                   background: palette.surfaceContainerLow,
@@ -125,7 +127,7 @@ Future<void> showRecordDetailSheet(
               Expanded(
                 child: _SheetAction(
                   icon: Icons.delete_outline_rounded,
-                  label: '删除这条记录',
+                  label: 'Delete',
                   iconColor: palette.error,
                   textColor: palette.onErrorContainer,
                   background: palette.errorContainer,

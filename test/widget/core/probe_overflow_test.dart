@@ -4,7 +4,9 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:ev_tool_app/core/widgets/app_toast.dart';
 
 void main() {
-  testWidgets('probe: 大字号下 toast 溢出详情', (tester) async {
+  testWidgets('probe: toast overflow details at large text scale', (
+    tester,
+  ) async {
     tester.view.physicalSize = const Size(402, 874);
     tester.view.devicePixelRatio = 1.0;
     addTearDown(tester.view.resetPhysicalSize);
@@ -17,7 +19,7 @@ void main() {
         home: Scaffold(
           body: Builder(
             builder: (context) => TextButton(
-              onPressed: () => showAppToast(context, '已保存'),
+              onPressed: () => showAppToast(context, 'Saved'),
               child: const Text('show'),
             ),
           ),
@@ -28,7 +30,7 @@ void main() {
     await tester.pump();
 
     debugDumpApp();
-    debugPrint('toast text rect: ${tester.getRect(find.text('已保存'))}');
+    debugPrint('toast text rect: ${tester.getRect(find.text('Saved'))}');
     await tester.pump(const Duration(seconds: 3));
   });
 }

@@ -15,18 +15,28 @@ class EquipmentCategory {
 
 /// 充电装备分类 Tab（6 类，与小程序一致）
 const List<EquipmentCategory> equipmentCategories = [
-  EquipmentCategory(id: 'charger-gun', title: '充电枪', keyword: '充电枪'),
-  EquipmentCategory(id: 'portable', title: '随车充', keyword: '随车充'),
-  EquipmentCategory(id: 'home-pile', title: '家充桩', keyword: '家充桩'),
-  EquipmentCategory(id: 'accessories', title: '车载配件', keyword: '车载配件'),
-  EquipmentCategory(id: 'cables', title: '充电线材', keyword: '充电线材'),
-  EquipmentCategory(id: 'power-bank', title: '应急电源', keyword: '应急电源'),
+  EquipmentCategory(id: 'charger-gun', title: 'Charging gun', keyword: '充电枪'),
+  EquipmentCategory(id: 'portable', title: 'Travel charger', keyword: '随车充'),
+  EquipmentCategory(
+    id: 'home-pile',
+    title: 'Home charging station',
+    keyword: '家充桩',
+  ),
+  EquipmentCategory(
+    id: 'accessories',
+    title: 'Car accessories',
+    keyword: '车载配件',
+  ),
+  EquipmentCategory(id: 'cables', title: 'Charging cables', keyword: '充电线材'),
+  EquipmentCategory(id: 'power-bank', title: 'Jump starters', keyword: '应急电源'),
 ];
 
 /// 首次进入免责声明文案（iOS 版去掉小程序跳转表述）
 const String equipmentTipText =
-    '本页商品数据来自拼多多开放平台，均为精选带券第三方商品，'
-    '价格与优惠以拼多多实际页面为准。点击商品后将跳转拼多多完成购买，敬请知晓。';
+    'Product data on this page comes from the Pinduoduo open platform — '
+    'curated third-party listings with coupons. Prices and offers are subject '
+    'to the actual Pinduoduo page. Tapping a product opens Pinduoduo to '
+    'complete the purchase.';
 
 /// 骨架屏卡数量（双列 × 3 行）
 const int equipmentSkeletonCount = 6;

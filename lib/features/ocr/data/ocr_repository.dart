@@ -36,7 +36,8 @@ const List<Duration> overloadRetryDelays = [
 ];
 
 /// 全部候选模型过载后的用户文案
-const String ocrBusyMessage = '识别服务繁忙，请稍后再试';
+const String ocrBusyMessage =
+    'Recognition service is busy, please try again later';
 
 /// 生成参数：低温度保证稳定抽取
 const double ocrTemperature = 0.1;
@@ -95,7 +96,10 @@ class OcrRepository {
   }) async {
     final key = _apiKey ?? '';
     if (key.isEmpty) {
-      throw const OcrException('小票识别服务 Key 未配置', code: ocrKeyMissingCode);
+      throw const OcrException(
+        'Receipt OCR service key not configured',
+        code: ocrKeyMissingCode,
+      );
     }
     final dataUrl = await _prepareDataUrl(imagePath);
     final body = await _requestWithModelFallback(key, dataUrl);
@@ -108,8 +112,10 @@ class OcrRepository {
         : null;
     final parsed = extractJsonBlock(rawContent is String ? rawContent : null);
     if (parsed == null) {
-      appLogger.w('小票识别输出无法解析为 JSON');
-      throw const OcrException('无法识别小票内容，请换一张更清晰的照片');
+      appLogger.w('Receipt OCR output could not be parsed as JSON');
+      throw const OcrException(
+        'Could not read the receipt, please try a clearer photo',
+      );
     }
     return normalizeReceiptResult(parsed, now: now);
   }
@@ -119,7 +125,9 @@ class OcrRepository {
     final dataUrl = await _pipeline.toBase64DataUrl(imagePath);
     final base64 = dataUrl.split(',').lastOrNull ?? '';
     if (base64.length * 3 / 4 > ocrMaxImageBytes) {
-      throw const OcrException('图片过大，请重新拍摄或选择更小的图片');
+      throw const OcrException(
+        'Image is too large, please retake or pick a smaller image',
+      );
     }
     return dataUrl;
   }
@@ -137,7 +145,7 @@ class OcrRepository {
         if (e.code != overloadErrorCode) {
           rethrow;
         }
-        appLogger.w('模型 ${model.name} 过载：${e.message}');
+        appLogger.w('Model ${model.name} overloaded: ${e.message}');
       }
     }
     throw const OcrException(ocrBusyMessage, code: overloadErrorCode);
@@ -214,14 +222,16 @@ class OcrRepository {
       throw _envelopeError(Map<String, dynamic>.from(data['error'] as Map));
     }
     if (data is! Map) {
-      throw const OcrException('小票识别服务响应异常');
+      throw const OcrException(
+        'Receipt OCR service returned an invalid response',
+      );
     }
     return Map<String, dynamic>.from(data);
   }
 
   OcrException _envelopeError(Map<String, dynamic> apiError) {
     return OcrException(
-      '小票识别失败：${apiError['message'] ?? '未知错误'}',
+      'Receipt recognition failed: ${apiError['message'] ?? 'unknown error'}',
       code: apiError['code']?.toString(),
     );
   }
@@ -231,7 +241,9 @@ class OcrRepository {
     if (data is Map && data['error'] is Map) {
       return _envelopeError(Map<String, dynamic>.from(data['error'] as Map));
     }
-    return OcrException('小票识别服务请求失败（${e.response?.statusCode}）');
+    return OcrException(
+      'Receipt OCR request failed (${e.response?.statusCode})',
+    );
   }
 }
 

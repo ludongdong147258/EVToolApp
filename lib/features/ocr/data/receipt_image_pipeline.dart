@@ -32,7 +32,7 @@ class FlutterImageCompressPipeline implements ReceiptImagePipeline {
   Future<String> toBase64DataUrl(String imagePath) async {
     final bytes = await _readBytes(imagePath);
     if (bytes == null) {
-      throw const OSError('图片读取失败，请重试');
+      throw const OSError('Failed to read image, please try again');
     }
     try {
       final size = await _decodeSize(bytes);
@@ -51,7 +51,9 @@ class FlutterImageCompressPipeline implements ReceiptImagePipeline {
       final result = compressed ?? bytes;
       return 'data:image/jpeg;base64,${base64Encode(result)}';
     } on Exception catch (e) {
-      appLogger.w('识别图片预压缩失败，回退原图：$e');
+      appLogger.w(
+        'Receipt image pre-compression failed, falling back to original: $e',
+      );
       return 'data:image/jpeg;base64,${base64Encode(bytes)}';
     }
   }
@@ -60,7 +62,7 @@ class FlutterImageCompressPipeline implements ReceiptImagePipeline {
     try {
       return await File(imagePath).readAsBytes();
     } on Exception catch (e) {
-      appLogger.w('识别图片读取失败：$e');
+      appLogger.w('Failed to read receipt image: $e');
       return null;
     }
   }
@@ -75,7 +77,7 @@ class FlutterImageCompressPipeline implements ReceiptImagePipeline {
       image.dispose();
       return size;
     } on Exception catch (e) {
-      appLogger.w('识别图片尺寸解码失败：$e');
+      appLogger.w('Failed to decode receipt image size: $e');
       return null;
     }
   }

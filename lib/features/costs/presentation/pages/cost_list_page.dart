@@ -67,19 +67,22 @@ class _CostListPageState extends ConsumerState<CostListPage> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('删除支出'),
-        content: const Text('删除后 5 秒内可在底部提示条撤销，确定删除这笔支出吗？'),
+        title: const Text('Delete expense'),
+        content: const Text(
+          'You can undo within 5 seconds from the bottom bar. '
+          'Delete this expense?',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: const Text('取消'),
+            child: const Text('Cancel'),
           ),
           TextButton(
             style: TextButton.styleFrom(
               foregroundColor: dialogContext.palette.error,
             ),
             onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: const Text('删除'),
+            child: const Text('Delete'),
           ),
         ],
       ),
@@ -101,8 +104,11 @@ class _CostListPageState extends ConsumerState<CostListPage> {
   void _showUndoBar() {
     showUndoBar(
       context,
-      text: _undoFailed ? '恢复失败，点此重试' : '已删除 ${_deletedPending.length} 笔支出',
-      actionText: _undoFailed ? '重试' : '撤销',
+      text: _undoFailed
+          ? 'Restore failed, tap to retry'
+          : 'Deleted ${_deletedPending.length} '
+                '${_deletedPending.length == 1 ? 'expense' : 'expenses'}',
+      actionText: _undoFailed ? 'Retry' : 'Undo',
       onUndo: _undoDelete,
     ).closed.whenComplete(() {
       // 窗口关闭（超时或撤销后）即放弃剩余待恢复项
@@ -124,7 +130,7 @@ class _CostListPageState extends ConsumerState<CostListPage> {
     if (allOk) {
       ScaffoldMessenger.of(context)
         ..hideCurrentSnackBar()
-        ..showSnackBar(const SnackBar(content: Text('已恢复')));
+        ..showSnackBar(const SnackBar(content: Text('Restored')));
       _deletedPending = [];
     }
   }
@@ -137,12 +143,12 @@ class _CostListPageState extends ConsumerState<CostListPage> {
     final filters = ref.watch(costFiltersProvider);
     final filtered = ref.watch(filteredExpensesProvider);
     final summaryView = ref.watch(expenseSummaryProvider);
-    final timeLabel = timeRangeLabels[filters.timePreset] ?? '全部';
+    final timeLabel = timeRangeLabels[filters.timePreset] ?? 'All';
     final top = summaryView.top;
     final isEmptyAll = expenses.isEmpty;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('养车支出')),
+      appBar: AppBar(title: const Text('Maintenance Costs')),
       body: ListView(
         padding: const EdgeInsets.only(
           left: 16,
@@ -154,9 +160,11 @@ class _CostListPageState extends ConsumerState<CostListPage> {
           if (isEmptyAll)
             EmptyState(
               icon: Icons.payments_rounded,
-              title: '暂无养车支出',
-              subtitle: '记录停车、保险、洗车等花费，看清全年养车成本',
-              ctaText: '记一笔支出',
+              title: 'No expenses yet',
+              subtitle:
+                  'Track parking, insurance, car wash and more to see '
+                  'your full maintenance costs',
+              ctaText: 'Add expense',
               onCta: () => context.push(RouteNames.costAdd),
             )
           else ...[
@@ -169,7 +177,7 @@ class _CostListPageState extends ConsumerState<CostListPage> {
                     children: [
                       Expanded(
                         child: Text(
-                          '$timeLabel · 养车支出',
+                          '$timeLabel · Expenses',
                           style: const TextStyle(
                             fontSize: 13,
                             color: AppColors.onPrimaryA85,
@@ -185,21 +193,20 @@ class _CostListPageState extends ConsumerState<CostListPage> {
                   ),
                   const SizedBox(height: 8),
                   HeroValue(
-                    value: formatYuan(summaryView.summary.totalAmount),
-                    unit: '¥',
+                    value: formatMoney(summaryView.summary.totalAmount),
                   ),
                   const SizedBox(height: 16),
                   HeroStatsRow(
                     items: [
                       HeroStatItem(
-                        label: '支出笔数',
+                        label: 'Count',
                         value: '${summaryView.summary.count}',
-                        unit: '笔',
                       ),
                       HeroStatItem(
-                        label: top == null ? '最高单笔' : '最高单笔·${top.typeLabel}',
-                        value: top == null ? '--' : formatYuan(top.amount),
-                        unit: top == null ? null : '元',
+                        label: top == null
+                            ? 'Largest'
+                            : 'Largest · ${top.typeLabel}',
+                        value: top == null ? '--' : formatMoney(top.amount),
                       ),
                     ],
                   ),
@@ -233,7 +240,7 @@ class _CostListPageState extends ConsumerState<CostListPage> {
                 scrollDirection: Axis.horizontal,
                 children: [
                   _FilterChip(
-                    label: '全部',
+                    label: 'All',
                     isSelected: filters.type == null,
                     onTap: () =>
                         ref.read(costFiltersProvider.notifier).setType(null),
@@ -264,14 +271,14 @@ class _CostListPageState extends ConsumerState<CostListPage> {
               children: [
                 Expanded(
                   child: Text(
-                    '$timeLabel · ${filtered.length} 条',
+                    '$timeLabel · ${filtered.length} entries',
                     style: context.textTheme.titleSmall?.copyWith(
                       fontWeight: FontWeight.w600,
                     ),
                   ),
                 ),
                 Text(
-                  '长按可删除',
+                  'Long-press to delete',
                   style: TextStyle(fontSize: 12, color: palette.textHint),
                 ),
                 InkWell(
@@ -294,7 +301,9 @@ class _CostListPageState extends ConsumerState<CostListPage> {
                         ),
                         const SizedBox(width: 2),
                         Text(
-                          filters.sortBy == 'amount' ? '金额最高' : '最新',
+                          filters.sortBy == 'amount'
+                              ? 'Highest amount'
+                              : 'Latest',
                           style: TextStyle(
                             fontSize: 12,
                             color: palette.textHint,
@@ -311,8 +320,8 @@ class _CostListPageState extends ConsumerState<CostListPage> {
               EmptyState(
                 compact: true,
                 icon: Icons.filter_alt_off_outlined,
-                title: '当前筛选条件下暂无支出',
-                ctaText: '清除筛选',
+                title: 'No expenses match these filters',
+                ctaText: 'Clear filters',
                 onCta: () => ref.read(costFiltersProvider.notifier).clearAll(),
               )
             else
@@ -372,14 +381,14 @@ class _ReportEntryCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      '综合费用统计',
+                      'Cost Report',
                       style: context.textTheme.titleSmall?.copyWith(
                         fontWeight: FontWeight.w600,
                       ),
                     ),
                     const SizedBox(height: 2),
                     Text(
-                      '充电 + 养车支出合并报表',
+                      'Charging + maintenance in one report',
                       style: TextStyle(fontSize: 12, color: palette.textHint),
                     ),
                   ],

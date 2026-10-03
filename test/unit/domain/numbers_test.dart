@@ -120,4 +120,16 @@ void main() {
       expect(isValidPositiveNumber('12abc'), isTrue);
     });
   });
+
+  group('formatMoney', () {
+    test('加 \$ 前缀并保持两位小数与千分位', () {
+      expect(formatMoney(345.5), '\$345.50');
+      expect(formatMoney(1234567.891), '\$1,234,567.89');
+    });
+
+    test('非法输入返回 \$0.00', () {
+      expect(formatMoney(null), '\$0.00');
+      expect(formatMoney('abc'), '\$0.00');
+    });
+  });
 }

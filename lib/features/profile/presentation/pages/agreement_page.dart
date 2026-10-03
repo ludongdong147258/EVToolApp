@@ -9,6 +9,9 @@ class AgreementPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return const LegalDocPage(title: '用户协议', sections: agreementSections);
+    return const LegalDocPage(
+      title: 'User Agreement',
+      sections: agreementSections,
+    );
   }
 }

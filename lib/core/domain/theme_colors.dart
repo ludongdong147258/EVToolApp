@@ -46,7 +46,7 @@ class AccentTheme {
 /// 默认主题（green）单例常量。
 const AccentTheme defaultAccentTheme = AccentTheme(
   id: 'green',
-  name: '极光绿',
+  name: 'Aurora Green',
   primary: 0xFF10B981,
   primaryContainer: 0xFF059669,
   secondary: 0xFF047857,
@@ -63,7 +63,7 @@ const List<AccentTheme> accentThemes = [
   defaultAccentTheme,
   AccentTheme(
     id: 'blue',
-    name: '深海蓝',
+    name: 'Deep Blue',
     primary: 0xFF3B82F6,
     primaryContainer: 0xFF2563EB,
     secondary: 0xFF1D4ED8,
@@ -76,7 +76,7 @@ const List<AccentTheme> accentThemes = [
   ),
   AccentTheme(
     id: 'orange',
-    name: '落日橙',
+    name: 'Sunset Orange',
     primary: 0xFFF97316,
     primaryContainer: 0xFFC2410C,
     secondary: 0xFF9A3412,
@@ -89,7 +89,7 @@ const List<AccentTheme> accentThemes = [
   ),
   AccentTheme(
     id: 'purple',
-    name: '星辰紫',
+    name: 'Stellar Purple',
     primary: 0xFF8B5CF6,
     primaryContainer: 0xFF7C3AED,
     secondary: 0xFF6D28D9,
@@ -102,7 +102,7 @@ const List<AccentTheme> accentThemes = [
   ),
   AccentTheme(
     id: 'pink',
-    name: '樱花粉',
+    name: 'Sakura Pink',
     primary: 0xFFEC4899,
     primaryContainer: 0xFFBE185D,
     secondary: 0xFF9D174D,
@@ -115,7 +115,7 @@ const List<AccentTheme> accentThemes = [
   ),
   AccentTheme(
     id: 'cyan',
-    name: '赛博青',
+    name: 'Cyber Cyan',
     primary: 0xFF06B6D4,
     primaryContainer: 0xFF0E7490,
     secondary: 0xFF155E75,

@@ -58,6 +58,50 @@ String getCurrentMonthKey({DateTime? now}) {
   return '${current.year}-${pad2(current.month)}';
 }
 
+/// 英文月份缩写（Jan..Dec）
+const List<String> monthShortNames = [
+  'Jan',
+  'Feb',
+  'Mar',
+  'Apr',
+  'May',
+  'Jun',
+  'Jul',
+  'Aug',
+  'Sep',
+  'Oct',
+  'Nov',
+  'Dec',
+];
+
+/// 日期字符串 → "Aug 28"（列表/卡片用）；格式非法返回 ""
+String formatMonthDay(dynamic dateStr) {
+  if (dateStr is! String || !dateRe.hasMatch(dateStr)) {
+    return '';
+  }
+  final month = int.parse(dateStr.substring(5, 7));
+  final day = int.parse(dateStr.substring(8, 10));
+  return '${monthShortNames[month - 1]} $day';
+}
+
+/// 日期字符串 → "Aug 28, 2026"（完整日期）；格式非法返回 ""
+String formatFullDate(dynamic dateStr) {
+  if (dateStr is! String || !dateRe.hasMatch(dateStr)) {
+    return '';
+  }
+  final year = dateStr.substring(0, 4);
+  return '${formatMonthDay(dateStr)}, $year';
+}
+
+/// 月份 key → "Aug 2026"（图表/导航标签）；格式非法返回原值
+String formatMonthLabel(dynamic monthKey) {
+  if (monthKey is! String || !monthKeyRe.hasMatch(monthKey)) {
+    return monthKey?.toString() ?? '';
+  }
+  final month = int.parse(monthKey.substring(5, 7));
+  return '${monthShortNames[month - 1]} ${monthKey.substring(0, 4)}';
+}
+
 /// 时间戳 → 日期字符串（"YYYY-MM-DD"，手拼避免 toLocaleString 兼容问题）
 ///
 /// 1754000000000 → "2025-08-01"；非法 → ""

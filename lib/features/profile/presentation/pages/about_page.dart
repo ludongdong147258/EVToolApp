@@ -7,8 +7,10 @@ import 'package:ev_tool_app/core/routing/route_names.dart';
 
 /// 应用描述（移植小程序 about 页 APP_DESCRIPTION）。
 const String _appDescription =
-    '一款面向电车（新能源车辆）用户的实用工具小程序，提供充电记录管理、充电统计、'
-    '油电成本对比、峰谷电价计算等实用功能，帮助您更好地了解用车成本。';
+    'A practical companion app for electric vehicle owners, offering charging '
+    'record management, charging statistics, fuel-versus-EV cost comparison, '
+    'and time-of-use electricity pricing calculators to help you understand '
+    'your true cost of driving.';
 
 /// 关于页（子页）：品牌区 + 简介 + 信息列表。
 class AboutPage extends StatelessWidget {
@@ -20,7 +22,7 @@ class AboutPage extends StatelessWidget {
     final accent = palette.accent;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('关于应用')),
+      appBar: AppBar(title: const Text('About')),
       body: ListView(
         padding: const EdgeInsets.fromLTRB(16, 24, 16, 32),
         children: [
@@ -58,7 +60,7 @@ class AboutPage extends StatelessWidget {
               ),
               const SizedBox(height: 12),
               Text(
-                '${AppConstants.appName} 电车工具',
+                '${AppConstants.appName} · EV Toolkit',
                 style: context.textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.w700,
                 ),
@@ -89,7 +91,7 @@ class AboutPage extends StatelessWidget {
               children: [
                 _InfoRow(
                   icon: Icons.menu_book_rounded,
-                  text: '用户协议',
+                  text: 'User Agreement',
                   onTap: () => context.push(RouteNames.agreement),
                 ),
                 Divider(
@@ -100,7 +102,7 @@ class AboutPage extends StatelessWidget {
                 ),
                 _InfoRow(
                   icon: Icons.lock_rounded,
-                  text: '隐私政策',
+                  text: 'Privacy Policy',
                   onTap: () => context.push(RouteNames.privacy),
                 ),
                 Divider(
@@ -111,7 +113,7 @@ class AboutPage extends StatelessWidget {
                 ),
                 const _InfoRow(
                   icon: Icons.info_outline_rounded,
-                  text: '版本',
+                  text: 'Version',
                   value: AppConstants.appVersion,
                 ),
               ],

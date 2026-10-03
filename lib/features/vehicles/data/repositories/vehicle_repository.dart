@@ -90,7 +90,7 @@ class VehicleRepository {
         await _costRepository.syncVehicleRename(id, rename);
       } on Exception catch (e) {
         // 快照同步失败只记录日志，不阻塞改名（与小程序口径一致）
-        appLogger.w('同步车辆快照失败', error: e);
+        appLogger.w('Failed to sync vehicle snapshots', error: e);
       }
     }
     return ensureSingleDefault(next);
@@ -107,7 +107,7 @@ class VehicleRepository {
       await _recordRepository.syncVehicleRemoval(id);
       await _costRepository.syncVehicleRemoval(id);
     } on Exception catch (e) {
-      appLogger.w('同步车辆快照失败', error: e);
+      appLogger.w('Failed to sync vehicle snapshots', error: e);
     }
     return ensureSingleDefault(next);
   }
@@ -136,8 +136,8 @@ class VehicleRepository {
         for (final vehicle in vehicles) vehicle.toJson(),
       ]);
     } on Exception catch (e) {
-      appLogger.e('保存车辆档案失败', error: e);
-      throw const StorageException('车辆保存失败');
+      appLogger.e('Failed to save vehicles', error: e);
+      throw const StorageException('Failed to save vehicle');
     }
   }
 }

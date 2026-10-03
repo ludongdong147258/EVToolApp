@@ -45,14 +45,17 @@ const List<String> expenseTypes = <String>[
 // ignore: constant_identifier_names
 const Map<String, ExpenseTypeMeta> EXPENSE_TYPE_META =
     <String, ExpenseTypeMeta>{
-      'insurance': ExpenseTypeMeta(label: '保险费', icon: 'verified_user'),
-      'parking': ExpenseTypeMeta(label: '停车费', icon: 'place'),
-      'wash': ExpenseTypeMeta(label: '洗车费', icon: 'water_drop'),
-      'maintenance': ExpenseTypeMeta(label: '保养维修', icon: 'build'),
-      'toll': ExpenseTypeMeta(label: '高速通行费', icon: 'speed'),
-      'fine': ExpenseTypeMeta(label: '违章罚款', icon: 'warning'),
-      'parts': ExpenseTypeMeta(label: '配件耗材', icon: 'settings'),
-      'other': ExpenseTypeMeta(label: '其他费用', icon: 'payments'),
+      'insurance': ExpenseTypeMeta(label: 'Insurance', icon: 'verified_user'),
+      'parking': ExpenseTypeMeta(label: 'Parking', icon: 'place'),
+      'wash': ExpenseTypeMeta(label: 'Car Wash', icon: 'water_drop'),
+      'maintenance': ExpenseTypeMeta(
+        label: 'Maintenance & Repair',
+        icon: 'build',
+      ),
+      'toll': ExpenseTypeMeta(label: 'Tolls', icon: 'speed'),
+      'fine': ExpenseTypeMeta(label: 'Fines', icon: 'warning'),
+      'parts': ExpenseTypeMeta(label: 'Parts & Accessories', icon: 'settings'),
+      'other': ExpenseTypeMeta(label: 'Other', icon: 'payments'),
     };
 
 /// 时间范围预设 key 列表（列表页筛选顺序）
@@ -65,17 +68,17 @@ const List<String> timeRangePresets = <String>[
 
 /// 时间范围预设展示文案
 const Map<String, String> timeRangeLabels = <String, String>{
-  'month': '本月',
-  'quarter3': '近三月',
-  'year': '本年',
-  'all': '全部',
+  'month': 'This Month',
+  'quarter3': 'Last 3 Months',
+  'year': 'This Year',
+  'all': 'All',
 };
 
 /// 综合报表中充电分项的 key（与 EXPENSE_TYPES 同层参与占比）
 const String chargeTypeKey = 'charge';
 
 /// 综合报表中充电分项的展示文案
-const String chargeTypeLabel = '充电';
+const String chargeTypeLabel = 'Charging';
 
 /// 养车支出记录（不可变；vehicleName 存快照，车辆改名/删除不影响历史记录展示）
 class Expense {
@@ -666,17 +669,19 @@ const int _reportTopN = 3;
 
 /// 报表文字小结
 ///
-/// total ≤ 0 → "{periodLabel}暂无支出记录"；
-/// 否则如 "本年度养车总花费 4,860.00 元；充电 42%，保险费 35%，停车费 15%"。
+/// total ≤ 0 → "{periodLabel} · No expenses yet"；
+/// 否则如 "This year · Total maintenance spend: $4,860.00;
+/// Charging 42%, Insurance 35%, Parking 15%"。
 String buildReportTextLine(
   List<TypeBreakdownItem>? breakdown,
   Object? total, {
   String? periodLabel,
 }) {
   final prefix = periodLabel ?? '';
+  final lead = prefix.isEmpty ? '' : '$prefix · ';
   final totalNum = toNumber(total) ?? 0;
   if (totalNum <= 0) {
-    return '$prefix暂无支出记录';
+    return '${lead}No expenses yet';
   }
   final items = breakdown ?? const <TypeBreakdownItem>[];
   final top = items.take(_reportTopN).toList(growable: false);
@@ -689,9 +694,10 @@ String buildReportTextLine(
     for (final item in top) '${item.label} ${item.percent}%',
   ];
   if (rest.isNotEmpty && restPercent > 0) {
-    parts.add('其他 $restPercent%');
+    parts.add('Other $restPercent%');
   }
-  return '$prefix养车总花费 ${formatYuan(totalNum)} 元；${parts.join('，')}';
+  return '${lead}Total maintenance spend: ${formatMoney(totalNum)}; '
+      '${parts.join(', ')}';
 }
 
 /// 最高单笔支出
@@ -821,16 +827,11 @@ void _accumulateMonth(
   );
 }
 
-/// 日期中文全格式（表单行展示）
+/// 日期全格式（表单行展示；历史函数名保留）
 ///
-/// "2026-08-28" → "2026年8月28日"；非法返回 ""。
+/// "2026-08-28" → "Aug 28, 2026"；非法返回 ""。
 String formatDateCn(Object? dateStr) {
-  if (!isValidDateString(dateStr)) {
-    return '';
-  }
-  final text = dateStr as String;
-  return '${int.parse(text.substring(0, 4))}'
-      '年${int.parse(text.substring(5, 7))}月${int.parse(text.substring(8, 10))}日';
+  return formatFullDate(dateStr);
 }
 
 /// 车辆改名：同步刷新关联支出的 vehicleName 快照
