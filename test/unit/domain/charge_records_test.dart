@@ -730,8 +730,8 @@ void main() {
           cost: 15.5,
           energy: 31,
           note: '',
-          latitude: 80,
-          longitude: 120,
+          latitude: 91,
+          longitude: 0,
         ),
       );
 
@@ -739,6 +739,36 @@ void main() {
       expect(onlyLat?.longitude, isNull);
       expect(outOfRange?.latitude, isNull);
       expect(outOfRange?.longitude, isNull);
+    });
+
+    test('海外坐标（西经/南纬）正常保留', () {
+      final west = buildRecordFromForm(
+        const ChargeRecordForm(
+          type: 'home',
+          date: '2026-08-23',
+          cost: 15.5,
+          energy: 31,
+          note: '',
+          latitude: 37.33,
+          longitude: -122.03,
+        ),
+      );
+      final south = buildRecordFromForm(
+        const ChargeRecordForm(
+          type: 'home',
+          date: '2026-08-23',
+          cost: 15.5,
+          energy: 31,
+          note: '',
+          latitude: -33.87,
+          longitude: 151.21,
+        ),
+      );
+
+      expect(west?.latitude, closeTo(37.33, 1e-9));
+      expect(west?.longitude, closeTo(-122.03, 1e-9));
+      expect(south?.latitude, closeTo(-33.87, 1e-9));
+      expect(south?.longitude, closeTo(151.21, 1e-9));
     });
 
     test('地点字段不影响核心校验（无地点的表单仍可保存）', () {

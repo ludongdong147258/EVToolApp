@@ -30,11 +30,11 @@ const int cityFieldMaxLength = 20;
 /// 车辆昵称最大长度（快照字段与表单共用，源自 vehicles.js）
 const int vehicleNameMaxLength = 20;
 
-/// GCJ-02 坐标合法范围（中国境内），超出视为录入错误
-const double latitudeMin = 3;
-const double latitudeMax = 54;
-const double longitudeMin = 73;
-const double longitudeMax = 136;
+/// WGS-84 坐标合法范围（全球），超出视为录入错误
+const double latitudeMin = -90;
+const double latitudeMax = 90;
+const double longitudeMin = -180;
+const double longitudeMax = 180;
 
 /// parseDuration 的非法哨兵值（合法值为正整数或 null）
 const int _durationInvalid = -1;
