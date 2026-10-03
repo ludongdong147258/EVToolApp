@@ -4,7 +4,7 @@
 
 ## 项目概述
 
-EV Tool（电车工具助手）—— 基于 Flutter 构建的电动汽车伴侣应用，仅支持 iOS。全部功能移植自微信小程序版 EVTool（`/Users/ludongdong/workspace/EVTool`，Taro/React）：充电记录、养车支出、车辆车库、年检维保备忘录、4 个省钱计算器、统计报表/年度报告、充电点位地图、附近充电站、装备导购、小票 OCR 识别、数据备份恢复。**数据全部本地存储（无后端）**，业务计算逻辑与备份 JSON 格式（v1）与小程序完全一致（双向兼容）。认证（auth）与 Dio token 基础设施为休眠代码，未挂载。
+EV Tool（电车工具助手）—— 基于 Flutter 构建的电动汽车伴侣应用，仅支持 iOS。全部功能移植自微信小程序版 EVTool（`/Users/ludongdong/workspace/EVTool`，Taro/React）：充电记录、养车支出、车辆车库、年检维保备忘录、4 个省钱计算器、统计报表/年度报告、充电点位地图、附近充电站、装备导购、小票 OCR 识别、数据备份恢复。**数据全部本地存储（无后端，无登录界面）**，业务计算逻辑与备份 JSON 格式（v1）与小程序完全一致（双向兼容）。Dio token 基础设施为休眠代码，未挂载。
 
 ## 命令
 
@@ -90,9 +90,8 @@ lib/
     │                        # 逆地理 10min 内存缓存）+ nearby_stations_page
     ├── equipment/           # GoodsRepository（拼多多商品+推广短链）+ equipment_page（6 类瀑布流+免责声明）
     ├── ocr/                 # OcrRepository（智谱 GLM-4V，1305 退避 + 模型回退）+ OcrEntryCard（key 缺失自隐藏）
-    ├── profile/             # profile_page（用户卡+菜单+主题色）/backup_restore_page（JSON 导出导入去重）/
-    │                        # user_profile_repository/about/agreement/privacy + AccentSwatch
-    └── auth/                # 休眠：mock 认证骨架（LoginPage 未挂路由）
+    └── profile/             # profile_page（用户卡+菜单+主题色）/backup_restore_page（JSON 导出导入去重）/
+                             # user_profile_repository/about/agreement/privacy + AccentSwatch
 ```
 
 ### 关键机制
