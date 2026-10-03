@@ -2,14 +2,13 @@ import 'package:flutter/material.dart';
 
 import 'package:ev_tool_app/core/domain/numbers.dart';
 import 'package:ev_tool_app/core/domain/poster.dart';
+import 'package:ev_tool_app/core/extensions/context_extensions.dart';
 import 'package:ev_tool_app/core/theme/app_colors.dart';
 import 'package:ev_tool_app/core/theme/app_palette.dart';
 
-/// 海报绘制用的固定浅色色板（白底海报恒用浅色板，不随 App 深浅色切换；
-/// 色值对应小程序 SharePoster 的 Canvas 常量）。
+/// 海报绘制用的固定中性色（白底海报恒用浅色亮度，不随 App 深浅色切换；
+/// brand 色随当前 accent，见 [AnnualPoster.build]；色值对应小程序 SharePoster 的 Canvas 常量）。
 abstract final class _PosterPalette {
-  static const EvPalette light = EvPalette.lightFallback;
-
   /// 次要说明文字（38% 黑）
   static const Color hint = Color(0x61000000);
 
@@ -40,17 +39,22 @@ class AnnualPoster extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // 白底海报恒用浅色亮度，但 brand 色跟随当前选中的 accent
+    final palette = EvPalette(
+      brightness: Brightness.light,
+      accent: context.palette.accent,
+    );
     return Container(
       width: posterLayout.width.toDouble(),
       height: posterLayout.height.toDouble(),
       color: Colors.white,
       child: Stack(
         children: [
-          _buildHero(),
-          _buildSplit(),
-          _buildBarChart(),
-          _buildBest(),
-          _buildFooter(),
+          _buildHero(palette),
+          _buildSplit(palette),
+          _buildBarChart(palette),
+          _buildBest(palette),
+          _buildFooter(palette),
         ],
       ),
     );
@@ -69,7 +73,7 @@ class AnnualPoster extends StatelessWidget {
   }
 
   /* 渐变 Hero 区：标题 + 年度充电支出 + 主数字 + 三列指标 */
-  Widget _buildHero() {
+  Widget _buildHero(EvPalette palette) {
     return Positioned(
       left: posterLayout.padding.toDouble(),
       top: posterLayout.heroTop.toDouble(),
@@ -81,7 +85,7 @@ class AnnualPoster extends StatelessWidget {
           gradient: LinearGradient(
             begin: Alignment.topLeft,
             end: Alignment.bottomRight,
-            colors: _PosterPalette.light.heroGradient,
+            colors: palette.heroGradient,
           ),
           borderRadius: BorderRadius.circular(24),
         ),
@@ -143,7 +147,7 @@ class AnnualPoster extends StatelessWidget {
   }
 
   /* 充电方式占比：底槽 + 快充/家充双色填充 + 左右图例 */
-  Widget _buildSplit() {
+  Widget _buildSplit(EvPalette palette) {
     return _section(
       top: posterLayout.splitTop,
       children: [
@@ -168,7 +172,7 @@ class AnnualPoster extends StatelessWidget {
                 if (model.fastPercent > 0)
                   Expanded(
                     flex: model.fastPercent,
-                    child: ColoredBox(color: _PosterPalette.light.primary),
+                    child: ColoredBox(color: palette.primary),
                   ),
                 if (model.homePercent > 0)
                   Expanded(
@@ -184,10 +188,7 @@ class AnnualPoster extends StatelessWidget {
           children: [
             Text(
               'Fast (DC) ${model.fastPercent}%',
-              style: TextStyle(
-                fontSize: 24,
-                color: _PosterPalette.light.primary,
-              ),
+              style: TextStyle(fontSize: 24, color: palette.primary),
             ),
             const Spacer(),
             Text(
@@ -201,7 +202,7 @@ class AnnualPoster extends StatelessWidget {
   }
 
   /* 12 月柱状图：标题 + 柱顶数值 + 全月刻度 */
-  Widget _buildBarChart() {
+  Widget _buildBarChart(EvPalette palette) {
     final heights = calcPosterBarHeights(
       model.barItems,
       posterLayout.barChartHeight,
@@ -239,6 +240,7 @@ class AnnualPoster extends StatelessWidget {
                   child: _PosterBar(
                     item: model.barItems[i],
                     height: heights[i],
+                    palette: palette,
                   ),
                 ),
               ],
@@ -269,7 +271,7 @@ class AnnualPoster extends StatelessWidget {
   }
 
   /* 年度之最：左标签 + 右数值强调 + 下方说明，条目间细分隔线 */
-  Widget _buildBest() {
+  Widget _buildBest(EvPalette palette) {
     final items = model.bestItems.take(3).toList(growable: false);
     return _section(
       top: posterLayout.bestTop,
@@ -312,7 +314,7 @@ class AnnualPoster extends StatelessWidget {
                         fontSize: 30,
                         height: 1.2,
                         fontWeight: FontWeight.w700,
-                        color: _PosterPalette.light.primary,
+                        color: palette.primary,
                       ),
                     ),
                   ],
@@ -337,7 +339,7 @@ class AnnualPoster extends StatelessWidget {
   }
 
   /* 底部：分隔线 + 徽标 slogan + 产品名落款 */
-  Widget _buildFooter() {
+  Widget _buildFooter(EvPalette palette) {
     return Positioned(
       left: posterLayout.padding.toDouble(),
       right: posterLayout.padding.toDouble(),
@@ -352,7 +354,7 @@ class AnnualPoster extends StatelessWidget {
             style: TextStyle(
               fontSize: 28,
               fontWeight: FontWeight.w600,
-              color: _PosterPalette.light.primary,
+              color: palette.primary,
             ),
           ),
         ],
@@ -400,12 +402,19 @@ class _HeroStat extends StatelessWidget {
 
 /// 海报 12 月柱（空月份灰柱，有数据月份渐变主色 + 柱顶数值）。
 class _PosterBar extends StatelessWidget {
-  const _PosterBar({required this.item, required this.height});
+  const _PosterBar({
+    required this.item,
+    required this.height,
+    required this.palette,
+  });
 
   final PosterBar item;
 
   /// 归一化柱高（设计 px；0 = 空月份画最小灰柱）。
   final int height;
+
+  /// 海报浅色 brand 色板（随当前 accent）。
+  final EvPalette palette;
 
   @override
   Widget build(BuildContext context) {
@@ -424,9 +433,7 @@ class _PosterBar extends StatelessWidget {
           width: double.infinity,
           height: hasBar ? height.toDouble() : _posterMinBarPx.toDouble(),
           decoration: BoxDecoration(
-            color: hasBar
-                ? _PosterPalette.light.primary
-                : _PosterPalette.barEmpty,
+            color: hasBar ? palette.primary : _PosterPalette.barEmpty,
             borderRadius: const BorderRadius.vertical(top: Radius.circular(6)),
           ),
         ),
