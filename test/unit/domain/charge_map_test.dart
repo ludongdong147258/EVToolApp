@@ -45,78 +45,6 @@ LocationGroup _group({
 }
 
 void main() {
-  group('getCityCoord 城市坐标查询', () {
-    test('全称匹配（选择器口径），返回条目携带英文名与中文匹配键', () {
-      expect(getCityCoord('浙江省', '杭州市')!.name, 'Hangzhou');
-      expect(getCityCoord('浙江省', '杭州市')!.lat, closeTo(30.274, 1e-9));
-      expect(getCityCoord('浙江省', '杭州市')!.lng, closeTo(120.155, 1e-9));
-      expect(getCityCoord('北京市', '北京市')!.name, 'Beijing');
-      expect(getCityCoord('北京市', '北京市')!.lat, closeTo(39.904, 1e-9));
-      expect(getCityCoord('北京市', '北京市')!.lng, closeTo(116.407, 1e-9));
-    });
-
-    test('简称与后缀剥离匹配', () {
-      expect(getCityCoord('广东省', '广州')!.lat, closeTo(23.129, 1e-9));
-      expect(getCityCoord('广东省', '广州')!.lng, closeTo(113.264, 1e-9));
-      expect(getCityCoord('湖北省', '恩施土家族苗族自治州')!.lat, closeTo(30.272, 1e-9));
-      expect(getCityCoord('湖北省', '恩施土家族苗族自治州')!.lng, closeTo(109.488, 1e-9));
-    });
-
-    test('省或城市未收录返回 null', () {
-      expect(getCityCoord('浙江省', '不存在市'), isNull);
-      expect(getCityCoord('火星省', '杭州'), isNull);
-    });
-  });
-
-  group('中英文省市输入回归（zh 匹配键）', () {
-    test('中文省市全称（腾讯逆地理口径）仍能命中并返回英文名', () {
-      expect(matchCity('广东省', '广州市'), 'Guangzhou');
-      expect(matchCity('浙江省', '杭州市'), 'Hangzhou');
-      expect(matchCity('北京市', '北京市'), 'Beijing');
-      expect(getCityCoord('广东省', '广州市')!.name, 'Guangzhou');
-      expect(getCityCoord('广东省', '广州市')!.zh, '广州');
-      expect(getCityCoord('广东省', '广州市')!.lat, closeTo(23.129, 1e-9));
-      expect(getCityCoord('广东省', '广州市')!.lng, closeTo(113.264, 1e-9));
-    });
-
-    test('英文省份 key 直接命中（findNearestCity 回填后再查询）', () {
-      expect(matchCity('Guangdong', '广州市'), 'Guangzhou');
-      expect(getCityCoord('Zhejiang', '杭州市')!.name, 'Hangzhou');
-    });
-
-    test('英文城市名（存量值回读）同样命中，保持幂等', () {
-      expect(matchCity('Guangdong', 'Guangzhou'), 'Guangzhou');
-      expect(matchCity('广东省', 'Guangzhou'), 'Guangzhou');
-      expect(getCityCoord('Zhejiang', 'Hangzhou')!.name, 'Hangzhou');
-    });
-
-    test('旧记录中的中文简称城市名仍能命中', () {
-      expect(matchCity('浙江省', '杭州'), 'Hangzhou');
-      expect(getCityCoord('新疆维吾尔自治区', '乌鲁木齐')!.name, 'Urumqi');
-    });
-  });
-
-  group('findNearestCity 最近城市', () {
-    test('坐标落在杭州附近返回杭州（英文名 + 英文省份）', () {
-      final hit = findNearestCity(30.3, 120.1);
-      expect(hit, isNotNull);
-      expect(hit!.city, 'Hangzhou');
-      expect(hit.province, 'Zhejiang');
-    });
-
-    test('与 matchCity 口径一致（选择器全称与地图选点归一到同一英文名）', () {
-      expect(matchCity('浙江省', '杭州市'), 'Hangzhou');
-      expect(matchCity('湖北省', '恩施土家族苗族自治州'), 'Enshi');
-      expect(matchCity('广东省', '广州'), 'Guangzhou');
-      expect(matchCity('浙江省', '不存在市'), isNull);
-    });
-
-    test('非法坐标返回 null', () {
-      expect(findNearestCity(null, 120), isNull);
-      expect(findNearestCity(null, null), isNull);
-    });
-  });
-
   group('groupRecordsByLocation 点位聚合', () {
     test('同城市同地点名聚合为一组并统计类型/花费', () {
       // Arrange
@@ -126,24 +54,24 @@ void main() {
           'type': 'fast',
           'cost': 30,
           'energy': 40,
-          'city': '杭州',
-          'locationName': '服务区快充',
+          'city': 'Cupertino',
+          'locationName': 'Apple Park Charger',
         }),
         _record({
           'id': 'r2',
           'type': 'home',
           'cost': 10,
           'energy': 20,
-          'city': '杭州',
-          'locationName': '服务区快充',
+          'city': 'Cupertino',
+          'locationName': 'Apple Park Charger',
         }),
         _record({
           'id': 'r3',
           'type': 'fast',
           'cost': 25,
           'energy': 30,
-          'city': '上海',
-          'locationName': '商场充电站',
+          'city': 'Mountain View',
+          'locationName': 'Mall Charger',
         }),
       ];
 
@@ -152,7 +80,7 @@ void main() {
 
       // Assert
       expect(groups, hasLength(2));
-      final top = groups.first; // 杭州组 2 次最多
+      final top = groups.first; // Cupertino 组 2 次最多
       expect(top.count, 2);
       expect(top.homeCount, 1);
       expect(top.fastCount, 1);
@@ -164,8 +92,8 @@ void main() {
     test('无地点名的记录按城市充电点聚合', () {
       // Arrange
       final records = [
-        _record({'city': '杭州', 'locationName': null}),
-        _record({'city': '杭州', 'locationName': ''}),
+        _record({'city': 'Cupertino', 'locationName': null}),
+        _record({'city': 'Cupertino', 'locationName': ''}),
       ];
 
       // Act & Assert
@@ -174,20 +102,20 @@ void main() {
       expect(groups.first.locationName, cityPointName);
     });
 
-    test('旧中文城市与新英文城市（同城同地点）归一为一组', () {
-      // Arrange：旧记录存中文（腾讯逆地理），新记录存英文（findNearestCity 回填）
+    test('城市名首尾空白归一后同城同地点聚合为一组', () {
+      // Arrange：CLGeocoder 回填的城市名可能带空白
       final records = [
         _record({
-          'id': 'old',
-          'province': '浙江省',
-          'city': '杭州市',
-          'locationName': '服务区快充',
+          'id': 'a',
+          'province': 'California',
+          'city': 'Cupertino',
+          'locationName': 'Apple Park Charger',
         }),
         _record({
-          'id': 'new',
-          'province': 'Zhejiang',
-          'city': 'Hangzhou',
-          'locationName': '服务区快充',
+          'id': 'b',
+          'province': 'California',
+          'city': '  Cupertino  ',
+          'locationName': 'Apple Park Charger',
         }),
       ];
 
@@ -196,7 +124,6 @@ void main() {
 
       // Assert
       expect(groups, hasLength(1));
-      expect(groups.first.city, 'Hangzhou');
       expect(groups.first.count, 2);
     });
 
@@ -319,28 +246,28 @@ void main() {
     test('按城市计数降序取前 N', () {
       // Arrange
       final records = [
-        _record({'city': '杭州'}),
-        _record({'city': '杭州'}),
-        _record({'city': '杭州'}),
-        _record({'city': '上海'}),
-        _record({'city': '上海'}),
-        _record({'city': '北京'}),
+        _record({'city': 'Cupertino'}),
+        _record({'city': 'Cupertino'}),
+        _record({'city': 'Cupertino'}),
+        _record({'city': 'Mountain View'}),
+        _record({'city': 'Mountain View'}),
+        _record({'city': 'Palo Alto'}),
         _record({'city': null}),
       ];
 
       // Act & Assert
       expect(calcCityTop(records, 3), [
         predicate<({String city, int count})>(
-          (e) => e.city == '杭州' && e.count == 3,
+          (e) => e.city == 'Cupertino' && e.count == 3,
         ),
         predicate<({String city, int count})>(
-          (e) => e.city == '上海' && e.count == 2,
+          (e) => e.city == 'Mountain View' && e.count == 2,
         ),
         predicate<({String city, int count})>(
-          (e) => e.city == '北京' && e.count == 1,
+          (e) => e.city == 'Palo Alto' && e.count == 1,
         ),
       ]);
-      expect(calcCityTop(records, 1).single.city, '杭州');
+      expect(calcCityTop(records, 1).single.city, 'Cupertino');
     });
 
     test('无城市记录返回空数组', () {
@@ -352,17 +279,17 @@ void main() {
       );
     });
 
-    test('同城中英文混存合并计数（归一键）', () {
+    test('城市名首尾空白归一后合并计数', () {
       // Arrange
       final records = [
-        _record({'province': '浙江省', 'city': '杭州市'}),
-        _record({'province': 'Zhejiang', 'city': 'Hangzhou'}),
-        _record({'province': 'Zhejiang', 'city': 'Hangzhou'}),
+        _record({'city': 'Cupertino'}),
+        _record({'city': ' Cupertino '}),
+        _record({'city': 'Cupertino'}),
       ];
 
       // Act & Assert
       final top = calcCityTop(records, 3);
-      expect(top.first.city, 'Hangzhou');
+      expect(top.first.city, 'Cupertino');
       expect(top.first.count, 3);
     });
   });
@@ -406,8 +333,8 @@ void main() {
     test('单点位：该点坐标 + 城市视野', () {
       // Arrange
       final records = [
-        _record({'city': '杭州', 'locationName': '家充'}),
-        _record({'city': '杭州', 'locationName': '家充'}),
+        _record({'city': 'Cupertino', 'locationName': 'Home'}),
+        _record({'city': 'Cupertino', 'locationName': 'Home'}),
       ];
 
       // Act & Assert

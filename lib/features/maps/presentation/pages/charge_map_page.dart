@@ -18,10 +18,6 @@ import 'package:ev_tool_app/core/widgets/gradient_hero_card.dart';
 import 'package:ev_tool_app/features/maps/presentation/widgets/apple_map_view.dart';
 import 'package:ev_tool_app/features/records/presentation/providers/records_provider.dart';
 
-/// 无点位记录时地图兜底（北京）。
-const double _fallbackLatitude = 39.904;
-const double _fallbackLongitude = 116.407;
-
 /// 地图区高度：屏高 46%（最小 280，对齐小程序 46vh / 560rpx）。
 const double _mapHeightRatio = 0.46;
 const double _mapHeightMin = 280;
@@ -60,8 +56,8 @@ class _ChargeMapPageState extends ConsumerState<ChargeMapPage> {
   String _rangeFilter = 'all'; // "all" | "year" | "month"
   String? _selectedKey; // 选中点位（groups.key），驱动标注气泡
   MapViewport _viewport = const MapViewport(
-    latitude: _fallbackLatitude,
-    longitude: _fallbackLongitude,
+    latitude: mapFallbackLatitude,
+    longitude: mapFallbackLongitude,
     zoom: 4,
   );
   bool _centerLocked = false; // 首次定位后锁定，切筛选不重置视野
@@ -79,8 +75,8 @@ class _ChargeMapPageState extends ConsumerState<ChargeMapPage> {
         ? _viewport
         : getMapCenter(
             filtered,
-            fallbackLatitude: _fallbackLatitude,
-            fallbackLongitude: _fallbackLongitude,
+            fallbackLatitude: mapFallbackLatitude,
+            fallbackLongitude: mapFallbackLongitude,
           );
     if (!_centerLocked) {
       WidgetsBinding.instance.addPostFrameCallback((_) {

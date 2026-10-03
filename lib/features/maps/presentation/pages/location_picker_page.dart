@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import 'package:ev_tool_app/core/domain/charge_map.dart'
+    show mapFallbackLatitude, mapFallbackLongitude;
 import 'package:ev_tool_app/core/domain/charge_records.dart'
     show locationNameMaxLength;
 import 'package:ev_tool_app/core/extensions/context_extensions.dart';
@@ -24,10 +26,6 @@ class PickedLocation {
   final String? city;
   final String? locationName;
 }
-
-/// 无初始坐标时兜底视野（北京）。
-const double _fallbackLatitude = 39.904;
-const double _fallbackLongitude = 116.407;
 
 /// 地图选点页：点击地图放置 marker，逆地理补全省市/地点名。
 ///
@@ -128,8 +126,9 @@ class _LocationPickerPageState extends ConsumerState<LocationPickerPage> {
                 Positioned.fill(
                   child: AppleMapView(
                     initialCameraPosition: MapViewCameraPosition(
-                      latitude: widget.initialLatitude ?? _fallbackLatitude,
-                      longitude: widget.initialLongitude ?? _fallbackLongitude,
+                      latitude: widget.initialLatitude ?? mapFallbackLatitude,
+                      longitude:
+                          widget.initialLongitude ?? mapFallbackLongitude,
                       zoom: widget.initialLatitude != null ? 14 : 11,
                     ),
                     markers: hasPicked

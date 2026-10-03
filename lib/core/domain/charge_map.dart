@@ -1,19 +1,14 @@
 import 'dart:math' as math;
 
 import 'package:ev_tool_app/core/domain/charge_records.dart';
-import 'package:ev_tool_app/core/domain/data/city_coords.dart';
-import 'package:ev_tool_app/core/domain/stations.dart';
 
 /// Pure functions for the charging locations map (ported from the
 /// mini-program src/lib/chargeMap.js).
 ///
 /// Data flow: charging records → [groupRecordsByLocation] (location
 /// aggregation) → [buildLocationMarkers] (map markers) →
-/// [calcCityTop]/[calcLocationStats]. Coordinate system: GCJ-02.
-
-/// Administrative suffixes to strip when matching city names (the region
-/// picker / Tencent geocoder return full Chinese administrative names).
-const List<String> _cityNameSuffixes = ['自治州', '地区', '盟', '市'];
+/// [calcCityTop]/[calcLocationStats]. Coordinate system: WGS-84
+/// (legacy GCJ-02 records are not migrated and may render offset).
 
 /// Fallback display name for aggregation when only the city is known
 /// (no concrete location name).
@@ -99,132 +94,15 @@ class MapViewport {
   final double zoom;
 }
 
-/// Province input may be an English map key (e.g. "Guangdong") or the
-/// Chinese name returned by Tencent reverse geocoding — resolve to the city
-/// list either way.
-List<CityCoord>? _provinceCities(String province) {
-  final direct = cityCoords[province];
-  if (direct != null) return direct;
-  final englishKey = provinceZhKeys[province];
-  return englishKey == null ? null : cityCoords[englishKey];
-}
-
-bool _matchCityName(String presetName, String pickerName) {
-  if (presetName == pickerName) return true;
-  var stripped = pickerName;
-  for (final suffix in _cityNameSuffixes) {
-    if (stripped.endsWith(suffix)) {
-      stripped = stripped.substring(0, stripped.length - suffix.length);
-    }
-  }
-  return presetName == stripped || pickerName.contains(presetName);
-}
-
-/// Province/city → preset city entry name (normalized to the preset short
-/// name for a unified storage vocabulary). Matching uses the Chinese [CityCoord.zh]
-/// key because picker/geocoder inputs are Chinese; the returned name is English.
-///
-/// Returns null when not found (caller keeps the original value).
-String? matchCity(String province, String city) {
-  final cities = _provinceCities(province);
-  if (cities == null) return null;
-  for (final entry in cities) {
-    if (_matchesCity(entry, city)) return entry.name;
-  }
-  return null;
-}
-
-/// Province/city → city center coordinates; null when not found.
-CityCoord? getCityCoord(String province, String city) {
-  final cities = _provinceCities(province);
-  if (cities == null) return null;
-  for (final entry in cities) {
-    if (_matchesCity(entry, city)) return entry;
-  }
-  return null;
-}
-
-/// 城市匹配：中文 zh 键（含行政后缀剥离）或英文 name 精确相等。
-/// 英文名也必须认——matchCity/findNearestCity 返回并落盘的就是英文名，
-/// 存量值回读（幂等）不能解析失败。
-bool _matchesCity(CityCoord entry, String city) {
-  return _matchCityName(entry.zh, city) || entry.name == city;
-}
-
-/// Coordinates → nearest city (used to fill province/city after map picking).
-_CityHit? _findNearestCity(double latitude, double longitude) {
-  _CityHit? best;
-  var bestDistance = double.infinity;
-  for (final province in cityCoords.keys) {
-    for (final entry in cityCoords[province]!) {
-      final distance = haversineDistance(
-        latitude,
-        longitude,
-        entry.lat,
-        entry.lng,
-      );
-      if (distance < bestDistance) {
-        bestDistance = distance;
-        best = _CityHit(province: province, entry: entry);
-      }
-    }
-  }
-  return best;
-}
-
-/// Coordinates → nearest city (including its center coordinates);
-/// null for invalid coordinates.
-NearestCity? findNearestCity(num? latitude, num? longitude) {
-  final lat = latitude?.toDouble();
-  final lng = longitude?.toDouble();
-  if (lat == null || lng == null || !lat.isFinite || !lng.isFinite) {
-    return null;
-  }
-  final hit = _findNearestCity(lat, lng);
-  if (hit == null) return null;
-  return NearestCity(
-    province: hit.province,
-    city: hit.entry.name,
-    latitude: hit.entry.lat,
-    longitude: hit.entry.lng,
-  );
-}
-
-class NearestCity {
-  const NearestCity({
-    required this.province,
-    required this.city,
-    required this.latitude,
-    required this.longitude,
-  });
-
-  final String province;
-  final String city;
-  final double latitude;
-  final double longitude;
-}
-
-class _CityHit {
-  const _CityHit({required this.province, required this.entry});
-
-  final String province;
-  final CityCoord entry;
-}
-
 bool _hasLocation(ChargeRecord record) =>
     record.latitude != null &&
     record.longitude != null &&
     record.latitude!.isFinite &&
     record.longitude!.isFinite;
 
-/// 城市显示/聚合键归一：旧记录可能存中文（腾讯逆地理），新记录存英文，
-/// 同城统一解析为英文名；解析不到原样保留。
+/// 城市显示/聚合键归一：去除首尾空白（城市名来自 CLGeocoder，英文）。
 String _normalizeCityKey(ChargeRecord record) {
-  final city = record.city;
-  if (city == null || city.isEmpty) return city ?? '';
-  final province = record.province;
-  if (province == null || province.isEmpty) return city;
-  return matchCity(province, city) ?? city;
+  return record.city?.trim() ?? '';
 }
 
 /// Aggregate records by location (data source for the map page scatter).
