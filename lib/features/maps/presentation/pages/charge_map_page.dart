@@ -22,8 +22,9 @@ import 'package:ev_tool_app/features/records/presentation/providers/records_prov
 const double _fallbackLatitude = 39.904;
 const double _fallbackLongitude = 116.407;
 
-/// 地图区高度（px）。
-const double _mapHeight = 320;
+/// 地图区高度：屏高 46%（最小 280，对齐小程序 46vh / 560rpx）。
+const double _mapHeightRatio = 0.46;
+const double _mapHeightMin = 280;
 
 /// 高频城市条形卡取前 N 名。
 const int _cityTopN = 3;
@@ -162,7 +163,7 @@ class _ChargeMapPageState extends ConsumerState<ChargeMapPage> {
       for (final vehicle in vehicles) (key: vehicle.id, text: vehicle.name),
     ];
     return SizedBox(
-      height: 36,
+      height: 28,
       child: ListView(
         scrollDirection: Axis.horizontal,
         children: [
@@ -195,11 +196,28 @@ class _ChargeMapPageState extends ConsumerState<ChargeMapPage> {
   }
 
   Widget _buildMap(List<LocationGroup> groups, MapViewport viewport) {
+    final palette = context.palette;
     final markers = buildLocationMarkers(groups, selectedKey: _selectedKey);
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(AppColors.radiusLg),
-      child: SizedBox(
-        height: _mapHeight,
+    final height = (MediaQuery.sizeOf(context).height * _mapHeightRatio).clamp(
+      _mapHeightMin,
+      double.infinity,
+    );
+    // 卡片化地图：细边框 + 软阴影（对齐小程序 .cm-map-wrap）
+    return Container(
+      height: height,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(AppColors.radiusLg),
+        border: Border.all(color: palette.divider),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(AppColors.radiusLg),
         child: Stack(
           children: [
             Positioned.fill(
@@ -226,8 +244,8 @@ class _ChargeMapPageState extends ConsumerState<ChargeMapPage> {
               ),
             ),
             Positioned(
-              left: 8,
-              bottom: 8,
+              left: 10,
+              bottom: 10,
               child: _MapLegend(pointCount: groups.length),
             ),
           ],
@@ -255,9 +273,10 @@ class _ChargeMapPageState extends ConsumerState<ChargeMapPage> {
                 },
               ),
             const SizedBox(height: 12),
-            OutlinedButton.icon(
+            // 填充式导航按钮（对齐小程序 .btn-primary）
+            FilledButton.icon(
               onPressed: () => _navigateTo(group),
-              icon: const Icon(Icons.arrow_forward, size: 16),
+              icon: const Icon(Icons.arrow_forward_rounded, size: 16),
               label: const Text('导航到此点位'),
             ),
           ],
@@ -299,6 +318,8 @@ class _ChargeMapPageState extends ConsumerState<ChargeMapPage> {
 
   Widget _buildHeroStats(List<LocationGroup> groups, LocationStats stats) {
     return GradientHeroCard(
+      // 紧凑 padding（对齐小程序 .cm-hero）
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 10),
       child: HeroStatsRow(
         items: [
           HeroStatItem(label: '充电点位', value: '${groups.length}'),
@@ -362,18 +383,20 @@ class _FilterLabel extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.only(left: indent ? 12 : 4, top: 9),
-      child: Text(
-        text,
-        style: context.textTheme.bodySmall?.copyWith(
-          color: context.palette.textHint,
+      padding: EdgeInsets.only(left: indent ? 12 : 4),
+      child: Center(
+        child: Text(
+          text,
+          style: context.textTheme.bodySmall?.copyWith(
+            color: context.palette.textHint,
+          ),
         ),
       ),
     );
   }
 }
 
-/// 筛选 chip（小号）。
+/// 筛选 chip（chip--sm 小号胶囊，与养车支出/充电统计同款）。
 class _FilterChip extends StatelessWidget {
   const _FilterChip({
     required this.text,
@@ -390,19 +413,26 @@ class _FilterChip extends StatelessWidget {
     final palette = context.palette;
     return Padding(
       padding: const EdgeInsets.only(right: 8),
-      child: Material(
-        color: active ? palette.primary : palette.surfaceContainer,
-        borderRadius: BorderRadius.circular(AppColors.radiusMd),
-        child: InkWell(
-          onTap: onTap,
-          borderRadius: BorderRadius.circular(AppColors.radiusMd),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            child: Text(
-              text,
-              style: context.textTheme.bodySmall?.copyWith(
-                color: active ? Colors.white : palette.onSurfaceVariant,
-              ),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(20),
+        onTap: onTap,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+          decoration: BoxDecoration(
+            color: active ? palette.secondaryContainer : palette.inputBg,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(
+              color: active ? palette.primaryContainer : Colors.transparent,
+            ),
+          ),
+          child: Text(
+            text,
+            style: TextStyle(
+              fontSize: 12,
+              color: active
+                  ? palette.onSecondaryContainer
+                  : palette.onSurfaceVariant,
+              fontWeight: active ? FontWeight.w600 : FontWeight.w400,
             ),
           ),
         ),
@@ -423,8 +453,15 @@ class _MapLegend extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
-        color: palette.surfaceCard.withValues(alpha: 0.9),
-        borderRadius: BorderRadius.circular(AppColors.radiusMd),
+        color: palette.surfaceCard.withValues(alpha: 0.92),
+        borderRadius: BorderRadius.circular(50),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 8,
+            offset: const Offset(0, 2),
+          ),
+        ],
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -440,7 +477,7 @@ class _MapLegend extends StatelessWidget {
           Text(
             '共 $pointCount 个点位',
             style: context.textTheme.bodySmall?.copyWith(
-              color: palette.textHint,
+              color: palette.textSecondary,
             ),
           ),
         ],
@@ -459,7 +496,11 @@ class _LegendDot extends StatelessWidget {
     return Container(
       width: 8,
       height: 8,
-      decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+      decoration: BoxDecoration(
+        color: color,
+        shape: BoxShape.circle,
+        border: Border.all(color: Colors.white, width: 1),
+      ),
     );
   }
 }
@@ -487,20 +528,21 @@ class _CityTopItem extends StatelessWidget {
       child: Row(
         children: [
           Container(
-            width: 20,
-            height: 20,
+            width: 22,
+            height: 22,
             alignment: Alignment.center,
             decoration: BoxDecoration(
               color: isFirst
-                  ? palette.primary
-                  : palette.surfaceContainerHighest,
+                  ? palette.primary.withValues(alpha: 0.08)
+                  : palette.inputBg,
               shape: BoxShape.circle,
             ),
             child: Text(
               '$rank',
               style: TextStyle(
                 fontSize: 11,
-                color: isFirst ? Colors.white : palette.onSurfaceVariant,
+                fontWeight: FontWeight.w700,
+                color: isFirst ? palette.secondary : palette.onSurfaceVariant,
               ),
             ),
           ),
@@ -530,16 +572,18 @@ class _CityTopItem extends StatelessWidget {
                 ),
                 const SizedBox(height: 6),
                 ClipRRect(
-                  borderRadius: BorderRadius.circular(2),
+                  borderRadius: BorderRadius.circular(3),
                   child: SizedBox(
                     height: 6,
                     child: Stack(
                       children: [
-                        Container(color: palette.surfaceContainer),
+                        Container(
+                          color: palette.primary.withValues(alpha: 0.08),
+                        ),
                         FractionallySizedBox(
                           alignment: Alignment.centerLeft,
                           widthFactor: percent.clamp(0, 1),
-                          child: Container(color: palette.primary),
+                          child: Container(color: palette.primaryContainer),
                         ),
                       ],
                     ),
@@ -554,7 +598,7 @@ class _CityTopItem extends StatelessWidget {
   }
 }
 
-/// 弹层内记录条目：日期 + 类型 + 花费/度数，点击跳编辑。
+/// 弹层内记录卡片：日期 + 类型 pill + 金额行 + 备注，点击跳编辑。
 class _GroupRecordTile extends StatelessWidget {
   const _GroupRecordTile({required this.record, required this.onTap});
 
@@ -565,50 +609,69 @@ class _GroupRecordTile extends StatelessWidget {
   Widget build(BuildContext context) {
     final palette = context.palette;
     final isHome = record.type == 'home';
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(AppColors.radiusMd),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(vertical: 10),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
+    final typeColor = isHome ? AppColors.homeCharge : AppColors.fastCharge;
+    final costPerKwh = calcCostPerKwh(record.cost, record.energy);
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 8),
+      child: Material(
+        color: palette.inputBg,
+        borderRadius: BorderRadius.circular(AppColors.radiusMd),
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(AppColors.radiusMd),
+          child: Padding(
+            padding: const EdgeInsets.all(12),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Expanded(
-                  child: Text(record.date, style: context.textTheme.bodyMedium),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        record.date,
+                        style: context.textTheme.bodyMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 8,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: typeColor.withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(50),
+                      ),
+                      child: Text(
+                        typeDefaultTitles[record.type] ?? record.type,
+                        style: TextStyle(fontSize: 11, color: typeColor),
+                      ),
+                    ),
+                  ],
                 ),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 8,
-                    vertical: 2,
+                const SizedBox(height: 4),
+                Text(
+                  '¥${formatYuan(record.cost)} · ${record.energy}度'
+                  '${costPerKwh == null ? '' : ' · ¥${formatYuan(costPerKwh)}/度'}',
+                  style: context.textTheme.bodySmall?.copyWith(
+                    color: palette.onSurface,
                   ),
-                  decoration: BoxDecoration(
-                    color: isHome
-                        ? AppColors.homeCharge.withValues(alpha: 0.12)
-                        : AppColors.fastCharge.withValues(alpha: 0.12),
-                    borderRadius: BorderRadius.circular(AppColors.radiusSm),
-                  ),
-                  child: Text(
-                    typeDefaultTitles[record.type] ?? record.type,
-                    style: TextStyle(
-                      fontSize: 11,
-                      color: isHome
-                          ? AppColors.homeCharge
-                          : AppColors.fastCharge,
+                ),
+                if (record.note.isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    record.note,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: context.textTheme.bodySmall?.copyWith(
+                      color: palette.textHint,
                     ),
                   ),
-                ),
+                ],
               ],
             ),
-            const SizedBox(height: 4),
-            Text(
-              '¥${formatYuan(record.cost)} · ${record.energy}度',
-              style: context.textTheme.bodySmall?.copyWith(
-                color: palette.textSecondary,
-              ),
-            ),
-          ],
+          ),
         ),
       ),
     );
