@@ -216,7 +216,7 @@ void main() {
     testWidgets('渲染品牌区/简介/信息列表', (tester) async {
       await pumpTall(tester, const MaterialApp(home: AboutPage()));
 
-      expect(find.text('VoltMate · EV Toolkit'), findsOneWidget);
+      expect(find.text('VoltLedger · EV Toolkit'), findsOneWidget);
       expect(find.text('Contact Email'), findsNothing);
       expect(find.text('User Agreement'), findsOneWidget);
       expect(find.text('Privacy Policy'), findsOneWidget);

@@ -22,7 +22,7 @@ const List<LegalSection> agreementSections = <LegalSection>[
   LegalSection(
     title: '1. Acceptance of These Terms',
     paragraphs: [
-      'Welcome to VoltMate (the "Service"). These Terms constitute the agreement between you and the Service regarding your use of the Service.',
+      'Welcome to VoltLedger (the "Service"). These Terms constitute the agreement between you and the Service regarding your use of the Service.',
       'Before using the Service, you should read and understand these Terms in their entirety. By downloading, opening, or using the Service in any way, you acknowledge that you have read and agree to be bound by all of these Terms.',
       'If you do not agree with any part of these Terms, please stop using the Service.',
     ],
@@ -30,7 +30,7 @@ const List<LegalSection> agreementSections = <LegalSection>[
   LegalSection(
     title: '2. About the Service',
     paragraphs: [
-      'VoltMate is a practical companion app for electric vehicle owners. It currently provides charging record management, charging statistics, cost and time-of-use electricity pricing calculators, and fuel-versus-EV cost comparison tools.',
+      'VoltLedger is a practical companion app for electric vehicle owners. It currently provides charging record management, charging statistics, cost and time-of-use electricity pricing calculators, and fuel-versus-EV cost comparison tools.',
       'All calculation results produced by the Service (including, without limitation, cost estimates, cost comparisons, and charging cost statistics) are derived from the data you enter and default parameters. They are provided for reference only and do not constitute purchasing advice or a basis for any decision.',
       'The Service may be updated from time to time with new features, interface changes, or adjusted content. The features actually provided in the app shall prevail.',
     ],
@@ -38,7 +38,7 @@ const List<LegalSection> agreementSections = <LegalSection>[
   LegalSection(
     title: '3. No Account Required',
     paragraphs: [
-      'VoltMate does not require registration, sign-in, or an account. There is no login flow, and the Service does not collect account credentials.',
+      'VoltLedger does not require registration, sign-in, or an account. There is no login flow, and the Service does not collect account credentials.',
       'Your nickname, avatar, and preferences are optional profile details stored only on your device, and you may clear or change them at any time.',
       'Because no account exists, you remain in full control of your data at all times, as described in the Privacy Policy.',
     ],
@@ -95,7 +95,7 @@ const List<LegalSection> privacySections = <LegalSection>[
   LegalSection(
     title: '1. Introduction',
     paragraphs: [
-      'VoltMate (the "Service") takes your privacy seriously. This Policy explains what information the Service handles, how it is used and stored, and the rights you have in connection with it.',
+      'VoltLedger (the "Service") takes your privacy seriously. This Policy explains what information the Service handles, how it is used and stored, and the rights you have in connection with it.',
       'Please read this Policy carefully before using the Service. By using the Service, you agree to the information practices described in this Policy.',
     ],
   ),

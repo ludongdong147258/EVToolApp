@@ -1,5 +1,5 @@
 name: ev_tool_app
-description: VoltMate - Electric Vehicle Companion App
+description: VoltLedger - Electric Vehicle Companion App
 publish_to: 'none'
 # The `+N` build segment makes CFBundleVersion resolve to an incrementing
 # integer (1) instead of "1.0.0", which App Store Connect requires.

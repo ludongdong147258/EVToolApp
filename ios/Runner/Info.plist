@@ -7,7 +7,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>VoltMate</string>
+	<string>VoltLedger</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -15,7 +15,7 @@
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>VoltMate</string>
+	<string>VoltLedger</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
@@ -27,11 +27,11 @@
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>NSCameraUsageDescription</key>
-	<string>VoltMate uses the camera to scan charging receipts for automatic record entry and to take vehicle photos.</string>
+	<string>VoltLedger uses the camera to scan charging receipts for automatic record entry and to take vehicle photos.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
-	<string>VoltMate uses your location to automatically detect where you are charging.</string>
+	<string>VoltLedger uses your location to automatically detect where you are charging.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>VoltMate uses your photo library to select charging receipts or vehicle photos.</string>
+	<string>VoltLedger uses your photo library to select charging receipts or vehicle photos.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

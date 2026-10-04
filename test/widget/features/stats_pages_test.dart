@@ -258,7 +258,7 @@ void main() {
         homePercent: 0,
         bestItems: [],
         sloganText: 'Rookie Owner · A year in EV life',
-        footerText: 'VoltMate · EV Charging Log',
+        footerText: 'VoltLedger · EV Charging Log',
       );
       final blueAccent = getAccentById('blue');
 
