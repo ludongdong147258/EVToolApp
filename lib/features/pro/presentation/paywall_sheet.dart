@@ -202,68 +202,71 @@ class _PaywallSheetState extends ConsumerState<_PaywallSheet> {
       );
     }
 
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          ..._perks.map(_buildPerkRow),
-          const SizedBox(height: 16),
-          offerings.when(
-            loading: () => const Center(
-              child: Padding(
-                padding: EdgeInsets.symmetric(vertical: 24),
-                child: CircularProgressIndicator(),
+    // 小屏（75% 高度上限）装不下整列：内容可滚动，短内容仍按自然高度收起
+    return AppSheetScrollBody(
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(20, 8, 20, 24),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            ..._perks.map(_buildPerkRow),
+            const SizedBox(height: 16),
+            offerings.when(
+              loading: () => const Center(
+                child: Padding(
+                  padding: EdgeInsets.symmetric(vertical: 24),
+                  child: CircularProgressIndicator(),
+                ),
+              ),
+              error: (_, _) => _buildRetryPlaceholder(theme),
+              data: (packages) => _buildPlanList(theme, packages),
+            ),
+            const SizedBox(height: 12),
+            AppPrimaryButton(
+              text: _selected == null ? 'Choose a plan' : 'Subscribe',
+              onTap: _busy || _selected == null ? null : _purchase,
+            ),
+            const SizedBox(height: 8),
+            Center(
+              child: TextButton(
+                onPressed: _busy ? null : _restore,
+                child: const Text('Restore Purchases'),
               ),
             ),
-            error: (_, _) => _buildRetryPlaceholder(theme),
-            data: (packages) => _buildPlanList(theme, packages),
-          ),
-          const SizedBox(height: 12),
-          AppPrimaryButton(
-            text: _selected == null ? 'Choose a plan' : 'Subscribe',
-            onTap: _busy || _selected == null ? null : _purchase,
-          ),
-          const SizedBox(height: 8),
-          Center(
-            child: TextButton(
-              onPressed: _busy ? null : _restore,
-              child: const Text('Restore Purchases'),
-            ),
-          ),
-          const SizedBox(height: 4),
-          Center(
-            child: Text(
-              'Payment is charged to your Apple ID account at confirmation of '
-              'purchase. Subscriptions auto-renew unless cancelled at least 24 '
-              'hours before the end of the current period. Cancel anytime in '
-              'your App Store subscription settings.',
-              textAlign: TextAlign.center,
-              style: theme.textTheme.bodySmall?.copyWith(
-                color: theme.colorScheme.onSurfaceVariant,
+            const SizedBox(height: 4),
+            Center(
+              child: Text(
+                'Payment is charged to your Apple ID account at confirmation of '
+                'purchase. Subscriptions auto-renew unless cancelled at least 24 '
+                'hours before the end of the current period. Cancel anytime in '
+                'your App Store subscription settings.',
+                textAlign: TextAlign.center,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
               ),
             ),
-          ),
-          const SizedBox(height: 4),
-          // 3.1.2：自动续订订阅必须在付费墙提供隐私政策与使用条款入口
-          Center(
-            child: Wrap(
-              alignment: WrapAlignment.center,
-              spacing: 16,
-              children: [
-                TextButton(
-                  onPressed: () => context.push(RouteNames.privacy),
-                  child: const Text('Privacy Policy'),
-                ),
-                TextButton(
-                  onPressed: () => context.push(RouteNames.agreement),
-                  child: const Text('Terms of Use'),
-                ),
-              ],
+            const SizedBox(height: 4),
+            // 3.1.2：自动续订订阅必须在付费墙提供隐私政策与使用条款入口
+            Center(
+              child: Wrap(
+                alignment: WrapAlignment.center,
+                spacing: 16,
+                children: [
+                  TextButton(
+                    onPressed: () => context.push(RouteNames.privacy),
+                    child: const Text('Privacy Policy'),
+                  ),
+                  TextButton(
+                    onPressed: () => context.push(RouteNames.agreement),
+                    child: const Text('Terms of Use'),
+                  ),
+                ],
+              ),
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }
