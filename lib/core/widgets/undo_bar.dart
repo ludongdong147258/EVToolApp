@@ -18,6 +18,8 @@ ScaffoldFeatureController<SnackBar, SnackBarClosedReason> showUndoBar(
     SnackBar(
       content: Text(text, maxLines: 1, overflow: TextOverflow.ellipsis),
       duration: duration,
+      // Flutter 3.47+：带 action 的 SnackBar 默认 persist=true 永不超时，需显式关闭
+      persist: false,
       action: SnackBarAction(label: actionText, onPressed: onUndo),
     ),
   );
