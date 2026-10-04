@@ -82,6 +82,8 @@ class _PaywallSheetState extends ConsumerState<_PaywallSheet> {
   @override
   void initState() {
     super.initState();
+    // 先用 KV 缓存同步初始化有效期（离线/秒开），再实时拉取覆盖
+    _proExpiration = ref.read(proRepositoryProvider).getCachedExpiration();
     // 打开时拉最新 entitlement（处理沙盒续订/后台状态变化）
     unawaited(ref.read(proStatusProvider.notifier).refreshFromRevenueCat());
     // 已订阅时加载有效期（RC 有 customerInfo 缓存，代价低）

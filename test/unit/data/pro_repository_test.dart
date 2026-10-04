@@ -34,6 +34,42 @@ void main() {
       expect(repo.getCachedProStatus(), isFalse);
     });
 
+    test('getCachedExpiration：无缓存返回 null', () {
+      expect(ProRepository(FakeKeyValueStore()).getCachedExpiration(), isNull);
+    });
+
+    test('getCachedExpiration：解析日期与续订标记', () async {
+      final kv = FakeKeyValueStore();
+      final repo = ProRepository(kv);
+
+      await kv.setJson(ProRepository.expirationStorageKey, {
+        'expires': '2027-11-04T16:33:22Z',
+        'willRenew': true,
+      });
+
+      final cached = repo.getCachedExpiration()!;
+      expect(cached.expires, DateTime.utc(2027, 11, 4, 16, 33, 22));
+      expect(cached.willRenew, isTrue);
+    });
+
+    test('getCachedExpiration：脏数据容错', () async {
+      final kv = FakeKeyValueStore();
+      final repo = ProRepository(kv);
+
+      // expires 非法 → expires null 但记录仍返回
+      await kv.setJson(ProRepository.expirationStorageKey, {
+        'expires': 'not-a-date',
+        'willRenew': 'yes',
+      });
+      final dirty = repo.getCachedExpiration()!;
+      expect(dirty.expires, isNull);
+      expect(dirty.willRenew, isFalse);
+
+      // 整体损坏 → null
+      kv.setRaw(ProRepository.expirationStorageKey, '{broken');
+      expect(repo.getCachedExpiration(), isNull);
+    });
+
     test('refresh / getOfferings / purchase / restore 静默不抛', () async {
       final repo = ProRepository(FakeKeyValueStore());
 

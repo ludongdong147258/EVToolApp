@@ -38,7 +38,7 @@ Future<void> initRevenueCat(KeyValueStore kv) async {
           false;
       _onEntitlementChanged?.call(active);
       final kv = _listenerKv;
-      if (kv != null) unawaited(_cacheProStatus(kv, active));
+      if (kv != null) unawaited(_cacheEntitlement(kv, info));
     });
   } on PlatformException catch (e) {
     appLogger.e('Failed to configure RevenueCat', error: e);
@@ -56,11 +56,22 @@ KeyValueStore? _listenerKv;
 /// entitlement 变化时通知 provider（ProStatusNotifier 注册/注销）。
 void Function(bool active)? _onEntitlementChanged;
 
-Future<void> _cacheProStatus(KeyValueStore kv, bool value) async {
+/// 统一缓存 entitlement 状态：`proStatus`（bool）+ `proExpiration`（到期信息）。
+/// 失权或终身（无 expirationDate）时清除到期缓存；写失败仅 log。
+Future<void> _cacheEntitlement(KeyValueStore kv, CustomerInfo info) async {
+  final entitlement = info.entitlements.all[AppConstants.proEntitlementId];
+  final active = entitlement?.isActive ?? false;
+  final expirationDate = entitlement?.expirationDate;
   try {
-    await kv.setJson(ProRepository.storageKey, value);
+    await kv.setJson(ProRepository.storageKey, active);
+    await kv.setJson(
+      ProRepository.expirationStorageKey,
+      (active && expirationDate != null)
+          ? {'expires': expirationDate, 'willRenew': entitlement!.willRenew}
+          : null,
+    );
   } on Exception catch (e) {
-    appLogger.e('Failed to cache pro status', error: e);
+    appLogger.e('Failed to cache pro entitlement', error: e);
   }
 }
 
@@ -73,6 +84,7 @@ class ProRepository {
   ProRepository(this._kv);
 
   static const String storageKey = 'proStatus';
+  static const String expirationStorageKey = 'proExpiration';
   final KeyValueStore _kv;
 
   /// SDK 是否已配置（key 存在且 configure 成功）。
@@ -80,6 +92,22 @@ class ProRepository {
 
   /// 缓存的 Pro 状态（无缓存/脏数据按 false 处理；无 key 时调用方走解锁分支）。
   bool getCachedProStatus() => _kv.getJson(storageKey) == true;
+
+  /// 缓存的有效期（离线回显用）；无缓存/脏数据返回 null，expires 解析失败按 null。
+  ({DateTime? expires, bool willRenew})? getCachedExpiration() {
+    final Map<String, dynamic>? raw;
+    try {
+      raw = _kv.getJsonMap(expirationStorageKey);
+    } on Exception catch (e) {
+      appLogger.e('Failed to load cached pro expiration', error: e);
+      return null;
+    }
+    if (raw == null) return null;
+    return (
+      expires: DateTime.tryParse(raw['expires'] ?? ''),
+      willRenew: raw['willRenew'] == true,
+    );
+  }
 
   /// 从 RevenueCat 拉取最新 entitlement 并写缓存；SDK 不可用/异常时返回缓存值。
   Future<bool> refresh() async {
@@ -89,7 +117,7 @@ class ProRepository {
       final active =
           info.entitlements.all[AppConstants.proEntitlementId]?.isActive ??
           false;
-      await _cacheProStatus(_kv, active);
+      await _cacheEntitlement(_kv, info);
       return active;
     } on PlatformException catch (e) {
       appLogger.e('Failed to refresh pro status', error: e);
@@ -109,12 +137,13 @@ class ProRepository {
     }
   }
 
-  /// 当前 entitlement 的到期信息；未激活/无 SDK/异常返回 null，
-  /// expires 为 null 表示终身（lifetime）。
+  /// 当前 entitlement 的到期信息并写缓存（离线回显）；未激活/无 SDK/异常
+  /// 返回 null，expires 为 null 表示终身（lifetime）。
   Future<({DateTime? expires, bool willRenew})?> proExpiration() async {
     if (!sdkAvailable) return null;
     try {
       final info = await Purchases.getCustomerInfo();
+      await _cacheEntitlement(_kv, info);
       final entitlement = info.entitlements.all[AppConstants.proEntitlementId];
       if (entitlement == null || !entitlement.isActive) return null;
       return (
@@ -136,7 +165,7 @@ class ProRepository {
           info.entitlements.all[AppConstants.proEntitlementId]?.isActive ??
           false;
       if (!active) _logInactiveEntitlement(info, 'purchase');
-      await _cacheProStatus(_kv, active);
+      await _cacheEntitlement(_kv, info);
       return active ? ProActionResult.success : ProActionResult.failed;
     } on PlatformException catch (e) {
       if (PurchasesErrorHelper.getErrorCode(e) ==
@@ -157,7 +186,7 @@ class ProRepository {
           info.entitlements.all[AppConstants.proEntitlementId]?.isActive ??
           false;
       if (!active) _logInactiveEntitlement(info, 'restore');
-      await _cacheProStatus(_kv, active);
+      await _cacheEntitlement(_kv, info);
       return active ? ProActionResult.success : ProActionResult.noPurchases;
     } on PlatformException catch (e) {
       appLogger.e('Restore failed', error: e);
