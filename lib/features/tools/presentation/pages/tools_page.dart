@@ -82,13 +82,6 @@ const List<ToolEntry> toolEntries = <ToolEntry>[
     icon: Icons.menu_book_outlined,
     route: RouteNames.warrantyHandbook,
   ),
-  ToolEntry(
-    id: 'equipment',
-    title: 'Charging Gear',
-    desc: 'Buying guide for chargers, portable cables, and emergency gear.',
-    icon: Icons.shopping_bag_outlined,
-    route: RouteNames.equipment,
-  ),
 ];
 
 /// 工具分组：标题 + 该组工具 id 列表。
@@ -110,7 +103,6 @@ const List<ToolGroup> toolGroups = <ToolGroup>[
     ],
   ),
   ToolGroup(title: 'Maps', toolIds: <String>['nearby-stations']),
-  ToolGroup(title: 'Shopping', toolIds: <String>['equipment']),
   ToolGroup(
     title: 'Memos & Handbooks',
     toolIds: <String>['inspection-memo', 'mod-compliance', 'warranty-handbook'],

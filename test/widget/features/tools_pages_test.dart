@@ -56,14 +56,12 @@ void main() {
     expect(find.text('Tools'), findsOneWidget);
     expect(find.text('Savings Calculators'), findsOneWidget);
     expect(find.text('Maps'), findsOneWidget);
-    expect(find.text('Shopping'), findsOneWidget);
     expect(find.text('Memos & Handbooks'), findsOneWidget);
     expect(find.text('Range Estimate'), findsOneWidget);
     expect(find.text('Fuel vs EV Cost'), findsOneWidget);
     expect(find.text('Time-of-Use Savings'), findsOneWidget);
     expect(find.text('Home Charger Setup'), findsOneWidget);
     expect(find.text('Nearby Stations'), findsOneWidget);
-    expect(find.text('Charging Gear'), findsOneWidget);
     expect(find.text('Service & Inspection Memo'), findsOneWidget);
     expect(find.text('Mod Compliance Check'), findsOneWidget);
     expect(find.text('EV Warranty Handbook'), findsOneWidget);
