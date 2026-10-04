@@ -1,28 +1,28 @@
 import 'package:ev_tool_app/core/domain/stations.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-/// 测试 POI 工厂：Open Charge Map /v3/poi/ 返回的点位结构
+/// 测试要素工厂：Overpass API 返回的充电桩要素结构
 Map<String, dynamic> mkPoi(
   String id,
   String title,
   dynamic lat,
   dynamic lng, [
-  Map<String, dynamic> extra = const {},
+  Map<String, dynamic> tags = const {},
 ]) => {
-  'ID': id,
-  'AddressInfo': {
-    'Title': title,
-    'AddressLine1': '1 Main St',
-    'Town': 'Cupertino',
-    'StateOrProvince': 'California',
-    'Latitude': lat,
-    'Longitude': lng,
+  'type': 'node',
+  'id': id,
+  'lat': lat,
+  'lon': lng,
+  'tags': {
+    'amenity': 'charging_station',
+    'name': title,
+    'addr:housenumber': '1',
+    'addr:street': 'Main St',
+    'addr:city': 'Cupertino',
+    'phone': '4089961010',
+    'socket:type2:output': '150 kW',
+    ...tags,
   },
-  'ContactTelephone1': '4089961010',
-  'Connections': [
-    {'PowerKW': 150},
-  ],
-  ...extra,
 };
 
 /// 测试用 station 工厂
@@ -101,7 +101,7 @@ void main() {
     });
   });
 
-  group('normalizeStation OCM POI 归一化', () {
+  group('normalizeStation Overpass 要素归一化', () {
     test('完整字段映射为 station 结构（距离由原点 haversine 计算）', () {
       // Arrange
       final poi = mkPoi('123', 'Apple Park Charger', 23.11812, 113.32386);
@@ -111,9 +111,9 @@ void main() {
 
       // Assert
       expect(station, isNotNull);
-      expect(station!.id, '123');
+      expect(station!.id, 'node/123');
       expect(station.name, 'Apple Park Charger');
-      expect(station.address, '1 Main St, Cupertino, California');
+      expect(station.address, '1 Main St Cupertino');
       expect(station.tel, '4089961010');
       expect(station.latitude, 23.11812);
       expect(station.longitude, 113.32386);
@@ -122,56 +122,95 @@ void main() {
       expect(station.category, 'DC 150kW');
     });
 
-    test('ContactTelephone1 缺失时 tel 为空串（页面据此不渲染拨打按钮）', () {
-      final poi = mkPoi('poi-4', 'No Phone', 23.13, 113.27)
-        ..remove('ContactTelephone1');
+    test('way/relation 要素用 center 坐标', () {
+      // Arrange
+      final way = {
+        'type': 'way',
+        'id': 42,
+        'center': {'lat': 23.13, 'lon': 113.27},
+        'tags': <String, dynamic>{'amenity': 'charging_station', 'name': 'W'},
+      };
+
+      // Act & Assert
+      final station = normalizeStation(way, tianhe);
+      expect(station, isNotNull);
+      expect(station!.id, 'way/42');
+      expect(station.latitude, 23.13);
+      expect(station.longitude, 113.27);
+    });
+
+    test('phone 缺失时 tel 为空串（页面据此不渲染拨打按钮）', () {
+      final poi = mkPoi('poi-4', 'No Phone', 23.13, 113.27, {'phone': ''});
       expect(normalizeStation(poi, tianhe)!.tel, '');
     });
 
-    test('Title 为空串/空值时兜底为 Unnamed station', () {
-      // Arrange
-      final poi = mkPoi('poi-x', '', 23.13, 113.27);
+    test('phone 含分号分隔多个号码时取第一个', () {
+      final poi = mkPoi('poi-6', 'Multi Phone', 23.13, 113.27, {
+        'phone': '4081112222; 4083334444',
+      });
+      expect(normalizeStation(poi, tianhe)!.tel, '4081112222');
+    });
 
-      // Act & Assert
-      expect(normalizeStation(poi, tianhe)!.name, 'Unnamed station');
+    test('name 缺失时按 brand → operator 兜底，全缺为 Unnamed station', () {
+      // Arrange & Act & Assert
+      expect(
+        normalizeStation(
+          mkPoi('b1', '', 23.13, 113.27, {'name': null, 'brand': 'EVgo'}),
+          tianhe,
+        )!.name,
+        'EVgo',
+      );
+      expect(
+        normalizeStation(
+          mkPoi('b2', '', 23.13, 113.27, {
+            'name': null,
+            'brand': null,
+            'operator': 'City of Cupertino',
+          }),
+          tianhe,
+        )!.name,
+        'City of Cupertino',
+      );
+      expect(
+        normalizeStation(
+          mkPoi('b3', '', 23.13, 113.27, {'name': null, 'brand': null}),
+          tianhe,
+        )!.name,
+        'Unnamed station',
+      );
     });
 
     test('地址各部分缺失时只拼接非空部分', () {
       // Arrange
       final poi = mkPoi('poi-5', 'Bare Station', 23.13, 113.27, {
-        'AddressInfo': {
-          'Title': 'Bare Station',
-          'Town': 'Cupertino',
-          'Latitude': 23.13,
-          'Longitude': 113.27,
-        },
+        'addr:housenumber': null,
+        'addr:street': null,
+        'addr:city': 'Cupertino',
       });
 
       // Act & Assert
       expect(normalizeStation(poi, tianhe)!.address, 'Cupertino');
     });
 
-    test('缺少 AddressInfo / 坐标非法 / 空入参返回 null', () {
-      expect(normalizeStation({'ID': 'x'}, tianhe), isNull);
+    test('坐标非法 / 空入参返回 null', () {
+      expect(
+        normalizeStation(<String, dynamic>{
+          'type': 'node',
+          'id': 1,
+          'tags': <String, dynamic>{},
+        }, tianhe),
+        isNull,
+      );
+      expect(
+        normalizeStation(<String, dynamic>{
+          'type': 'node',
+          'id': 1,
+          'lat': 'abc',
+          'lon': 113.27,
+        }, tianhe),
+        isNull,
+      );
       expect(normalizeStation(null, tianhe), isNull);
-      expect(
-        normalizeStation({
-          'ID': 'x',
-          'AddressInfo': <String, dynamic>{'Title': 't'},
-        }, tianhe),
-        isNull,
-      );
-      expect(
-        normalizeStation({
-          'ID': 'x',
-          'AddressInfo': <String, dynamic>{
-            'Title': 't',
-            'Latitude': 'abc',
-            'Longitude': 113.27,
-          },
-        }, tianhe),
-        isNull,
-      );
     });
 
     test('数值字符串坐标可被容忍', () {
@@ -181,37 +220,31 @@ void main() {
       expect(station.longitude, 113.27);
     });
 
-    test('category 按最大功率推导：≥50kW 为 DC，低于为 AC', () {
-      // Arrange
-      final dc = mkPoi('dc', 'Fast', 23.13, 113.27, {
-        'Connections': [
-          {'PowerKW': 11},
-          {'PowerKW': 250},
-        ],
+    test('category 取 socket:*:output 最大功率：≥50kW 为 DC，低于为 AC', () {
+      // Arrange："50 kW" / "7" / "7.2 kW" 混排，取最大 50 → DC
+      final mixed = mkPoi('m1', 'Mixed', 23.13, 113.27, {
+        'socket:type2:output': '7',
+        'socket:chademo:output': '50 kW',
+        'socket:type1:output': '7.2 kW',
       });
-      final ac = mkPoi('ac', 'Slow', 23.13, 113.27, {
-        'Connections': [
-          {'PowerKW': 22},
-        ],
+      final ac = mkPoi('a1', 'Slow', 23.13, 113.27, {
+        'socket:type2:output': '22 kW',
       });
 
       // Act & Assert
-      expect(normalizeStation(dc, tianhe)!.category, 'DC 250kW');
+      expect(normalizeStation(mixed, tianhe)!.category, 'DC 50kW');
       expect(normalizeStation(ac, tianhe)!.category, 'AC 22kW');
     });
 
-    test('无 Connections / PowerKW 全缺失时 category 为空串', () {
+    test('无 tags / socket 功率全缺失时 category 为空串', () {
       // Arrange
-      final noConnections = mkPoi('n1', 'Unknown', 23.13, 113.27)
-        ..remove('Connections');
+      final noTags = {'type': 'node', 'id': 1, 'lat': 23.13, 'lon': 113.27};
       final noPower = mkPoi('n2', 'No Power', 23.13, 113.27, {
-        'Connections': [
-          {'Quantity': 2},
-        ],
+        'socket:type2:output': null,
       });
 
       // Act & Assert
-      expect(normalizeStation(noConnections, tianhe)!.category, '');
+      expect(normalizeStation(noTags, tianhe)!.category, '');
       expect(normalizeStation(noPower, tianhe)!.category, '');
     });
   });

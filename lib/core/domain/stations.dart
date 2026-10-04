@@ -1,10 +1,11 @@
 /// Pure functions for nearby charging stations (no Flutter dependency,
 /// testable).
 ///
-/// Data source: Open Charge Map /v3/poi/ (WGS-84):
-/// POI → [normalizeStation] → Station → [sortStationsByDistance] → page
-/// markers. (Historically ported from the mini-program src/lib/stations.js
-/// with Tencent LBS; deliberately diverged for the overseas build.)
+/// Data source: OpenStreetMap Overpass API (`nwr[amenity=charging_station]`,
+/// WGS-84): element → [normalizeStation] → Station →
+/// [sortStationsByDistance] → page markers. (Historically ported from the
+/// mini-program src/lib/stations.js with Tencent LBS; deliberately diverged
+/// for the overseas build.)
 library;
 
 import 'dart:math' as math;
@@ -169,32 +170,41 @@ String formatDistance(num? meters) {
   return '${(value / _kmThreshold).toStringAsFixed(1)}km';
 }
 
-/// Open Charge Map POI → [Station].
+/// OpenStreetMap Overpass element → [Station].
 ///
-/// [poi] is one entry of the /v3/poi/ response: AddressInfo carries the
-/// name/coordinates, Connections carry power (kW); [origin] is the distance
-/// origin (compact responses carry no distance field, always recomputed).
-/// Returns null for invalid points; never throws.
-Station? normalizeStation(Map<String, dynamic>? poi, LatLng origin) {
-  final addressInfo = poi?['AddressInfo'];
-  if (poi == null || addressInfo is! Map) {
+/// [element] is one entry of the Overpass response (`node/way/relation`
+/// with `lat/lon` or `center`, `tags` carrying name/brand/sockets);
+/// [origin] is the distance origin (always recomputed). Returns null for
+/// invalid points; never throws.
+Station? normalizeStation(Map<String, dynamic>? element, LatLng origin) {
+  if (element == null) {
     return null;
   }
-  final latitude = _toNumber(addressInfo['Latitude']);
-  final longitude = _toNumber(addressInfo['Longitude']);
+  final dynamic center = element['center'];
+  final latitude = _toNumber(
+    element['lat'] ?? (center is Map ? center['lat'] : null),
+  );
+  final longitude = _toNumber(
+    element['lon'] ?? (center is Map ? center['lon'] : null),
+  );
   if (latitude.isNaN || longitude.isNaN) {
     return null;
   }
+  final dynamic rawTags = element['tags'];
+  final tags = rawTags is Map ? rawTags : const <String, dynamic>{};
   final addressParts = [
-    addressInfo['AddressLine1'],
-    addressInfo['Town'],
-    addressInfo['StateOrProvince'],
+    tags['addr:housenumber'],
+    tags['addr:street'],
+    tags['addr:city'],
   ].where(_isNonEmptyText).map((part) => '$part'.trim());
   return Station(
-    id: _text(poi['ID'], ''),
-    name: _text(addressInfo['Title'], 'Unnamed station'),
-    address: addressParts.join(', '),
-    tel: _text(poi['ContactTelephone1'], ''),
+    id: '${element['type']}/${element['id']}',
+    name: _text(
+      tags['name'] ?? tags['brand'] ?? tags['operator'],
+      'Unnamed station',
+    ),
+    address: addressParts.join(' '),
+    tel: _firstPhone(tags['phone'] ?? tags['contact:phone']),
     latitude: latitude,
     longitude: longitude,
     distance: haversineDistance(
@@ -203,23 +213,24 @@ Station? normalizeStation(Map<String, dynamic>? poi, LatLng origin) {
       latitude,
       longitude,
     ),
-    category: _stationCategory(poi['Connections']),
+    category: _stationCategory(tags),
   );
 }
 
-/// Category from the strongest connection: DC at/above
-/// [_dcPowerKwThreshold], otherwise AC; unknown power → empty.
-String _stationCategory(dynamic connections) {
-  if (connections is! List) {
-    return '';
-  }
+/// Category from the strongest socket output tag (`socket:*:output`,
+/// values like "50 kW" / "7"): DC at/above [_dcPowerKwThreshold], otherwise
+/// AC; unknown power → empty.
+String _stationCategory(Map<dynamic, dynamic> tags) {
   double? maxKw;
-  for (final connection in connections) {
-    if (connection is! Map) {
+  for (final entry in tags.entries) {
+    final key = entry.key;
+    if (key is! String ||
+        !key.startsWith('socket:') ||
+        !key.endsWith(':output')) {
       continue;
     }
-    final powerKw = _toNumber(connection['PowerKW']);
-    if (!powerKw.isNaN && (maxKw == null || powerKw > maxKw)) {
+    final powerKw = _parseLeadingNumber(entry.value);
+    if (powerKw != null && (maxKw == null || powerKw > maxKw)) {
       maxKw = powerKw;
     }
   }
@@ -228,6 +239,23 @@ String _stationCategory(dynamic connections) {
   }
   final rounded = maxKw.round();
   return maxKw >= _dcPowerKwThreshold ? 'DC ${rounded}kW' : 'AC ${rounded}kW';
+}
+
+/// "50 kW" → 50, "7.2 kW" → 7.2, "7" → 7; unparsable → null.
+double? _parseLeadingNumber(dynamic value) {
+  if (value is! String) {
+    return null;
+  }
+  final match = RegExp(r'^\s*(\d+(?:\.\d+)?)').firstMatch(value);
+  return match == null ? null : double.parse(match.group(1)!);
+}
+
+/// OSM phone tags may carry ";"-separated numbers; take the first.
+String _firstPhone(dynamic value) {
+  if (value is! String || value.trim().isEmpty) {
+    return '';
+  }
+  return value.split(';').first.trim();
 }
 
 /// `value || fallback` semantics: null/blank string takes the fallback.

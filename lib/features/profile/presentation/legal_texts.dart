@@ -112,7 +112,7 @@ const List<LegalSection> privacySections = <LegalSection>[
     title: '3. How Information Is Used',
     paragraphs: [
       'Providing core features: Saving and displaying your charging records, computing statistics (cumulative cost, cost per kWh, and so on), and running tools such as fuel-versus-EV comparison and time-of-use pricing calculations. These computations run on your device using the data you enter.',
-      'Third-party feature calls: When you use a feature that requires an external service, the necessary data is sent to that service to fulfill your request. Specifically: when you search for nearby charging stations, your coordinates are sent to a third-party charging station data service (Open Charge Map), and, if you use receipt scanning, the receipt image is sent to an optical character recognition service. Converting coordinates into place names is performed on your device by the system location service. These calls only occur when you actively trigger the corresponding feature.',
+      'Third-party feature calls: When you use a feature that requires an external service, the necessary data is sent to that service to fulfill your request. Specifically: when you search for nearby charging stations, your coordinates are sent to a third-party charging station data service (OpenStreetMap), and, if you use receipt scanning, the receipt image is sent to an optical character recognition service. Converting coordinates into place names is performed on your device by the system location service. These calls only occur when you actively trigger the corresponding feature.',
       'Service improvement: We may analyze aggregated, anonymized usage patterns to improve the product experience.',
     ],
   ),

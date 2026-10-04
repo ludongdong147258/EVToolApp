@@ -4,15 +4,11 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 ///
 /// 对应小程序 src/services/apiConfig.js。
 abstract final class Env {
-  static const String _ocmKey = 'OCM_API_KEY';
   static const String _zhipuKey = 'ZHIPU_API_KEY';
   static const String _goodsBase = 'GOODS_API_BASE';
 
   static String _get(String name) =>
       dotenv.isInitialized ? (dotenv.env[name] ?? '') : '';
-
-  /// Open Charge Map key（附近充电站）；可选，空串表示匿名调用（受限流约束）。
-  static String get ocmKey => _get(_ocmKey);
 
   /// 智谱 AI key（GLM-4V 小票 OCR）；空串表示未配置。
   static String get zhipuKey => _get(_zhipuKey);

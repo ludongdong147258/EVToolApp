@@ -3,22 +3,21 @@ import 'dart:convert';
 import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import 'package:ev_tool_app/core/constants/env.dart';
 import 'package:ev_tool_app/core/domain/stations.dart';
 import 'package:ev_tool_app/core/storage/key_value_store.dart';
 import 'package:ev_tool_app/core/utils/logger.dart';
 
-/// Open Charge Map 专用无鉴权 Dio（沿用小程序 createNoAuthRequest 约束：
-/// 第三方接口不注入 Bearer token，15s 超时）。
+/// Overpass (OpenStreetMap) 专用无鉴权 Dio（沿用小程序 createNoAuthRequest
+/// 约束：第三方接口不注入 Bearer token；Overpass 查询较重，超时放到 30s）。
 ///
 /// 注意：绝不复用应用的 dioProvider（带鉴权拦截器与 401 刷新链路，
 /// 会把本站用户 token 发给第三方域）。
 final stationsDioProvider = Provider<Dio>((ref) {
   return Dio(
     BaseOptions(
-      baseUrl: 'https://api.openchargemap.org/v3',
+      baseUrl: 'https://overpass-api.de/api',
       connectTimeout: const Duration(seconds: 15),
-      receiveTimeout: const Duration(seconds: 15),
+      receiveTimeout: const Duration(seconds: 30),
     ),
   );
 });
@@ -33,12 +32,14 @@ class StationServiceException implements Exception {
   String toString() => message;
 }
 
-/// 附近充电桩仓储（数据源 Open Charge Map /v3/poi/）。
+/// 附近充电桩仓储（数据源 OpenStreetMap Overpass API）。
 ///
-/// - 搜索半径 5km（海外桩密度低），maxresults 30；
+/// - `nwr[amenity=charging_station]` around 半径 5km（海外桩密度低），
+///   最多 30 条；
 /// - 结果按坐标分格 + 30 分钟 TTL 缓存于 KeyValueStore，命中后按当前
 ///   原点重算距离；
-/// - 无 key 可用（受限流约束），配置 OCM_API_KEY 可提高配额；
+/// - Overpass 是公共共享服务：带 Accept/UA 头礼貌请求，429/504 限流
+///   归一为「服务繁忙」；
 /// - 错误策略与项目其他仓储一致：log + throw [StationServiceException]，
 ///   由页面 catch 后渲染错误态。
 class StationRepository {
@@ -49,9 +50,10 @@ class StationRepository {
   /// 结果缓存在本机的 key（按坐标分格 + TTL，同位置复用）。
   static const String nearbyStationsCacheKey = 'nearbyStationsCache';
 
-  /// 搜索半径（km）——海外充电桩密度远低于国内，1km 常返回空。
-  static const int _searchRadiusKm = 5;
+  /// 搜索半径（米）——海外充电桩密度远低于国内，1km 常返回空。
+  static const int _searchRadiusMeters = 5000;
   static const int _maxResults = 30;
+  static const int _overpassTimeoutSeconds = 20;
 
   final Dio _dio;
   final KeyValueStore _kv;
@@ -132,62 +134,64 @@ class StationRepository {
     }
   }
 
-  /// 请求 /poi/ 并归一化（保持接口返回序，排序由调用方决定）。
+  /// 请求 Overpass /interpreter 并归一化（保持接口返回序，排序由调用方决定）。
   Future<List<Station>> _fetchNearbyStations(LatLng origin) async {
-    final body = await _getList(
-      '/poi/',
-      queryParameters: <String, dynamic>{
-        'latitude': origin.latitude,
-        'longitude': origin.longitude,
-        'distance': _searchRadiusKm,
-        'distanceunit': 'KM',
-        'maxresults': _maxResults,
-        'compact': true,
-        'output': 'json',
-        // 可选 key：无 key 可用但受限流约束，配置后提高配额
-        if (Env.ocmKey.isNotEmpty) 'key': Env.ocmKey,
-      },
-    );
+    final query =
+        '[out:json][timeout:$_overpassTimeoutSeconds];'
+        'nwr[amenity=charging_station]'
+        '(around:$_searchRadiusMeters,${origin.latitude},${origin.longitude});'
+        'out tags center $_maxResults;';
+    final body = await _getJson('/interpreter', query);
+    final dynamic elements = body['elements'];
+    if (elements is! List) {
+      return const <Station>[];
+    }
     final stations = <Station>[];
-    for (final poi in body) {
-      if (poi is! Map) continue;
-      final station = normalizeStation(poi.cast<String, dynamic>(), origin);
+    for (final element in elements) {
+      if (element is! Map) continue;
+      final station = normalizeStation(element.cast<String, dynamic>(), origin);
       if (station != null) stations.add(station);
     }
     return stations;
   }
 
-  /// 无鉴权 GET（OCM 接口专用）；响应为 JSON 数组。
-  /// 网络失败 / 限流（403/429）归一化为 [StationServiceException]。
-  Future<List<dynamic>> _getList(
-    String path, {
-    Map<String, dynamic>? queryParameters,
-  }) async {
+  /// 无鉴权 GET（Overpass 专用）。Accept/UA 头必须带（裸请求会 406）。
+  /// 网络失败 / 限流（429/504）归一化为 [StationServiceException]。
+  Future<Map<String, dynamic>> _getJson(String path, String query) async {
     try {
       final response = await _dio.get<dynamic>(
         path,
-        queryParameters: queryParameters,
+        queryParameters: <String, dynamic>{'data': query},
+        options: Options(
+          headers: <String, dynamic>{
+            'Accept': 'application/json',
+            'User-Agent': 'VoltLedger/1.0',
+          },
+        ),
       );
       final data = response.data;
-      if (data is List) {
+      if (data is Map<String, dynamic>) {
         return data;
+      }
+      if (data is Map) {
+        return data.cast<String, dynamic>();
       }
       // Content-Type 非 JSON 时 dio 不解码（String 原样返回），手动解析
       if (data is String && data.trim().isNotEmpty) {
         try {
           final decoded = jsonDecode(data);
-          if (decoded is List) {
-            return decoded;
+          if (decoded is Map) {
+            return decoded.cast<String, dynamic>();
           }
         } on FormatException {
-          // 非 JSON 字符串 → 走空 List，由调用方按空结果处理
+          // 非 JSON 字符串 → 走空 Map，elements 缺失按空结果处理
         }
       }
-      return const <dynamic>[];
+      return const <String, dynamic>{};
     } on DioException catch (e) {
       final statusCode = e.response?.statusCode;
-      final isRateLimited = statusCode == 403 || statusCode == 429;
-      if (isRateLimited) {
+      final isBusy = statusCode == 429 || statusCode == 504;
+      if (isBusy) {
         appLogger.w('Charging station service rate limited', error: e);
         throw const StationServiceException(
           'Charging station service is busy, please try again later',
