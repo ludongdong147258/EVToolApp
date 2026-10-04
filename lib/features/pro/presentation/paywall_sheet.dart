@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 
+import 'package:ev_tool_app/core/domain/date_utils.dart';
 import 'package:ev_tool_app/core/theme/app_colors.dart';
 import 'package:ev_tool_app/core/widgets/app_primary_button.dart';
 import 'package:ev_tool_app/core/widgets/app_sheet.dart';
@@ -55,6 +56,10 @@ String _planTitle(Package p) => switch (p.packageType) {
   _ => p.identifier,
 };
 
+/// 到期时间 → "Feb 12, 2027"（复用 date_utils 英文月份缩写）。
+String _formatExpiration(DateTime d) =>
+    '${monthShortNames[d.month - 1]} ${d.day}, ${d.year}';
+
 class _PaywallSheet extends ConsumerStatefulWidget {
   const _PaywallSheet();
 
@@ -65,6 +70,7 @@ class _PaywallSheet extends ConsumerStatefulWidget {
 class _PaywallSheetState extends ConsumerState<_PaywallSheet> {
   Package? _selected;
   bool _busy = false;
+  ({DateTime? expires, bool willRenew})? _proExpiration;
 
   static const List<(IconData, String)> _perks = [
     (Icons.receipt_long_rounded, 'Unlimited receipt OCR scans'),
@@ -78,6 +84,24 @@ class _PaywallSheetState extends ConsumerState<_PaywallSheet> {
     super.initState();
     // 打开时拉最新 entitlement（处理沙盒续订/后台状态变化）
     unawaited(ref.read(proStatusProvider.notifier).refreshFromRevenueCat());
+    // 已订阅时加载有效期（RC 有 customerInfo 缓存，代价低）
+    unawaited(_loadExpiration());
+  }
+
+  Future<void> _loadExpiration() async {
+    final expiration = await ref.read(proRepositoryProvider).proExpiration();
+    if (mounted && expiration != null) {
+      setState(() => _proExpiration = expiration);
+    }
+  }
+
+  /// 有效期文案：Renews（续订中）/ Expires（已取消续订）；无到期信息返回 null。
+  String? get _expirationLabel {
+    final expiration = _proExpiration;
+    final expires = expiration?.expires;
+    if (expires == null) return null; // 终身或未加载到
+    final date = _formatExpiration(expires);
+    return expiration!.willRenew ? 'Renews $date' : 'Expires $date';
   }
 
   @override
@@ -127,6 +151,16 @@ class _PaywallSheetState extends ConsumerState<_PaywallSheet> {
                 color: theme.colorScheme.onSurfaceVariant,
               ),
             ),
+            // 有效期：续订中 → Renews；已取消续订 → Expires；终身/未知 → 不显示
+            if (_expirationLabel case final label?) ...[
+              const SizedBox(height: 4),
+              Text(
+                label,
+                style: theme.textTheme.bodySmall?.copyWith(
+                  color: theme.colorScheme.onSurfaceVariant,
+                ),
+              ),
+            ],
           ],
         ),
       );

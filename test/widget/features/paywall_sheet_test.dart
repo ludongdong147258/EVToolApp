@@ -56,6 +56,9 @@ void main() {
 
       expect(find.text('Pro is active'), findsOneWidget);
       expect(find.text('Thanks for supporting VoltLedger!'), findsOneWidget);
+      // 无 SDK 拉不到到期信息 → 不显示有效期行
+      expect(find.textContaining('Renews '), findsNothing);
+      expect(find.textContaining('Expires '), findsNothing);
     });
 
     testWidgets('非 Pro 且无 key 显示 dev 占位', (tester) async {

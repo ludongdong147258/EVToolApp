@@ -109,6 +109,24 @@ class ProRepository {
     }
   }
 
+  /// 当前 entitlement 的到期信息；未激活/无 SDK/异常返回 null，
+  /// expires 为 null 表示终身（lifetime）。
+  Future<({DateTime? expires, bool willRenew})?> proExpiration() async {
+    if (!sdkAvailable) return null;
+    try {
+      final info = await Purchases.getCustomerInfo();
+      final entitlement = info.entitlements.all[AppConstants.proEntitlementId];
+      if (entitlement == null || !entitlement.isActive) return null;
+      return (
+        expires: DateTime.tryParse(entitlement.expirationDate ?? ''),
+        willRenew: entitlement.willRenew,
+      );
+    } on PlatformException catch (e) {
+      appLogger.e('Failed to load pro expiration', error: e);
+      return null;
+    }
+  }
+
   /// 购买套餐；成功写缓存。取消/失败/entitlement 未激活分态返回（文案由 UI toast）。
   Future<ProActionResult> purchase(Package package) async {
     if (!sdkAvailable) return ProActionResult.failed;
