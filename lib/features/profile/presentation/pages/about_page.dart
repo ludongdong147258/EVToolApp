@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 
 import 'package:ev_tool_app/core/constants/app_constants.dart';
 import 'package:ev_tool_app/core/extensions/context_extensions.dart';
@@ -64,6 +65,22 @@ class AboutPage extends StatelessWidget {
                 style: context.textTheme.titleMedium?.copyWith(
                   fontWeight: FontWeight.w700,
                 ),
+              ),
+              // 版本号 + 版权行（版本取自包信息，与构建号一致）
+              FutureBuilder<PackageInfo>(
+                future: PackageInfo.fromPlatform(),
+                builder: (context, snapshot) {
+                  final version = snapshot.data?.version;
+                  return Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: Text(
+                      version == null
+                          ? '© ${AppConstants.copyrightStartYear} ${AppConstants.appName}'
+                          : '© ${AppConstants.copyrightStartYear} ${AppConstants.appName} · v$version',
+                      style: TextStyle(fontSize: 12, color: palette.textHint),
+                    ),
+                  );
+                },
               ),
             ],
           ),

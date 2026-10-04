@@ -32,10 +32,7 @@ Future<void> main() async {
     return;
   }
 
-  // Load auth tokens from platform-secure storage into the in-memory cache
-  // before the app reads them (the Dio auth interceptor reads synchronously).
   final localStorage = LocalStorage(sharedPreferences);
-  await localStorage.initSecureAuth();
 
   // Pro 订阅（RevenueCat）：缺 key 时静默降级为全功能解锁（dev 模式）。
   await initRevenueCat(SharedPrefsKeyValueStore(sharedPreferences));

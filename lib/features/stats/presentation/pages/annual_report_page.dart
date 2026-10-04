@@ -111,7 +111,7 @@ class _AnnualReportPageState extends ConsumerState<AnnualReportPage> {
       }
       final dir = await getTemporaryDirectory();
       final stamp = DateTime.now().millisecondsSinceEpoch;
-      final file = File('${dir.path}/evtool_annual_$stamp.png');
+      final file = File('${dir.path}/voltledger_annual_$stamp.png');
       await file.writeAsBytes(bytes);
       if (!mounted) return;
       await shareFiles(context, [XFile(file.path)]);
