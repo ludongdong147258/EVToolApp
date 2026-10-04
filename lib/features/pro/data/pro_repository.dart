@@ -60,14 +60,14 @@ void Function(bool active)? _onEntitlementChanged;
 /// 失权或终身（无 expirationDate）时清除到期缓存；写失败仅 log。
 Future<void> _cacheEntitlement(KeyValueStore kv, CustomerInfo info) async {
   final entitlement = info.entitlements.all[AppConstants.proEntitlementId];
-  final active = entitlement?.isActive ?? false;
   final expirationDate = entitlement?.expirationDate;
+  final active = entitlement != null && entitlement.isActive;
   try {
     await kv.setJson(ProRepository.storageKey, active);
     await kv.setJson(
       ProRepository.expirationStorageKey,
       (active && expirationDate != null)
-          ? {'expires': expirationDate, 'willRenew': entitlement!.willRenew}
+          ? {'expires': expirationDate, 'willRenew': entitlement.willRenew}
           : null,
     );
   } on Exception catch (e) {

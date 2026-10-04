@@ -97,12 +97,14 @@ class _PaywallSheetState extends ConsumerState<_PaywallSheet> {
     }
   }
 
-  /// 有效期文案：Renews（续订中）/ Expires（已取消续订）；无到期信息返回 null。
+  /// 有效期文案：已过期 → Expired；续订中 → Renews；已取消续订 → Expires；
+  /// 无到期信息（终身/未加载）返回 null。
   String? get _expirationLabel {
     final expiration = _proExpiration;
     final expires = expiration?.expires;
-    if (expires == null) return null; // 终身或未加载到
+    if (expires == null) return null;
     final date = _formatExpiration(expires);
+    if (expires.isBefore(DateTime.now())) return 'Expired $date';
     return expiration!.willRenew ? 'Renews $date' : 'Expires $date';
   }
 
