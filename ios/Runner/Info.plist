@@ -30,6 +30,8 @@
 	<true/>
 	<key>NSCameraUsageDescription</key>
 	<string>VoltLedger uses the camera to scan charging receipts for automatic record entry and to take vehicle photos.</string>
+	<key>NSLocationAlwaysAndWhenInUseUsageDescription</key>
+	<string>VoltLedger uses your location only while the app is open, to automatically detect where you are charging and to find nearby charging stations. Always-on location access is never requested or used.</string>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>VoltLedger uses your location to automatically detect where you are charging.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
