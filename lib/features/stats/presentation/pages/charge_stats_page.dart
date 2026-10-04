@@ -25,6 +25,7 @@ import 'package:ev_tool_app/core/widgets/gradient_hero_card.dart';
 import 'package:ev_tool_app/core/widgets/undo_bar.dart';
 import 'package:ev_tool_app/features/records/presentation/providers/records_provider.dart';
 import 'package:ev_tool_app/features/records/presentation/widgets/record_card.dart';
+import 'package:ev_tool_app/features/pro/presentation/paywall_sheet.dart';
 import 'package:ev_tool_app/features/records/presentation/widgets/record_detail_sheet.dart';
 
 /// 类型筛选 chips（null = 全部）。
@@ -242,6 +243,8 @@ class _ChargeStatsPageState extends ConsumerState<ChargeStatsPage> {
     List<ChargeRecord> records,
     List<Vehicle> vehicles,
   ) async {
+    // Pro 门控：导出受限，页面统计与复制月摘要保持免费
+    if (!await ensurePro(context, ref)) return;
     try {
       final dir = await getTemporaryDirectory();
       final stamp = DateTime.now().millisecondsSinceEpoch;

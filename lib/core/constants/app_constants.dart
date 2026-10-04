@@ -9,6 +9,16 @@ class AppConstants {
   static const Duration uploadTimeout = Duration(seconds: 60);
   static const int maxRetryCount = 3;
 
+  // ---------- Pro 订阅（RevenueCat） ----------
+  /// RevenueCat entitlement 标识（须与后台 Entitlements 配置一致）。
+  static const String proEntitlementId = 'voltledger_pro';
+
+  /// 免费档每月 OCR 识别次数。
+  static const int freeOcrMonthlyQuota = 5;
+
+  /// 免费档车辆数量上限（备份导入不受限）。
+  static const int freeVehicleLimit = 2;
+
   /// API 基础地址：编译期注入，运行时不可变。
   /// flutter run --dart-define=API_BASE_URL=https://api.example.com/
   static const String apiBaseUrl = String.fromEnvironment(

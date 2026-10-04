@@ -11,6 +11,9 @@ import 'package:ev_tool_app/core/theme/app_colors.dart';
 import 'package:ev_tool_app/core/utils/logger.dart';
 import 'package:ev_tool_app/core/widgets/app_toast.dart';
 import 'package:ev_tool_app/features/ocr/data/ocr_repository.dart';
+import 'package:ev_tool_app/features/ocr/data/ocr_usage_repository.dart';
+import 'package:ev_tool_app/features/pro/data/pro_repository.dart';
+import 'package:ev_tool_app/features/pro/presentation/paywall_sheet.dart';
 
 /// 秒数计时 ≥2s 才显示（快请求不闪烁数字），对齐小程序 ELAPSED_VISIBLE_DELAY。
 const int _elapsedVisibleDelaySeconds = 2;
@@ -53,6 +56,13 @@ class OcrEntryCardState extends ConsumerState<OcrEntryCard> {
       return const SizedBox.shrink();
     }
     final palette = context.palette;
+    final isPro = ref.watch(proStatusProvider);
+    final subtitle = isPro
+        ? 'Take or pick a charging receipt photo to '
+              'auto-fill cost, energy, and duration'
+        : 'Take or pick a charging receipt photo to '
+              'auto-fill cost, energy, and duration\n'
+              '${ref.read(ocrUsageRepositoryProvider).remaining()} free scans left this month';
     final title = _isRecognizing
         ? 'Recognizing receipt…'
               '${_elapsedSeconds >= _elapsedVisibleDelaySeconds ? ' $_elapsedSeconds s' : ''}'
@@ -97,8 +107,7 @@ class OcrEntryCardState extends ConsumerState<OcrEntryCard> {
                             ),
                             const SizedBox(height: 2),
                             Text(
-                              'Take or pick a charging receipt photo to '
-                              'auto-fill cost, energy, and duration',
+                              subtitle,
                               style: TextStyle(
                                 fontSize: 12,
                                 color: palette.textHint,
@@ -122,6 +131,13 @@ class OcrEntryCardState extends ConsumerState<OcrEntryCard> {
   ///
   /// 公开给宿主页面：行内错误的「重试」按钮经 GlobalKey 重新调用。
   Future<void> openPicker() async {
+    // Pro 门控：免费档每月 [AppConstants.freeOcrMonthlyQuota] 次，用尽弹付费墙
+    if (!ref.read(proStatusProvider) &&
+        !ref.read(ocrUsageRepositoryProvider).hasQuota()) {
+      showAppToast(context, 'No free scans left this month');
+      await showPaywallSheet(context);
+      return;
+    }
     final source = await showModalBottomSheet<ImageSource>(
       context: context,
       builder: (sheetContext) => SafeArea(
@@ -193,6 +209,11 @@ class OcrEntryCardState extends ConsumerState<OcrEntryCard> {
           'No valid details recognized — try again or fill in manually',
         );
         return;
+      }
+      // 成功才计数（Pro 不计数）
+      if (!ref.read(proStatusProvider)) {
+        unawaited(ref.read(ocrUsageRepositoryProvider).increment());
+        if (mounted) setState(() {}); // 刷新剩余次数
       }
       widget.onResult?.call(result);
     } on OcrException catch (e) {

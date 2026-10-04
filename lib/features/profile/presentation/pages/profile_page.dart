@@ -24,6 +24,7 @@ import 'package:ev_tool_app/core/widgets/gradient_hero_card.dart';
 import 'package:ev_tool_app/core/widgets/main_shell.dart';
 import 'package:ev_tool_app/features/profile/data/repositories/user_profile_repository.dart';
 import 'package:ev_tool_app/features/profile/presentation/widgets/accent_swatch.dart';
+import 'package:ev_tool_app/features/pro/presentation/paywall_sheet.dart';
 import 'package:ev_tool_app/features/records/presentation/providers/records_provider.dart';
 
 /// 昵称兜底文案（用户未设置昵称时显示）。
@@ -199,6 +200,11 @@ class ProfilePage extends ConsumerWidget {
           _MenuGroup(
             title: 'My Services',
             items: [
+              _MenuItem(
+                icon: Icons.workspace_premium_rounded,
+                text: 'EV Pro',
+                onTap: (context) => showPaywallSheet(context),
+              ),
               _MenuItem(
                 icon: Icons.directions_car_rounded,
                 text: 'My Vehicles',

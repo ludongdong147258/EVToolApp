@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:image_picker/image_picker.dart';
 
+import 'package:ev_tool_app/core/constants/app_constants.dart';
 import 'package:ev_tool_app/core/domain/vehicles.dart';
 import 'package:ev_tool_app/core/extensions/context_extensions.dart';
 import 'package:ev_tool_app/core/theme/app_colors.dart';
@@ -14,6 +15,8 @@ import 'package:ev_tool_app/core/widgets/app_sheet.dart';
 import 'package:ev_tool_app/core/widgets/app_toast.dart';
 import 'package:ev_tool_app/core/widgets/empty_state.dart';
 import 'package:ev_tool_app/features/records/presentation/providers/records_provider.dart';
+import 'package:ev_tool_app/features/pro/data/pro_repository.dart';
+import 'package:ev_tool_app/features/pro/presentation/paywall_sheet.dart';
 import 'package:ev_tool_app/features/vehicles/data/photo_store.dart';
 import 'package:ev_tool_app/features/vehicles/presentation/widgets/vehicle_avatar.dart';
 
@@ -60,12 +63,27 @@ class VehiclesPage extends ConsumerWidget {
 }
 
 /// 打开新增/编辑弹层（编辑时草稿以当前车辆初始化）。
+///
+/// Pro 门控：免费档最多 2 辆，超限新增弹付费墙；
+/// 编辑已有车辆与备份导入不受限。
 Future<void> _openVehicleSheet(
   BuildContext context,
   WidgetRef ref, [
   Vehicle? vehicle,
-]) {
-  return showAppSheet(
+]) async {
+  if (vehicle == null &&
+      !canAddVehicle(
+        ref.read(vehiclesProvider).length,
+        ref.read(proStatusProvider),
+      )) {
+    showAppToast(
+      context,
+      'Free plan covers ${AppConstants.freeVehicleLimit} vehicles',
+    );
+    await showPaywallSheet(context);
+    return;
+  }
+  await showAppSheet(
     context: context,
     title: vehicle == null ? 'Add Vehicle' : 'Edit Vehicle',
     builder: (_) => _VehicleFormSheet(vehicle: vehicle),

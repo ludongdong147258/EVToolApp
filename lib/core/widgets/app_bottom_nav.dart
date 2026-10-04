@@ -7,11 +7,7 @@ import 'package:ev_tool_app/core/theme/app_colors.dart';
 ///
 /// 4 个 tab：充电记录 / 养车支出 / 实用工具 / 我的。
 class AppBottomNav extends StatelessWidget {
-  const AppBottomNav({
-    super.key,
-    required this.currentIndex,
-    this.onTap,
-  });
+  const AppBottomNav({super.key, required this.currentIndex, this.onTap});
 
   final int currentIndex;
   final ValueChanged<int>? onTap;

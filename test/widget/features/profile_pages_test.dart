@@ -10,6 +10,7 @@ import 'package:ev_tool_app/features/profile/presentation/pages/agreement_page.d
 import 'package:ev_tool_app/features/profile/presentation/pages/backup_restore_page.dart';
 import 'package:ev_tool_app/features/profile/presentation/pages/privacy_page.dart';
 import 'package:ev_tool_app/features/profile/presentation/pages/profile_page.dart';
+import 'package:ev_tool_app/features/pro/data/pro_repository.dart';
 import 'package:ev_tool_app/features/vehicles/presentation/pages/vehicles_page.dart';
 
 void main() {
@@ -191,6 +192,84 @@ void main() {
       expect(find.text('Take Photo'), findsOneWidget);
       expect(find.text('Choose from Library'), findsOneWidget);
       expect(find.text('Save'), findsOneWidget);
+    });
+
+    testWidgets('免费档 2 辆车时新增被拦并弹付费墙（编辑不受限）', (tester) async {
+      final store = seedStore();
+      store['vehicles'] = [
+        {
+          'id': 'v1',
+          'name': '小白',
+          'battery': 60,
+          'note': '',
+          'photoPath': '',
+          'isDefault': true,
+          'createdAt': 1,
+          'updatedAt': 1,
+        },
+        {
+          'id': 'v2',
+          'name': '小黑',
+          'battery': 75,
+          'note': '',
+          'photoPath': '',
+          'isDefault': false,
+          'createdAt': 2,
+          'updatedAt': 2,
+        },
+      ];
+      final container = await bootstrap(store: store);
+      // 模拟非 Pro（默认无 key 分支恒 true，手动置 false）
+      container.read(proStatusProvider.notifier).applyFromRevenueCat(false);
+
+      await pumpTall(
+        tester,
+        UncontrolledProviderScope(
+          container: container,
+          child: const MaterialApp(home: VehiclesPage()),
+        ),
+      );
+
+      await tester.tap(find.text('Add Vehicle'));
+      await tester.pumpAndSettle();
+      // 消化 toast 的 2s 定时器
+      await tester.pump(const Duration(seconds: 2));
+
+      // 被拦：表单不出现，付费墙弹出（无 key → dev 占位）
+      expect(find.text('Nickname'), findsNothing);
+      expect(find.text('EV Pro'), findsOneWidget);
+    });
+
+    testWidgets('Pro 用户车辆数量不限', (tester) async {
+      final store = seedStore();
+      store['vehicles'] = [
+        for (var i = 1; i <= 3; i++)
+          {
+            'id': 'v$i',
+            'name': '车$i',
+            'battery': 60,
+            'note': '',
+            'photoPath': '',
+            'isDefault': i == 1,
+            'createdAt': i,
+            'updatedAt': i,
+          },
+      ];
+      final container = await bootstrap(store: store);
+
+      await pumpTall(
+        tester,
+        UncontrolledProviderScope(
+          container: container,
+          child: const MaterialApp(home: VehiclesPage()),
+        ),
+      );
+
+      await tester.tap(find.text('Add Vehicle'));
+      await tester.pumpAndSettle();
+
+      // Pro（无 key 分支恒解锁）：表单正常打开
+      expect(find.text('Nickname'), findsOneWidget);
     });
 
     testWidgets('空车库展示空态与 CTA', (tester) async {

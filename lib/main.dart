@@ -4,7 +4,9 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:ev_tool_app/app.dart';
+import 'package:ev_tool_app/core/storage/key_value_store.dart';
 import 'package:ev_tool_app/core/storage/local_storage.dart';
+import 'package:ev_tool_app/features/pro/data/pro_repository.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -34,6 +36,9 @@ Future<void> main() async {
   // before the app reads them (the Dio auth interceptor reads synchronously).
   final localStorage = LocalStorage(sharedPreferences);
   await localStorage.initSecureAuth();
+
+  // Pro 订阅（RevenueCat）：缺 key 时静默降级为全功能解锁（dev 模式）。
+  await initRevenueCat(SharedPrefsKeyValueStore(sharedPreferences));
 
   runApp(
     ProviderScope(

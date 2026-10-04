@@ -27,6 +27,7 @@ import 'package:ev_tool_app/core/widgets/empty_state.dart';
 import 'package:ev_tool_app/core/widgets/gradient_hero_card.dart';
 import 'package:ev_tool_app/core/widgets/month_bar_chart.dart';
 import 'package:ev_tool_app/features/records/presentation/providers/records_provider.dart';
+import 'package:ev_tool_app/features/pro/presentation/paywall_sheet.dart';
 import 'package:ev_tool_app/features/stats/presentation/widgets/annual_poster.dart';
 
 /// 海报导出像素倍率（750 设计宽 × 2 = 1500px 输出）。
@@ -91,6 +92,8 @@ class _AnnualReportPageState extends ConsumerState<AnnualReportPage> {
 
   /// RepaintBoundary 截图 → PNG 临时文件 → 系统分享。
   Future<void> _sharePoster() async {
+    // Pro 门控：海报预览免费，仅分享导出受限
+    if (!await ensurePro(context, ref)) return;
     final renderObject = _posterKey.currentContext?.findRenderObject();
     if (renderObject is! RenderRepaintBoundary) {
       if (mounted) {

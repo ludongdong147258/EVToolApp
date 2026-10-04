@@ -60,6 +60,9 @@ dependencies:
   # External links
   url_launcher: ^6.3.1
 
+  # Subscriptions (RevenueCat / StoreKit)
+  purchases_flutter: ^8.0.0
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

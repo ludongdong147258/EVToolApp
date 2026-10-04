@@ -10,6 +10,7 @@
 /// 约定：输入接受字符串（来自输入框），任何非法输入返回 null / 空值，绝不抛错。
 library;
 
+import 'package:ev_tool_app/core/constants/app_constants.dart';
 import 'package:ev_tool_app/core/domain/numbers.dart';
 
 /// 车辆昵称最大长度（与表单 maxlength 一致）
@@ -265,6 +266,10 @@ List<Vehicle> ensureSingleDefault(List<Vehicle>? vehicles) {
       sorted[index].copyWith(isDefault: index == keptIndex),
   ];
 }
+
+/// 免费档是否还能新增车辆（Pro 不限；编辑已有车辆与备份导入不受此限制）。
+bool canAddVehicle(int count, bool isPro) =>
+    isPro || count < AppConstants.freeVehicleLimit;
 
 /// JS String(value ?? "") 的等价转换（null → ""）
 String _stringify(Object? value) => value == null ? '' : value.toString();

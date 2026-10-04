@@ -6,6 +6,7 @@ import 'package:flutter_dotenv/flutter_dotenv.dart';
 abstract final class Env {
   static const String _zhipuKey = 'ZHIPU_API_KEY';
   static const String _goodsBase = 'GOODS_API_BASE';
+  static const String _rcSdkKey = 'REVENUECAT_SDK_KEY';
 
   static String _get(String name) =>
       dotenv.isInitialized ? (dotenv.env[name] ?? '') : '';
@@ -15,6 +16,13 @@ abstract final class Env {
 
   /// 是否配置了智谱 key（决定 OCR 入口是否展示）。
   static bool get hasZhipuKey => zhipuKey.isNotEmpty;
+
+  /// RevenueCat public SDK key（appl_ 开头，非机密）；空串表示未配置，
+  /// 此时 Pro 功能视为全部解锁（dev 模式），不发版。
+  static String get revenueCatSdkKey => _get(_rcSdkKey);
+
+  /// 是否配置了 RevenueCat key。
+  static bool get hasRevenueCatKey => revenueCatSdkKey.isNotEmpty;
 
   /// 装备导购商品 API 基础地址。
   static String get goodsApiBase {

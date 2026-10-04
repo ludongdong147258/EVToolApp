@@ -1,0 +1,65 @@
+{
+  "identifier": "3A7B8633-8902-4AE8-B2E0-C49850A83BEB",
+  "nonRenewingSubscriptions": [],
+  "products": [],
+  "settings": {},
+  "subscriptionGroups": [
+    {
+      "id": "449A6FED-5F2A-43D0-A229-DC2E97837DC9",
+      "localizations": [],
+      "name": "EV Pro",
+      "subscriptions": [
+        {
+          "adHocOffers": [],
+          "codeOffers": [],
+          "displayPrice": "2.99",
+          "familyShareable": false,
+          "groupNumber": 1,
+          "internalID": "0ECCF2D6-DD01-440C-AD3D-0876BCB447C6",
+          "introductoryOffer": null,
+          "localizations": [
+            {
+              "description": "Unlimited OCR scans, exports and vehicles",
+              "displayName": "EV Pro Monthly",
+              "locale": "en_US"
+            }
+          ],
+          "recurringSubscriptionPeriod": "P1M",
+          "referenceName": "EV Pro Monthly",
+          "subscriptionGroupID": "449A6FED-5F2A-43D0-A229-DC2E97837DC9",
+          "type": "RecurringSubscription",
+          "productID": "com.voltledger.vip.monthly"
+        },
+        {
+          "adHocOffers": [],
+          "codeOffers": [],
+          "displayPrice": "14.99",
+          "familyShareable": false,
+          "groupNumber": 1,
+          "internalID": "0B37748F-BBC4-418C-900B-EAB2E27C1D34",
+          "introductoryOffer": {
+            "internalID": "952085A6-0185-4452-8ACF-EC2A8712FF8C",
+            "paymentMode": "free",
+            "subscriptionPeriod": "P1W"
+          },
+          "localizations": [
+            {
+              "description": "Unlimited OCR scans, exports and vehicles",
+              "displayName": "EV Pro Yearly",
+              "locale": "en_US"
+            }
+          ],
+          "recurringSubscriptionPeriod": "P1Y",
+          "referenceName": "EV Pro Yearly",
+          "subscriptionGroupID": "449A6FED-5F2A-43D0-A229-DC2E97837DC9",
+          "type": "RecurringSubscription",
+          "productID": "com.voltledger.vip.yearly"
+        }
+      ]
+    }
+  ],
+  "version": {
+    "major": 3,
+    "minor": 0
+  }
+}
