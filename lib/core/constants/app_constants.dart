@@ -13,5 +13,5 @@ class AppConstants {
   static const int freeOcrMonthlyQuota = 5;
 
   /// 免费档车辆数量上限（备份导入不受限）。
-  static const int freeVehicleLimit = 2;
+  static const int freeVehicleLimit = 1;
 }

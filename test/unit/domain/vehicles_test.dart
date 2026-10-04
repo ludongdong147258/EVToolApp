@@ -331,9 +331,8 @@ void main() {
   group('canAddVehicle 免费档车辆上限（Pro 订阅新增，非小程序移植）', () {
     test('非 Pro：低于上限可新增，达到上限不可新增', () {
       expect(canAddVehicle(0, false), isTrue);
-      expect(canAddVehicle(1, false), isTrue);
+      expect(canAddVehicle(1, false), isFalse);
       expect(canAddVehicle(2, false), isFalse);
-      expect(canAddVehicle(3, false), isFalse);
     });
 
     test('Pro：数量不限', () {

@@ -182,7 +182,9 @@ class _ToolGroup extends StatelessWidget {
           physics: const NeverScrollableScrollPhysics(),
           mainAxisSpacing: 10,
           crossAxisSpacing: 10,
-          childAspectRatio: 1.4,
+          // 固定卡片高度（不随屏宽变化）：390pt 宽机型上按 1.4 宽高比
+          // 内高装不下 3 行描述，第三行底部会被硬裁剪。
+          mainAxisExtent: 132,
           children: [
             for (final tool in tools)
               _ToolCard(tool: tool, onTap: () => onTap?.call(tool)),

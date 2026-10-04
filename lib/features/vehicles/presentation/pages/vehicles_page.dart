@@ -72,7 +72,7 @@ class VehiclesPage extends ConsumerWidget {
 
 /// 打开新增/编辑弹层（编辑时草稿以当前车辆初始化）。
 ///
-/// Pro 门控：免费档最多 2 辆，超限新增弹付费墙；
+/// Pro 门控：免费档最多 1 辆，超限新增弹付费墙；
 /// 编辑已有车辆与备份导入不受限。
 Future<void> _openVehicleSheet(
   BuildContext context,
@@ -86,7 +86,8 @@ Future<void> _openVehicleSheet(
       )) {
     showAppToast(
       context,
-      'Free plan covers ${AppConstants.freeVehicleLimit} vehicles',
+      'Free plan covers ${AppConstants.freeVehicleLimit} '
+      'vehicle${AppConstants.freeVehicleLimit > 1 ? 's' : ''}',
     );
     await showPaywallSheet(context);
     return;
