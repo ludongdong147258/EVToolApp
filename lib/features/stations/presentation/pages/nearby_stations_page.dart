@@ -19,7 +19,7 @@ const double _mapZoom = 12;
 /// 地图区占屏比例。
 const double _mapHeightRatio = 0.4;
 
-/// 附近充电桩（移植小程序 nearby-stations，数据源改为 Open Charge Map）。
+/// 附近充电桩（移植小程序 nearby-stations，数据源改为 OpenStreetMap Overpass）。
 ///
 /// 地图 + 周边充电桩列表，marker/列表联动选中，
 /// 导航/电话咨询内嵌条目（选中展开），导航唤起系统 Apple 地图。

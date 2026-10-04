@@ -103,19 +103,19 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.text('Annual cost comparison'), findsOneWidget);
-    // 默认 15000 km · 8.5L/8 元 → 燃油 \$10,200；15kWh/1.2 元 → 电动 \$2,700
-    expect(find.text('\$10,200.00'), findsOneWidget);
-    expect(find.text('\$2,700.00'), findsOneWidget);
+    // 默认 13,500 mi · 28 MPG / $3.30 → 燃油 $1,591；3.3 mi/kWh / $0.16 → 电动 $655
+    expect(find.text('\$1,591.00'), findsOneWidget);
+    expect(find.text('\$655.00'), findsOneWidget);
     expect(find.text('Annual savings'), findsOneWidget);
     expect(
-      find.textContaining('Saves \$5,000.00 per 10,000 km'),
+      find.textContaining('Saves \$693.00 per 10,000 miles'),
       findsOneWidget,
     );
 
     // 改电价为非法输入：保留旧结果 + 红框提示
     await tester.enterText(find.byType(TextField).at(3), '0');
     await tester.pump();
-    expect(find.text('\$10,200.00'), findsOneWidget);
+    expect(find.text('\$1,591.00'), findsOneWidget);
   });
 
   testWidgets(

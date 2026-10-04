@@ -2,7 +2,7 @@ import 'package:ev_tool_app/core/domain/range_estimate.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  group('calcRangeEstimate 续航静态估算', () {
+  group('calcRangeEstimate 续航静态估算（美制）', () {
     test('默认输入计算出基准续航（综合路况 0.9 折扣）', () {
       // Arrange
       const inputs = RangeEstimateInputs();
@@ -12,14 +12,14 @@ void main() {
 
       // Assert
       // 可用电量：60 × 80% = 48 度
-      // 基准续航：48 ÷ 14 × 100 = 342.857… → 342.9
-      // 预估续航：342.857 × 0.9（综合路况）= 308.571… → 308.6
+      // 基准续航：48 × 3.4 = 163.2
+      // 预估续航：163.2 × 0.9（综合路况）= 146.88 → 146.9
       if (result == null) {
         fail('result should not be null');
       }
       expect(result.availableEnergy, 48);
-      expect(result.baseRange, 342.9);
-      expect(result.estimatedRange, 308.6);
+      expect(result.baseRange, 163.2);
+      expect(result.estimatedRange, 146.9);
       expect(result.totalFactor, 0.9);
     });
 
@@ -35,7 +35,7 @@ void main() {
         fail('result should not be null');
       }
       expect(result.totalFactor, 1);
-      expect(result.estimatedRange, 342.9);
+      expect(result.estimatedRange, 163.2);
     });
 
     test('严寒 + 高速 + 空调开三重折扣叠加正确', () {
@@ -51,12 +51,12 @@ void main() {
 
       // Assert
       // 折扣：0.65 × 0.75 × 0.92 = 0.4485 → 0.45（两位小数）
-      // 预估：342.857 × 0.4485 = 153.771… → 153.8
+      // 预估：163.2 × 0.4485 = 73.183… → 73.2
       if (result == null) {
         fail('result should not be null');
       }
       expect(result.totalFactor, 0.45);
-      expect(result.estimatedRange, 153.8);
+      expect(result.estimatedRange, 73.2);
     });
 
     test('低温与高温折扣正确', () {
@@ -69,12 +69,12 @@ void main() {
       );
 
       // Assert
-      // 低温：342.857 × 0.8 = 274.285… → 274.3；高温：342.857 × 0.9 = 308.571… → 308.6
+      // 低温：163.2 × 0.8 = 130.56 → 130.6；高温：163.2 × 0.9 = 146.88 → 146.9
       if (cold == null || hot == null) {
         fail('results should not be null');
       }
-      expect(cold.estimatedRange, 274.3);
-      expect(hot.estimatedRange, 308.6);
+      expect(cold.estimatedRange, 130.6);
+      expect(hot.estimatedRange, 146.9);
     });
 
     test('电池容量与 SOC 边界值计算正确', () {
@@ -95,31 +95,30 @@ void main() {
       );
 
       // Assert
-      // 最小电池满电：15 ÷ 14 × 100 = 107.142… → 107.1
-      // 最大电池最低档：200 × 10% = 20 度 → 20 ÷ 14 × 100 = 142.857… → 142.9
+      // 最小电池满电：15 × 3.4 = 51；最大电池最低档：200 × 10% × 3.4 = 68
       if (minBattery == null || maxBattery == null) {
         fail('results should not be null');
       }
-      expect(minBattery.estimatedRange, 107.1);
-      expect(maxBattery.estimatedRange, 142.9);
+      expect(minBattery.estimatedRange, 51);
+      expect(maxBattery.estimatedRange, 68);
     });
 
-    test('电耗边界值计算正确', () {
+    test('能效边界值计算正确', () {
       // Arrange & Act
       final economic = calcRangeEstimate(
-        const RangeEstimateInputs(consumption: consumptionMin, road: 'city'),
+        const RangeEstimateInputs(efficiency: efficiencyMax, road: 'city'),
       );
       final thirsty = calcRangeEstimate(
-        const RangeEstimateInputs(consumption: consumptionMax, road: 'city'),
+        const RangeEstimateInputs(efficiency: efficiencyMin, road: 'city'),
       );
 
       // Assert
-      // 省电：48 ÷ 8 × 100 = 600；费电：48 ÷ 30 × 100 = 160
+      // 省电：48 × 6 = 288；费电：48 × 2 = 96
       if (economic == null || thirsty == null) {
         fail('results should not be null');
       }
-      expect(economic.estimatedRange, 600);
-      expect(thirsty.estimatedRange, 160);
+      expect(economic.estimatedRange, 288);
+      expect(thirsty.estimatedRange, 96);
     });
 
     test('结果保留一位小数（浮点安全）', () {
@@ -127,7 +126,7 @@ void main() {
       const inputs = RangeEstimateInputs(
         battery: 33,
         soc: 55,
-        consumption: 13,
+        efficiency: 3.5,
         road: 'city',
       );
 
@@ -135,12 +134,12 @@ void main() {
       final result = calcRangeEstimate(inputs);
 
       // Assert
-      // 可用电量：33 × 0.55 = 18.15；基准：18.15 ÷ 13 × 100 = 139.615… → 139.6
+      // 可用电量：33 × 0.55 = 18.15 → 18.2；基准：18.15 × 3.5 = 63.525 → 63.5
       if (result == null) {
         fail('result should not be null');
       }
       expect(result.availableEnergy, 18.2);
-      expect(result.baseRange, 139.6);
+      expect(result.baseRange, 63.5);
     });
 
     test('接受字符串形式的输入（来自输入框）', () {
@@ -148,7 +147,7 @@ void main() {
       const inputs = RangeEstimateInputs(
         battery: '60',
         soc: '80',
-        consumption: '14',
+        efficiency: '3.4',
       );
 
       // Act
@@ -167,14 +166,14 @@ void main() {
       final negativeBattery = calcRangeEstimate(
         const RangeEstimateInputs(battery: -1),
       );
-      final zeroConsumption = calcRangeEstimate(
-        const RangeEstimateInputs(consumption: 0),
+      final zeroEfficiency = calcRangeEstimate(
+        const RangeEstimateInputs(efficiency: 0),
       );
 
       // Assert
       expect(zeroSoc, isNull);
       expect(negativeBattery, isNull);
-      expect(zeroConsumption, isNull);
+      expect(zeroEfficiency, isNull);
     });
 
     test('任一数值越界或非数字时返回 null', () {
@@ -185,11 +184,11 @@ void main() {
       final overSoc = calcRangeEstimate(
         const RangeEstimateInputs(soc: socMax + 1),
       );
-      final underConsumption = calcRangeEstimate(
-        const RangeEstimateInputs(consumption: consumptionMin - 1),
+      final underEfficiency = calcRangeEstimate(
+        const RangeEstimateInputs(efficiency: efficiencyMin - 1),
       );
-      final emptyConsumption = calcRangeEstimate(
-        const RangeEstimateInputs(consumption: ''),
+      final emptyEfficiency = calcRangeEstimate(
+        const RangeEstimateInputs(efficiency: ''),
       );
       final nanSoc = calcRangeEstimate(const RangeEstimateInputs(soc: 'abc'));
       final undefinedBattery = calcRangeEstimate(
@@ -199,8 +198,8 @@ void main() {
       // Assert
       expect(overBattery, isNull);
       expect(overSoc, isNull);
-      expect(underConsumption, isNull);
-      expect(emptyConsumption, isNull);
+      expect(underEfficiency, isNull);
+      expect(emptyEfficiency, isNull);
       expect(nanSoc, isNull);
       expect(undefinedBattery, isNull);
     });
@@ -264,7 +263,7 @@ void main() {
         fail('breakdown should not be null');
       }
       expect(breakdown.items.length, 3);
-      expect(breakdown.items[0].label, 'Freezing ≤-10°C');
+      expect(breakdown.items[0].label, 'Freezing ≤14°F');
       expect(breakdown.items[0].factor, 0.65);
       expect(breakdown.items[1].label, 'Highway');
       expect(breakdown.items[1].factor, 0.75);
@@ -279,7 +278,7 @@ void main() {
         const RangeEstimateInputs(road: 'offroad'),
       );
       final badNumber = getFactorBreakdown(
-        const RangeEstimateInputs(consumption: ''),
+        const RangeEstimateInputs(efficiency: ''),
       );
       final missingInput = getFactorBreakdown(null);
 

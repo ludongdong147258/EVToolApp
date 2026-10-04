@@ -26,10 +26,10 @@ class FuelEvCalcPage extends StatefulWidget {
 
 class _FuelEvCalcPageState extends State<FuelEvCalcPage> {
   int _mileage = defaultMileage;
-  final _fuelConsumptionController = TextEditingController(text: '8.5');
-  final _fuelPriceController = TextEditingController(text: '8');
-  final _evConsumptionController = TextEditingController(text: '15');
-  final _elecPriceController = TextEditingController(text: '1.2');
+  final _mpgController = TextEditingController(text: '28');
+  final _gasPriceController = TextEditingController(text: '3.30');
+  final _miPerKwhController = TextEditingController(text: '3.3');
+  final _elecPriceController = TextEditingController(text: '0.16');
   AnnualCostResult? _result = calcAnnualCost(defaultFuelEvInputs);
 
   @override
@@ -49,17 +49,17 @@ class _FuelEvCalcPageState extends State<FuelEvCalcPage> {
   }
 
   List<TextEditingController> get _controllers => [
-    _fuelConsumptionController,
-    _fuelPriceController,
-    _evConsumptionController,
+    _mpgController,
+    _gasPriceController,
+    _miPerKwhController,
     _elecPriceController,
   ];
 
   FuelEvInputs get _inputs => FuelEvInputs(
     mileage: _mileage,
-    fuelConsumption: _fuelConsumptionController.text,
-    fuelPrice: _fuelPriceController.text,
-    evConsumption: _evConsumptionController.text,
+    mpg: _mpgController.text,
+    gasPrice: _gasPriceController.text,
+    miPerKwh: _miPerKwhController.text,
     elecPrice: _elecPriceController.text,
   );
 
@@ -175,7 +175,7 @@ class _FuelEvCalcPageState extends State<FuelEvCalcPage> {
                 const SizedBox(height: 4),
                 Text(
                   '${isEvMoreExpensive ? 'Costs' : 'Saves'} '
-                  '${formatMoney(savingPer10k.abs())} per 10,000 km',
+                  '${formatMoney(savingPer10k.abs())} per 10,000 miles',
                   style: TextStyle(fontSize: 12, color: palette.textHint),
                 ),
               ],
@@ -199,7 +199,7 @@ class _FuelEvCalcPageState extends State<FuelEvCalcPage> {
                       ),
                     ),
                     Text(
-                      '${formatAmount(_mileage)} km',
+                      '${formatAmount(_mileage)} mi',
                       style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
@@ -233,15 +233,15 @@ class _FuelEvCalcPageState extends State<FuelEvCalcPage> {
             child: Column(
               children: [
                 CalcTextField(
-                  label: 'Fuel consumption (L/100km)',
-                  hint: '8.5',
-                  controller: _fuelConsumptionController,
+                  label: 'Fuel economy (MPG)',
+                  hint: '28',
+                  controller: _mpgController,
                 ),
                 const SizedBox(height: 12),
                 CalcTextField(
-                  label: 'Fuel price (\$/L)',
-                  hint: '8.0',
-                  controller: _fuelPriceController,
+                  label: 'Gas price (\$/gal)',
+                  hint: '3.30',
+                  controller: _gasPriceController,
                 ),
               ],
             ),
@@ -254,14 +254,14 @@ class _FuelEvCalcPageState extends State<FuelEvCalcPage> {
             child: Column(
               children: [
                 CalcTextField(
-                  label: 'Energy consumption (kWh/100km)',
-                  hint: '15.0',
-                  controller: _evConsumptionController,
+                  label: 'Efficiency (mi/kWh)',
+                  hint: '3.3',
+                  controller: _miPerKwhController,
                 ),
                 const SizedBox(height: 12),
                 CalcTextField(
                   label: 'Electricity price (\$/kWh)',
-                  hint: '1.2',
+                  hint: '0.16',
                   controller: _elecPriceController,
                 ),
               ],

@@ -90,12 +90,12 @@ class PeakValleyCalcPage extends ConsumerStatefulWidget {
 }
 
 class _PeakValleyCalcPageState extends ConsumerState<PeakValleyCalcPage> {
-  final _peakPriceController = TextEditingController(text: '1.25');
-  final _valleyPriceController = TextEditingController(text: '0.35');
-  String _peakStart = '08:00';
-  String _peakEnd = '22:00';
-  String _valleyStart = '22:00';
-  String _valleyEnd = '08:00';
+  final _peakPriceController = TextEditingController(text: '0.42');
+  final _valleyPriceController = TextEditingController(text: '0.12');
+  String _peakStart = '16:00';
+  String _peakEnd = '21:00';
+  String _valleyStart = '21:00';
+  String _valleyEnd = '16:00';
   String _batteryCapacity = '75';
   int _targetPercent = defaultPeakValleyInputs.targetPercent is num
       ? (defaultPeakValleyInputs.targetPercent as num).toInt()
@@ -252,7 +252,7 @@ class _PeakValleyCalcPageState extends ConsumerState<PeakValleyCalcPage> {
                 const SizedBox(height: 12),
                 CalcTextField(
                   label: 'Peak rate (\$/kWh)',
-                  hint: '1.25',
+                  hint: '0.42',
                   controller: _peakPriceController,
                 ),
                 const SizedBox(height: 12),
@@ -267,7 +267,7 @@ class _PeakValleyCalcPageState extends ConsumerState<PeakValleyCalcPage> {
                 const SizedBox(height: 12),
                 CalcTextField(
                   label: 'Off-peak rate (\$/kWh)',
-                  hint: '0.35',
+                  hint: '0.12',
                   controller: _valleyPriceController,
                 ),
                 const SizedBox(height: 12),

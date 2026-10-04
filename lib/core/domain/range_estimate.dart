@@ -1,8 +1,8 @@
-/// 续航静态估算（纯函数）
+/// 续航静态估算（纯函数，美制单位）
 ///
-/// 根据电池容量、当前 SOC 与百公里电耗算出基准续航，
+/// 根据电池容量、当前 SOC 与能效（mi/kWh）算出基准续航，
 /// 再按温度 / 路况 / 空调三个工况系数折算出预估续航。
-/// 「静态」指不依赖充电记录推导：电耗由用户手动输入，
+/// 「静态」指不依赖充电记录推导：能效由用户手动输入，
 /// 电池容量可由调用方从默认车辆档案预填。
 library;
 
@@ -12,8 +12,8 @@ const int batteryMin = 15; // 电池容量下限（kWh，与车辆档案 parseBa
 const int batteryMax = 200; // 电池容量上限（kWh）
 const int socMin = 10; // SOC 下限（%）
 const int socMax = 100; // SOC 上限（%）
-const int consumptionMin = 8; // 百公里电耗下限（kWh/100km）
-const int consumptionMax = 30; // 百公里电耗上限（kWh/100km）
+const double efficiencyMin = 2; // 能效下限（mi/kWh）
+const double efficiencyMax = 6; // 能效上限（mi/kWh）
 
 /// 工况选项（factor 为续航折扣系数）
 class WorkConditionOption {
@@ -28,16 +28,12 @@ class WorkConditionOption {
   final double factor;
 }
 
-/// 温度工况选项
+/// 温度工况选项（°F 档位，折算自 -10/0-10/35°C）
 const List<WorkConditionOption> temperatureOptions = [
-  WorkConditionOption(
-    value: 'freezing',
-    label: 'Freezing ≤-10°C',
-    factor: 0.65,
-  ),
-  WorkConditionOption(value: 'cold', label: 'Cold 0-10°C', factor: 0.8),
+  WorkConditionOption(value: 'freezing', label: 'Freezing ≤14°F', factor: 0.65),
+  WorkConditionOption(value: 'cold', label: 'Cold 32-50°F', factor: 0.8),
   WorkConditionOption(value: 'mild', label: 'Mild', factor: 1),
-  WorkConditionOption(value: 'hot', label: 'Hot ≥35°C', factor: 0.9),
+  WorkConditionOption(value: 'hot', label: 'Hot ≥95°F', factor: 0.9),
 ];
 
 /// 路况选项
@@ -57,7 +53,7 @@ class RangeEstimateInputs {
   const RangeEstimateInputs({
     this.battery = 60, // kWh
     this.soc = 80, // 当前电量 %
-    this.consumption = 14, // kWh/100km
+    this.efficiency = 3.4, // mi/kWh
     this.temperature = 'mild',
     this.road = 'mixed',
     this.ac = 'off',
@@ -65,7 +61,7 @@ class RangeEstimateInputs {
 
   final dynamic battery;
   final dynamic soc;
-  final dynamic consumption;
+  final dynamic efficiency;
   final String? temperature;
   final String? road;
   final String? ac;
@@ -73,7 +69,7 @@ class RangeEstimateInputs {
   RangeEstimateInputs copyWith({
     dynamic battery,
     dynamic soc,
-    dynamic consumption,
+    dynamic efficiency,
     String? temperature,
     String? road,
     String? ac,
@@ -81,7 +77,7 @@ class RangeEstimateInputs {
     return RangeEstimateInputs(
       battery: battery ?? this.battery,
       soc: soc ?? this.soc,
-      consumption: consumption ?? this.consumption,
+      efficiency: efficiency ?? this.efficiency,
       temperature: temperature ?? this.temperature,
       road: road ?? this.road,
       ac: ac ?? this.ac,
@@ -96,13 +92,13 @@ const RangeEstimateInputs defaultRangeInputs = RangeEstimateInputs();
 const RangeEstimateInputs _emptyInputs = RangeEstimateInputs(
   battery: null,
   soc: null,
-  consumption: null,
+  efficiency: null,
   temperature: null,
   road: null,
   ac: null,
 );
 
-/// 续航估算结果（公里数保留一位小数，系数保留两位）
+/// 续航估算结果（英里数保留一位小数，系数保留两位）
 class RangeEstimateResult {
   const RangeEstimateResult({
     required this.availableEnergy,
@@ -137,7 +133,7 @@ class FactorBreakdown {
 const double _numberEpsilon = 2.220446049250313e-16;
 
 /// 保留一位小数（如 342.857 → 342.9；EPSILON 抵御 18.15 → 181.499… 类浮点陷阱）
-double _toKm(double value) {
+double _toMile(double value) {
   return ((value + _numberEpsilon) * 10).round() / 10;
 }
 
@@ -164,31 +160,31 @@ class _NumericInputs {
   const _NumericInputs({
     required this.battery,
     required this.soc,
-    required this.consumption,
+    required this.efficiency,
   });
 
   final num battery;
   final num soc;
-  final num consumption;
+  final num efficiency;
 }
 
-/// 解析并校验三个数值输入（电池/SOC/电耗）；任一非法返回 null
+/// 解析并校验三个数值输入（电池/SOC/能效）；任一非法返回 null
 _NumericInputs? _parseNumericInputs(RangeEstimateInputs source) {
   final battery = toNumber(source.battery);
   final soc = toNumber(source.soc);
-  final consumption = toNumber(source.consumption);
+  final efficiency = toNumber(source.efficiency);
   if (battery == null ||
       battery < batteryMin ||
       battery > batteryMax ||
       soc == null ||
       soc < socMin ||
       soc > socMax ||
-      consumption == null ||
-      consumption < consumptionMin ||
-      consumption > consumptionMax) {
+      efficiency == null ||
+      efficiency < efficiencyMin ||
+      efficiency > efficiencyMax) {
     return null;
   }
-  return _NumericInputs(battery: battery, soc: soc, consumption: consumption);
+  return _NumericInputs(battery: battery, soc: soc, efficiency: efficiency);
 }
 
 /// 计算预估续航
@@ -216,14 +212,14 @@ RangeEstimateResult? calcRangeEstimate(RangeEstimateInputs? inputs) {
     totalFactor = totalFactor * option.factor;
   }
 
-  final availableEnergy = _toKm((numeric.battery * numeric.soc) / 100);
+  final availableEnergy = _toMile((numeric.battery * numeric.soc) / 100);
   final baseRange =
-      ((numeric.battery * numeric.soc) / 100 / numeric.consumption) * 100;
+      ((numeric.battery * numeric.soc) / 100) * numeric.efficiency;
 
   return RangeEstimateResult(
     availableEnergy: availableEnergy,
-    baseRange: _toKm(baseRange),
-    estimatedRange: _toKm(baseRange * totalFactor),
+    baseRange: _toMile(baseRange),
+    estimatedRange: _toMile(baseRange * totalFactor),
     totalFactor: _toFactor(totalFactor),
   );
 }

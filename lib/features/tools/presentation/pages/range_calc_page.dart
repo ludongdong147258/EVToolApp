@@ -9,8 +9,8 @@ import 'package:ev_tool_app/core/widgets/gradient_hero_card.dart';
 import 'package:ev_tool_app/features/records/presentation/providers/records_provider.dart';
 import 'package:ev_tool_app/features/tools/presentation/widgets/calc_form_widgets.dart';
 
-/* 常见百公里电耗预设（kWh/100km）：紧凑级省电 → 大型/SUV 费电 */
-const List<int> _consumptionPresets = <int>[12, 14, 16, 18, 20];
+/* 常见能效预设（mi/kWh）：紧凑级省电 → 大型/SUV 费电 */
+const List<double> _efficiencyPresets = <double>[2.5, 3.0, 3.4, 4.0, 4.5];
 
 double? _parseNumber(String text) => double.tryParse(text.trim());
 
@@ -23,7 +23,7 @@ class RangeCalcPage extends ConsumerStatefulWidget {
 }
 
 class _RangeCalcPageState extends ConsumerState<RangeCalcPage> {
-  final _consumptionController = TextEditingController(text: '14');
+  final _efficiencyController = TextEditingController(text: '3.4');
   String _battery = '60';
   int _soc = 80;
   String _temperature = defaultRangeInputs.temperature ?? 'mild';
@@ -37,13 +37,13 @@ class _RangeCalcPageState extends ConsumerState<RangeCalcPage> {
   @override
   void initState() {
     super.initState();
-    _consumptionController.addListener(_onConsumptionChanged);
+    _efficiencyController.addListener(_onEfficiencyChanged);
     WidgetsBinding.instance.addPostFrameCallback((_) => _prefillVehicle());
   }
 
   @override
   void dispose() {
-    _consumptionController.dispose();
+    _efficiencyController.dispose();
     super.dispose();
   }
 
@@ -70,7 +70,7 @@ class _RangeCalcPageState extends ConsumerState<RangeCalcPage> {
   RangeEstimateInputs get _inputs => RangeEstimateInputs(
     battery: _battery,
     soc: _soc,
-    consumption: _consumptionController.text,
+    efficiency: _efficiencyController.text,
     temperature: _temperature,
     road: _road,
     ac: _ac,
@@ -91,7 +91,7 @@ class _RangeCalcPageState extends ConsumerState<RangeCalcPage> {
     });
   }
 
-  void _onConsumptionChanged() {
+  void _onEfficiencyChanged() {
     if (!mounted) return;
     _applyResult();
   }
@@ -149,7 +149,7 @@ class _RangeCalcPageState extends ConsumerState<RangeCalcPage> {
                         ),
                       ),
                       const TextSpan(
-                        text: ' km',
+                        text: ' mi',
                         style: TextStyle(
                           fontSize: 16,
                           color: AppColors.onPrimaryA85,
@@ -171,7 +171,7 @@ class _RangeCalcPageState extends ConsumerState<RangeCalcPage> {
                 _HeroDetailLine(
                   icon: Icons.speed,
                   label: 'Base range',
-                  value: '${formatPlainNumber(result?.baseRange ?? 0)} km',
+                  value: '${formatPlainNumber(result?.baseRange ?? 0)} mi',
                 ),
                 // 工况系数行图标按序对应 温度/路况/空调
                 for (final (index, item)
@@ -298,20 +298,20 @@ class _RangeCalcPageState extends ConsumerState<RangeCalcPage> {
           ),
           const SizedBox(height: 12),
           CalcCard(
-            title: 'Consumption & conditions',
+            title: 'Efficiency & conditions',
             icon: Icons.speed,
             iconColor: palette.info,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 CalcTextField(
-                  label: 'Consumption (kWh/100km)',
-                  hint: '14',
-                  controller: _consumptionController,
+                  label: 'Efficiency (mi/kWh)',
+                  hint: '3.4',
+                  controller: _efficiencyController,
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  'Use the rated value from your car (e.g. 14); if you enter a real-world figure, pick Mild / City / Off to avoid double discounts',
+                  'Use the rated value from your car (e.g. 3.4); if you enter a real-world figure, pick Mild / City / Off to avoid double discounts',
                   style: TextStyle(fontSize: 11, color: palette.textHint),
                 ),
                 const SizedBox(height: 8),
@@ -319,13 +319,15 @@ class _RangeCalcPageState extends ConsumerState<RangeCalcPage> {
                   spacing: 8,
                   runSpacing: 8,
                   children: [
-                    for (final preset in _consumptionPresets)
+                    for (final preset in _efficiencyPresets)
                       CalcChip(
-                        label: '$preset',
+                        label: formatPlainNumber(preset),
                         isSelected:
-                            _parseNumber(_consumptionController.text) == preset,
+                            _parseNumber(_efficiencyController.text) == preset,
                         onTap: () => _setStateWithResult(
-                          () => _consumptionController.text = '$preset',
+                          () => _efficiencyController.text = formatPlainNumber(
+                            preset,
+                          ),
                         ),
                       ),
                   ],
@@ -359,7 +361,7 @@ class _RangeCalcPageState extends ConsumerState<RangeCalcPage> {
           ),
           const SizedBox(height: 8),
           const CalcDisclaimer(
-            '* Estimates only: based on rated consumption; actual range depends on driving style, load, usable capacity, and more.',
+            '* Estimates only: based on rated efficiency; actual range depends on driving style, load, usable capacity, and more.',
           ),
         ],
       ),

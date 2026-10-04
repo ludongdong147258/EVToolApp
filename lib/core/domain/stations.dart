@@ -13,8 +13,9 @@ import 'dart:math' as math;
 /// Mean earth radius (meters).
 const double earthRadiusMeters = 6371000;
 
-/// Distance formatting: below 1km show meters.
-const int _kmThreshold = 1000;
+/// Unit conversions for imperial distance formatting.
+const double _metersPerMile = 1609.344;
+const double _feetPerMeter = 3.28084;
 
 /// Cache TTL: charging stations change slowly, reuse the same-position
 /// result for 30 minutes.
@@ -158,16 +159,18 @@ double haversineDistance(double lat1, double lng1, double lat2, double lng2) {
   return 2 * earthRadiusMeters * math.asin(math.min(1, math.sqrt(h)));
 }
 
-/// Distance formatting: 850 → "850m", 1234 → "1.2km", invalid → "".
+/// Distance formatting (imperial): 50 → "164 ft", 1234 → "0.8 mi",
+/// invalid → "". Under 0.1 mi shows feet; above shows miles with 1 decimal.
 String formatDistance(num? meters) {
   final value = _toNumber(meters);
   if (value.isNaN || value < 0) {
     return '';
   }
-  if (value < _kmThreshold) {
-    return '${value.round()}m';
+  final miles = value / _metersPerMile;
+  if (miles < 0.1) {
+    return '${(value * _feetPerMeter).round()} ft';
   }
-  return '${(value / _kmThreshold).toStringAsFixed(1)}km';
+  return '${miles.toStringAsFixed(1)} mi';
 }
 
 /// OpenStreetMap Overpass element → [Station].

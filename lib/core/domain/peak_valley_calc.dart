@@ -15,8 +15,8 @@ class PeakValleyInputs {
   const PeakValleyInputs({
     this.batteryCapacity = 75, // kWh
     this.targetPercent = 60, // 目标充电量 %
-    this.peakPrice = 1.25, // ¥/kWh
-    this.valleyPrice = 0.35, // ¥/kWh
+    this.peakPrice = 0.42, // $/kWh（美国典型 TOU 峰价）
+    this.valleyPrice = 0.12, // $/kWh（美国典型 TOU 谷价）
     this.peakStart, // 峰时起始 "HH:mm"（可选，四项需同时提供）
     this.peakEnd,
     this.valleyStart,

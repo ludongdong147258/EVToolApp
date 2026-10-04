@@ -12,14 +12,14 @@ void main() {
 
       // Assert
       // 需充入：75 × 60% = 45 度
-      // 平准：45 × (1.25+0.35)/2 = 36.00；优化：45 × 0.35 = 15.75
+      // 平准：45 × (0.42+0.12)/2 = 12.15；优化：45 × 0.12 = 5.40
       if (result == null) {
         fail('result should not be null');
       }
       expect(result.energy, 45);
-      expect(result.flatCost, 36);
-      expect(result.optimizedCost, 15.75);
-      expect(result.saving, 20.25);
+      expect(result.flatCost, 12.15);
+      expect(result.optimizedCost, 5.4);
+      expect(result.saving, 6.75);
     });
 
     test('目标充电量下限边界计算正确', () {
@@ -34,8 +34,8 @@ void main() {
         fail('result should not be null');
       }
       expect(result.energy, 15);
-      expect(result.flatCost, 12);
-      expect(result.optimizedCost, 5.25);
+      expect(result.flatCost, 4.05);
+      expect(result.optimizedCost, 1.8);
     });
 
     test('目标充电量上限边界计算正确', () {
@@ -46,12 +46,12 @@ void main() {
       final result = calcPeakValleyCost(inputs);
 
       // Assert
-      // 需充入 75 × 100% = 75；平准 75 × 0.8 = 60；优化 75 × 0.35 = 26.25
+      // 需充入 75 × 100% = 75；平准 75 × 0.27 = 20.25；优化 75 × 0.12 = 9.00
       if (result == null) {
         fail('result should not be null');
       }
       expect(result.energy, 75);
-      expect(result.saving, 33.75);
+      expect(result.saving, 11.25);
     });
 
     test('金额保留两位小数（浮点安全）', () {
@@ -210,26 +210,26 @@ void main() {
   });
 
   group('calcPeakValleyCost 时长加权平准成本', () {
-    test('默认互补时段：平准按峰 14h/谷 10h 加权', () {
+    test('默认互补时段：平准按峰 5h/谷 19h 加权', () {
       // Arrange
       const inputs = PeakValleyInputs(
-        peakStart: '08:00',
-        peakEnd: '22:00',
-        valleyStart: '22:00',
-        valleyEnd: '08:00',
+        peakStart: '16:00',
+        peakEnd: '21:00',
+        valleyStart: '21:00',
+        valleyEnd: '16:00',
       );
 
       // Act
       final result = calcPeakValleyCost(inputs);
 
       // Assert
-      // 平准单位电价 = (14×1.25 + 10×0.35)/24 = 0.875 → 45 × 0.875 = 39.375 → 39.38
+      // 平准单位电价 = (5×0.42 + 19×0.12)/24 = 0.1825 → 45 × 0.1825 = 8.2125 → 8.21
       if (result == null) {
         fail('result should not be null');
       }
-      expect(result.flatCost, 39.38);
-      expect(result.optimizedCost, 15.75);
-      expect(result.saving, 23.63);
+      expect(result.flatCost, 8.21);
+      expect(result.optimizedCost, 5.4);
+      expect(result.saving, 2.81);
     });
 
     test('部分覆盖（存在平时段）时平时段按峰谷均价补足', () {
@@ -245,11 +245,11 @@ void main() {
       final result = calcPeakValleyCost(inputs);
 
       // Assert
-      // (8×1.25 + 6×0.35 + 10×0.8)/24 = 0.8375 → 45 × 0.8375 = 37.6875 → 37.69
+      // (8×0.42 + 6×0.12 + 10×0.27)/24 = 0.2825 → 45 × 0.2825 = 12.7125 → 12.71
       if (result == null) {
         fail('result should not be null');
       }
-      expect(result.flatCost, 37.69);
+      expect(result.flatCost, 12.71);
     });
 
     test('时段重叠时返回 null', () {

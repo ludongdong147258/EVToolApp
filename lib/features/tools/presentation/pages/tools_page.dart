@@ -29,7 +29,7 @@ const List<ToolEntry> toolEntries = <ToolEntry>[
   ToolEntry(
     id: 'range-estimate',
     title: 'Range Estimate',
-    desc: 'Estimate remaining range from battery capacity and consumption.',
+    desc: 'Estimate remaining range from battery capacity and efficiency.',
     icon: Icons.battery_charging_full,
     route: RouteNames.rangeCalc,
   ),
@@ -67,11 +67,7 @@ class ToolGroup {
 const List<ToolGroup> toolGroups = <ToolGroup>[
   ToolGroup(
     title: 'Savings Calculators',
-    toolIds: <String>[
-      'range-estimate',
-      'fuel-vs-ev',
-      'peak-valley',
-    ],
+    toolIds: <String>['range-estimate', 'fuel-vs-ev', 'peak-valley'],
   ),
   ToolGroup(title: 'Maps', toolIds: <String>['nearby-stations']),
 ];

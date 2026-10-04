@@ -2,7 +2,7 @@ import 'package:ev_tool_app/core/domain/fuel_ev_calc.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
-  group('calcAnnualCost 油电成本计算', () {
+  group('calcAnnualCost 油电成本计算（美制）', () {
     test('默认输入计算出正确的年度成本与节省', () {
       // Arrange
       const inputs = FuelEvInputs();
@@ -11,15 +11,15 @@ void main() {
       final result = calcAnnualCost(inputs);
 
       // Assert
-      // 燃油：15000/100 × 8.5 × 8.0 = 10200
-      // 电动：15000/100 × 15 × 1.2 = 2700
+      // 燃油：13500 / 28 × 3.3 = 1591.07 → 1591
+      // 电动：13500 / 3.3 × 0.16 = 654.55 → 655
       if (result == null) {
         fail('result should not be null');
       }
-      expect(result.fuelCost, 10200);
-      expect(result.evCost, 2700);
-      expect(result.savings, 7500);
-      expect(result.savingPer10k, 5000);
+      expect(result.fuelCost, 1591);
+      expect(result.evCost, 655);
+      expect(result.savings, 936);
+      expect(result.savingPer10k, 693);
     });
 
     test('最小里程边界计算正确', () {
@@ -30,13 +30,13 @@ void main() {
       final result = calcAnnualCost(inputs);
 
       // Assert
-      // 燃油：1000/100 × 8.5 × 8.0 = 680；电动：1000/100 × 15 × 1.2 = 180
+      // 燃油：500 / 28 × 3.3 = 58.93 → 59；电动：500 / 3.3 × 0.16 = 24.24 → 24
       if (result == null) {
         fail('result should not be null');
       }
-      expect(result.fuelCost, 680);
-      expect(result.evCost, 180);
-      expect(result.savings, 500);
+      expect(result.fuelCost, 59);
+      expect(result.evCost, 24);
+      expect(result.savings, 35);
     });
 
     test('最大里程边界计算正确', () {
@@ -47,23 +47,23 @@ void main() {
       final result = calcAnnualCost(inputs);
 
       // Assert
-      // 燃油：200000/100 × 8.5 × 8.0 = 136000；电动：200000/100 × 15 × 1.2 = 36000
+      // 燃油：100000 / 28 × 3.3 = 11785.71；电动：100000 / 3.3 × 0.16 = 4848.48
       if (result == null) {
         fail('result should not be null');
       }
-      expect(result.fuelCost, 136000);
-      expect(result.evCost, 36000);
-      expect(result.savingPer10k, 5000);
+      expect(result.fuelCost, 11786);
+      expect(result.evCost, 4848);
+      expect(result.savingPer10k, 694);
     });
 
     test('接受字符串形式的输入（来自输入框）', () {
       // Arrange
       const inputs = FuelEvInputs(
-        mileage: '15000',
-        fuelConsumption: '8.5',
-        fuelPrice: '8.0',
-        evConsumption: '15.0',
-        elecPrice: '1.2',
+        mileage: '13500',
+        mpg: '28',
+        gasPrice: '3.30',
+        miPerKwh: '3.3',
+        elecPrice: '0.16',
       );
 
       // Act
@@ -73,13 +73,13 @@ void main() {
       if (result == null) {
         fail('result should not be null');
       }
-      expect(result.fuelCost, 10200);
-      expect(result.evCost, 2700);
+      expect(result.fuelCost, 1591);
+      expect(result.evCost, 655);
     });
 
     test('任一参数为 0 时返回 null', () {
       // Arrange & Act
-      final result = calcAnnualCost(const FuelEvInputs(fuelPrice: 0));
+      final result = calcAnnualCost(const FuelEvInputs(gasPrice: 0));
 
       // Assert
       expect(result, isNull);
@@ -96,12 +96,10 @@ void main() {
     test('任一参数为空串或非数字时返回 null', () {
       // Arrange & Act
       final emptyResult = calcAnnualCost(const FuelEvInputs(mileage: ''));
-      final nanResult = calcAnnualCost(
-        const FuelEvInputs(fuelConsumption: 'abc'),
-      );
+      final nanResult = calcAnnualCost(const FuelEvInputs(mpg: 'abc'));
       // JS 侧 undefined 入参在 Dart 中以显式 null 表达
       final undefinedResult = calcAnnualCost(
-        const FuelEvInputs(evConsumption: null),
+        const FuelEvInputs(miPerKwh: null),
       );
 
       // Assert
@@ -121,21 +119,21 @@ void main() {
       if (restored == null) {
         fail('restored should not be null');
       }
-      expect(restored.mileage, '15000');
-      expect(restored.fuelConsumption, '8.5');
-      expect(restored.fuelPrice, '8');
-      expect(restored.evConsumption, '15');
-      expect(restored.elecPrice, '1.2');
+      expect(restored.mileage, '13500');
+      expect(restored.mpg, '28');
+      expect(restored.gasPrice, '3.3');
+      expect(restored.miPerKwh, '3.3');
+      expect(restored.elecPrice, '0.16');
     });
 
     test('自定义输入 round-trip 后计算结果一致', () {
       // Arrange
       const inputs = FuelEvInputs(
         mileage: 20000,
-        fuelConsumption: '9.2',
-        fuelPrice: '7.5',
-        evConsumption: '14',
-        elecPrice: '0.8',
+        mpg: '30',
+        gasPrice: '3.5',
+        miPerKwh: '3.6',
+        elecPrice: '0.2',
       );
 
       // Act
@@ -154,7 +152,7 @@ void main() {
 
     test('缺任一参数返回 null', () {
       // Act
-      final restored = parseShareQuery({'m': '15000', 'fc': '8.5', 'fp': '8'});
+      final restored = parseShareQuery({'m': '13500', 'fc': '28', 'fp': '3.3'});
 
       // Assert
       expect(restored, isNull);
@@ -165,30 +163,30 @@ void main() {
       expect(
         parseShareQuery({
           'm': 'abc',
-          'fc': '8.5',
-          'fp': '8',
-          'ec': '15',
-          'ep': '1.2',
+          'fc': '28',
+          'fp': '3.3',
+          'ec': '3.3',
+          'ep': '0.16',
         }),
         isNull,
       );
       expect(
         parseShareQuery({
-          'm': '15000',
+          'm': '13500',
           'fc': '0',
-          'fp': '8',
-          'ec': '15',
-          'ep': '1.2',
+          'fp': '3.3',
+          'ec': '3.3',
+          'ep': '0.16',
         }),
         isNull,
       );
       expect(
         parseShareQuery({
           'm': '-1',
-          'fc': '8.5',
-          'fp': '8',
-          'ec': '15',
-          'ep': '1.2',
+          'fc': '28',
+          'fp': '3.3',
+          'ec': '3.3',
+          'ep': '0.16',
         }),
         isNull,
       );
@@ -204,22 +202,19 @@ void main() {
       final title = buildShareTitle(result);
 
       // Assert
-      expect(
-        title,
-        'An EV saves \$7,500 a year vs a gas car — here is the math',
-      );
+      expect(title, 'An EV saves \$936 a year vs a gas car — here is the math');
     });
 
     test('电动更贵时标题切换为成本对比口径', () {
       // Arrange
-      // 燃油 10200，电动 150 × 15 × 9 = 20250，差 10050
+      // 燃油 1591，电动 13500 / 3.3 × 9 = 36818.18 → 36818，差 35227
       final result = calcAnnualCost(const FuelEvInputs(elecPrice: 9));
 
       // Act
       final title = buildShareTitle(result);
 
       // Assert
-      expect(title, '\$10,050 a year apart — run your own numbers');
+      expect(title, '\$35,227 a year apart — run your own numbers');
     });
 
     test('结果为空时返回兜底标题', () {

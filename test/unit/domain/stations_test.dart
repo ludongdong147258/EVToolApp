@@ -81,14 +81,15 @@ void main() {
     });
   });
 
-  group('formatDistance 距离格式化', () {
+  group('formatDistance 距离格式化（英制）', () {
     for (final entry in const [
-      (0, '0m'),
-      (850, '850m'),
-      (999, '999m'),
-      (1000, '1.0km'),
-      (1234, '1.2km'),
-      (9560, '9.6km'),
+      (0, '0 ft'),
+      (50, '164 ft'),
+      (160, '525 ft'),
+      (161, '0.1 mi'),
+      (850, '0.5 mi'),
+      (1234, '0.8 mi'),
+      (9560, '5.9 mi'),
     ]) {
       test('${entry.$1} → ${entry.$2}', () {
         expect(formatDistance(entry.$1), entry.$2);
