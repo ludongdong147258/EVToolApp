@@ -2,7 +2,6 @@ class AppConstants {
   AppConstants._();
 
   static const String appName = 'VoltLedger';
-  static const String appVersion = '1.0.0';
   // 首次发表年份（版权声明起始年）；跨年后可改为区间，如 2026-${当前年}
   static const int copyrightStartYear = 2026;
   static const Duration networkTimeout = Duration(seconds: 30);

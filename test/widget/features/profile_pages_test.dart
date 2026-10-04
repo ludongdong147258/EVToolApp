@@ -220,8 +220,7 @@ void main() {
       expect(find.text('Contact Email'), findsNothing);
       expect(find.text('User Agreement'), findsOneWidget);
       expect(find.text('Privacy Policy'), findsOneWidget);
-      expect(find.text('Version'), findsOneWidget);
-      expect(find.text('1.0.0'), findsOneWidget);
+      expect(find.text('Version'), findsNothing);
     });
   });
 

@@ -105,17 +105,6 @@ class AboutPage extends StatelessWidget {
                   text: 'Privacy Policy',
                   onTap: () => context.push(RouteNames.privacy),
                 ),
-                Divider(
-                  height: 1,
-                  indent: 16,
-                  endIndent: 16,
-                  color: palette.divider,
-                ),
-                const _InfoRow(
-                  icon: Icons.info_outline_rounded,
-                  text: 'Version',
-                  value: AppConstants.appVersion,
-                ),
               ],
             ),
           ),
@@ -125,18 +114,12 @@ class AboutPage extends StatelessWidget {
   }
 }
 
-/// 信息列表行：图标 + 文案 + 值/箭头。
+/// 信息列表行：图标 + 文案 + 箭头。
 class _InfoRow extends StatelessWidget {
-  const _InfoRow({
-    required this.icon,
-    required this.text,
-    this.value,
-    this.onTap,
-  });
+  const _InfoRow({required this.icon, required this.text, this.onTap});
 
   final IconData icon;
   final String text;
-  final String? value;
   final VoidCallback? onTap;
 
   @override
@@ -151,13 +134,6 @@ class _InfoRow extends StatelessWidget {
             Icon(icon, size: 20, color: palette.textSecondary),
             const SizedBox(width: 12),
             Expanded(child: Text(text, style: const TextStyle(fontSize: 14))),
-            if (value != null)
-              Flexible(
-                child: Text(
-                  value!,
-                  style: TextStyle(fontSize: 13, color: palette.textHint),
-                ),
-              ),
             if (onTap != null)
               Icon(
                 Icons.chevron_right_rounded,
