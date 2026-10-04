@@ -39,7 +39,10 @@ void main() {
 
       expect(await repo.refresh(), isFalse);
       expect(await repo.getOfferings(), isEmpty);
-      expect(await repo.restore(), isFalse);
+      expect(
+        await repo.restore(),
+        ProActionResult.failed, // 无 SDK：无取消语义的失败
+      );
     });
   });
 

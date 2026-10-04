@@ -66,6 +66,9 @@ Future<void> _cacheProStatus(KeyValueStore kv, bool value) async {
 
 // ---------- 仓储 ----------
 
+/// 购买/恢复结果三态（+恢复无购买），UI 据此区分反馈文案。
+enum ProActionResult { success, cancelled, failed, noPurchases }
+
 class ProRepository {
   ProRepository(this._kv);
 
@@ -106,9 +109,9 @@ class ProRepository {
     }
   }
 
-  /// 购买套餐；成功写缓存返回 true，取消/失败返回 false（文案由 UI toast）。
-  Future<bool> purchase(Package package) async {
-    if (!sdkAvailable) return false;
+  /// 购买套餐；成功写缓存。取消/失败/entitlement 未激活分态返回（文案由 UI toast）。
+  Future<ProActionResult> purchase(Package package) async {
+    if (!sdkAvailable) return ProActionResult.failed;
     try {
       final info = await Purchases.purchasePackage(package);
       final active =
@@ -116,20 +119,20 @@ class ProRepository {
           false;
       if (!active) _logInactiveEntitlement(info, 'purchase');
       await _cacheProStatus(_kv, active);
-      return active;
+      return active ? ProActionResult.success : ProActionResult.failed;
     } on PlatformException catch (e) {
       if (PurchasesErrorHelper.getErrorCode(e) ==
           PurchasesErrorCode.purchaseCancelledError) {
-        return false;
+        return ProActionResult.cancelled;
       }
       appLogger.e('Purchase failed', error: e);
-      return false;
+      return ProActionResult.failed;
     }
   }
 
-  /// 恢复购买；成功写缓存返回 true。
-  Future<bool> restore() async {
-    if (!sdkAvailable) return false;
+  /// 恢复购买；调用成功但无 entitlement 视为无可恢复购买。
+  Future<ProActionResult> restore() async {
+    if (!sdkAvailable) return ProActionResult.failed;
     try {
       final info = await Purchases.restorePurchases();
       final active =
@@ -137,10 +140,10 @@ class ProRepository {
           false;
       if (!active) _logInactiveEntitlement(info, 'restore');
       await _cacheProStatus(_kv, active);
-      return active;
+      return active ? ProActionResult.success : ProActionResult.noPurchases;
     } on PlatformException catch (e) {
       appLogger.e('Restore failed', error: e);
-      return false;
+      return ProActionResult.failed;
     }
   }
 }
@@ -166,9 +169,13 @@ class ProStatusNotifier extends Notifier<bool> {
   @override
   bool build() {
     final repo = ref.watch(proRepositoryProvider);
-    // 注册 entitlement 监听：RC 后台变化（续订/退订）实时刷新 state
-    _onEntitlementChanged = applyFromRevenueCat;
-    ref.onDispose(() => _onEntitlementChanged = null);
+    // 注册 entitlement 监听：RC 后台变化（续订/退订）实时刷新 state。
+    // dispose 时仅在回调仍是自己的情况下置空，避免误杀其他容器刚注册的回调。
+    final handler = applyFromRevenueCat;
+    _onEntitlementChanged = handler;
+    ref.onDispose(() {
+      if (_onEntitlementChanged == handler) _onEntitlementChanged = null;
+    });
     return !repo.sdkAvailable ? true : repo.getCachedProStatus();
   }
 
@@ -178,7 +185,9 @@ class ProStatusNotifier extends Notifier<bool> {
   }
 
   /// 手动刷新（paywall 打开时调用，拉最新 entitlement）。
+  /// 无 SDK（dev/测试）时 no-op，保持"无 key 恒解锁"的默认语义。
   Future<void> refreshFromRevenueCat() async {
+    if (!ref.read(proRepositoryProvider).sdkAvailable) return;
     final active = await ref.read(proRepositoryProvider).refresh();
     if (state != active) state = active;
   }

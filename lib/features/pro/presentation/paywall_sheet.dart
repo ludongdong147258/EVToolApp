@@ -27,7 +27,8 @@ Future<bool> showPaywallSheet(BuildContext context) async {
 }
 
 /// 当前 offering 的可选套餐（无 key / 失败返回空列表）。
-final paywallOfferingsProvider = FutureProvider<List<Package>>(
+/// autoDispose：每次打开 paywall 重新拉取，失败后可重试不缓存 error。
+final paywallOfferingsProvider = FutureProvider.autoDispose<List<Package>>(
   (ref) => ref.watch(proRepositoryProvider).getOfferings(),
 );
 
@@ -85,6 +86,26 @@ class _PaywallSheetState extends ConsumerState<_PaywallSheet> {
     final isPro = ref.watch(proStatusProvider);
     final sdkAvailable = ref.watch(proRepositoryProvider).sdkAvailable;
     final offerings = ref.watch(paywallOfferingsProvider);
+
+    // 弹层期间 entitlement 变为激活（Restore/后台刷新成功）→ 自动关闭并放行门控，
+    // 避免"页面已显示 Pro is active 但用户关闭后仍被拦"的误拦。
+    ref.listen(proStatusProvider, (prev, next) {
+      if (next && prev != true && mounted) {
+        Navigator.of(context).pop(true);
+      }
+    });
+    // 套餐数据到达且尚未选择时，默认选年付（postFrame 避免在 build 中改状态）。
+    ref.listen(paywallOfferingsProvider, (prev, next) {
+      final packages = next.value;
+      if (packages == null || _selected != null) return;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted || _selected != null) return;
+        final plans = _sortedPlans(packages);
+        if (plans.isEmpty) return;
+        final annual = plans.where((p) => p.packageType == PackageType.annual);
+        setState(() => _selected = annual.isEmpty ? plans.first : annual.first);
+      });
+    });
 
     if (isPro) {
       return Padding(
@@ -189,27 +210,24 @@ class _PaywallSheetState extends ConsumerState<_PaywallSheet> {
     );
   }
 
-  /// 完全按 RC offering 的 availablePackages 渲染（配什么出什么），默认选年付。
+  /// 按 _planOrder 排序（短周期在前；custom/unknown 排最后）。
+  List<Package> _sortedPlans(List<Package> packages) => [...packages]
+    ..sort(
+      (a, b) =>
+          (_planOrder[a.packageType] ?? 99) - (_planOrder[b.packageType] ?? 99),
+    );
+
+  /// 完全按 RC offering 的 availablePackages 渲染（配什么出什么）。
   Widget _buildPlanList(ThemeData theme, List<Package> packages) {
     if (packages.isEmpty) return _buildRetryPlaceholder(theme);
 
-    final plans = [...packages]
-      ..sort(
-        (a, b) =>
-            (_planOrder[a.packageType] ?? 99) -
-            (_planOrder[b.packageType] ?? 99),
-      );
-    final annual = plans.where((p) => p.packageType == PackageType.annual);
-    final effectiveSelected =
-        _selected ?? (annual.isEmpty ? plans.first : annual.first);
-    _selected = effectiveSelected; // 供 Subscribe 按钮使用
-
+    final plans = _sortedPlans(packages);
     return Column(
       children: [
         for (final plan in plans)
           _PlanCard(
             plan: plan,
-            isSelected: plan == effectiveSelected,
+            isSelected: plan == _selected,
             onTap: () => setState(() => _selected = plan),
           ),
       ],
@@ -220,11 +238,19 @@ class _PaywallSheetState extends ConsumerState<_PaywallSheet> {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 16),
       child: Center(
-        child: Text(
-          'Plans are unavailable. Check your connection and try again.',
-          textAlign: TextAlign.center,
-          style: theme.textTheme.bodyMedium?.copyWith(
-            color: theme.colorScheme.onSurfaceVariant,
+        // 点击重试：invalidate 重新拉取（provider 已 autoDispose，不缓存 error）
+        child: InkWell(
+          onTap: () => ref.invalidate(paywallOfferingsProvider),
+          borderRadius: BorderRadius.circular(AppColors.radiusSm),
+          child: Padding(
+            padding: const EdgeInsets.all(8),
+            child: Text(
+              'Plans are unavailable. Tap to retry.',
+              textAlign: TextAlign.center,
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: theme.colorScheme.onSurfaceVariant,
+              ),
+            ),
           ),
         ),
       ),
@@ -235,25 +261,37 @@ class _PaywallSheetState extends ConsumerState<_PaywallSheet> {
     final plan = _selected;
     if (plan == null) return;
     setState(() => _busy = true);
-    final ok = await ref.read(proRepositoryProvider).purchase(plan);
+    final result = await ref.read(proRepositoryProvider).purchase(plan);
     if (!mounted) return;
     setState(() => _busy = false);
-    if (ok) {
-      showAppToast(context, 'Pro unlocked!');
-      Navigator.of(context).pop(true);
+    switch (result) {
+      case ProActionResult.success:
+        showAppToast(context, 'Pro unlocked!');
+        Navigator.of(context).pop(true);
+      case ProActionResult.cancelled:
+        break; // 用户主动取消，无需反馈
+      case ProActionResult.failed:
+        showAppToast(context, 'Purchase failed. Please try again');
+      case ProActionResult.noPurchases:
+        break; // purchase 不产生该态，防御
     }
   }
 
   Future<void> _restore() async {
     setState(() => _busy = true);
-    final ok = await ref.read(proRepositoryProvider).restore();
+    final result = await ref.read(proRepositoryProvider).restore();
     if (!mounted) return;
     setState(() => _busy = false);
-    if (ok) {
-      showAppToast(context, 'Pro restored!');
-      Navigator.of(context).pop(true);
-    } else {
-      showAppToast(context, 'No purchases to restore.');
+    switch (result) {
+      case ProActionResult.success:
+        showAppToast(context, 'Pro restored!');
+        Navigator.of(context).pop(true);
+      case ProActionResult.noPurchases:
+        showAppToast(context, 'No purchases to restore.');
+      case ProActionResult.failed:
+        showAppToast(context, 'Restore failed. Check your connection');
+      case ProActionResult.cancelled:
+        break; // restore 无取消语义，防御
     }
   }
 }

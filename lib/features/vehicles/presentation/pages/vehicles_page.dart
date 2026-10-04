@@ -42,7 +42,9 @@ class VehiclesPage extends ConsumerWidget {
                   title: 'No vehicles yet',
                   subtitle: 'Add a vehicle to track your charging costs',
                   ctaText: 'Add Vehicle',
-                  onCta: () => _openVehicleSheet(context, ref),
+                  onCta: () {
+                    unawaited(_openVehicleSheet(context, ref));
+                  },
                 ),
               ],
             )
@@ -52,10 +54,16 @@ class VehiclesPage extends ConsumerWidget {
                 for (final vehicle in vehicles)
                   _VehicleCard(
                     vehicle: vehicle,
-                    onTap: () => _openVehicleSheet(context, ref, vehicle),
+                    onTap: () {
+                      unawaited(_openVehicleSheet(context, ref, vehicle));
+                    },
                     onMore: () => _showMoreMenu(context, ref, vehicle),
                   ),
-                _AddVehicleTile(onTap: () => _openVehicleSheet(context, ref)),
+                _AddVehicleTile(
+                  onTap: () {
+                    unawaited(_openVehicleSheet(context, ref));
+                  },
+                ),
               ],
             ),
     );
