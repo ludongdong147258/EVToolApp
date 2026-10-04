@@ -7,7 +7,7 @@ library;
 const String contactEmail = 'fishspotradar@163.com';
 
 /// 协议/政策更新日期。
-const String legalUpdatedAt = '2026-08-23';
+const String legalUpdatedAt = '2026-10-04';
 
 /// 单个章节：标题 + 段落。
 class LegalSection {
@@ -112,8 +112,9 @@ const List<LegalSection> privacySections = <LegalSection>[
     title: '3. How Information Is Used',
     paragraphs: [
       'Providing core features: Saving and displaying your charging records, computing statistics (cumulative cost, cost per kWh, and so on), and running tools such as fuel-versus-EV comparison and time-of-use pricing calculations. These computations run on your device using the data you enter.',
-      'Third-party feature calls: When you use a feature that requires an external service, the necessary data is sent to that service to fulfill your request. Specifically: when you search for nearby charging stations, your coordinates are sent to a third-party charging station data service (OpenStreetMap), and, if you use receipt scanning, the receipt image is sent to an optical character recognition service. Converting coordinates into place names is performed on your device by the system location service. These calls only occur when you actively trigger the corresponding feature.',
-      'Service improvement: We may analyze aggregated, anonymized usage patterns to improve the product experience.',
+      'Third-party feature calls: Some features rely on external services, and data is sent only when you actively trigger the corresponding feature. When you search for nearby charging stations, your current coordinates are sent over an encrypted connection (HTTPS) to OpenStreetMap (the Overpass API, https://www.openstreetmap.org) to query charging station locations; that query is subject to the OpenStreetMap Foundation privacy policy (https://wiki.osmfoundation.org/wiki/Privacy_Policy). If you use receipt scanning, a single compressed image of the receipt is sent over an encrypted connection (HTTPS) to Zhipu AI (https://open.bigmodel.cn), a third-party optical character recognition service, to extract the text, and is handled under that provider\'s own privacy policy. Converting coordinates into place names is performed on your device by the system location service. If you deny the relevant permission, nothing is sent.',
+      'Receipt images may contain personal details (such as your name or phone number). Only scan receipts you are comfortable sending to the recognition service for processing.',
+      'No analytics or tracking: The app contains no third-party analytics, advertising, or tracking SDKs, and we do not collect usage data. We do not track you across other apps or websites, and we do not sell or share your information for advertising or tracking purposes.',
     ],
   ),
   LegalSection(

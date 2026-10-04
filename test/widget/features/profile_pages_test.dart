@@ -229,14 +229,14 @@ void main() {
     testWidgets('用户协议页渲染更新日期与首章节', (tester) async {
       await pumpTall(tester, const MaterialApp(home: AgreementPage()));
 
-      expect(find.text('Last updated: 2026-08-23'), findsOneWidget);
+      expect(find.text('Last updated: 2026-10-04'), findsOneWidget);
       expect(find.text('1. Acceptance of These Terms'), findsOneWidget);
     });
 
     testWidgets('隐私政策页渲染更新日期与首章节', (tester) async {
       await pumpTall(tester, const MaterialApp(home: PrivacyPage()));
 
-      expect(find.text('Last updated: 2026-08-23'), findsOneWidget);
+      expect(find.text('Last updated: 2026-10-04'), findsOneWidget);
       expect(find.text('1. Introduction'), findsOneWidget);
     });
   });
