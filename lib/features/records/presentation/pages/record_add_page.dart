@@ -194,16 +194,14 @@ class _RecordAddPageState extends ConsumerState<RecordAddPage> {
     });
   }
 
-  /// 进页自动定位当前所在位置（对齐小程序 silentLocateIfAuthorized）：
-  /// 新增模式专用；系统授权弹窗只在首次进入时出现一次，拒绝后静默不打扰。
+  /// 进页静默定位当前所在位置（对齐小程序 silentLocateIfAuthorized）：
+  /// 新增模式专用；仅在定位授权已 granted 时执行，不主动弹系统授权框
+  /// （首次授权由用户点击地点字段 [_pickLocation] 触发，符合"有用户意图再请求"）。
   /// 全程异常吞掉 —— 定位失败不影响手动选点。
   Future<void> _autoLocate() async {
     if (!mounted) return;
     try {
-      var permission = await Geolocator.checkPermission();
-      if (permission == LocationPermission.denied) {
-        permission = await Geolocator.requestPermission();
-      }
+      final permission = await Geolocator.checkPermission();
       final granted =
           permission == LocationPermission.whileInUse ||
           permission == LocationPermission.always;
@@ -448,12 +446,36 @@ class _RecordAddPageState extends ConsumerState<RecordAddPage> {
   }
 
   /// 地图选点：打开选点页，返回后回填省市/地点名/坐标。
+  /// 首次点击时才请求定位授权（用户意图明确）；授权后以当前位置为初始视角。
   Future<void> _pickLocation() async {
+    PickedLocation? initial;
+    if (_latitude != null && _longitude != null) {
+      initial = PickedLocation(latitude: _latitude!, longitude: _longitude!);
+    } else {
+      try {
+        var permission = await Geolocator.checkPermission();
+        // iOS 上"未询问"状态同样映射为 denied，此处一并触发请求
+        if (permission == LocationPermission.denied) {
+          permission = await Geolocator.requestPermission();
+        }
+        final granted =
+            permission == LocationPermission.whileInUse ||
+            permission == LocationPermission.always;
+        if (granted) {
+          final position = await Geolocator.getCurrentPosition();
+          initial = PickedLocation(
+            latitude: position.latitude,
+            longitude: position.longitude,
+          );
+        }
+      } on Exception {
+        // 定位失败 → 进入默认地图，不影响选点
+      }
+    }
+    if (!mounted) return;
     final picked = await context.push<PickedLocation>(
       RouteNames.locationPicker,
-      extra: (_latitude != null && _longitude != null)
-          ? PickedLocation(latitude: _latitude!, longitude: _longitude!)
-          : null,
+      extra: initial,
     );
     if (picked == null || !mounted) return;
     setState(() {

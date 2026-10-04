@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:go_router/go_router.dart';
@@ -14,6 +15,16 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   Future<ProviderContainer> bootstrap() async {
+    // geolocator 通道 mock：未 mock 时选点前的授权检查会永久挂起。
+    // 返回 0（denied）→ 不做自动定位，直接进入选点页。
+    TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger
+        .setMockMethodCallHandler(
+          const MethodChannel('flutter.baseflow.com/geolocator'),
+          (call) async => switch (call.method) {
+            'checkPermission' || 'requestPermission' => 0,
+            _ => null,
+          },
+        );
     SharedPreferences.setMockInitialValues(const {});
     final prefs = await SharedPreferences.getInstance();
     final container = ProviderContainer(
