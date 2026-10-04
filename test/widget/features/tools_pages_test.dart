@@ -56,15 +56,10 @@ void main() {
     expect(find.text('Tools'), findsOneWidget);
     expect(find.text('Savings Calculators'), findsOneWidget);
     expect(find.text('Maps'), findsOneWidget);
-    expect(find.text('Memos & Handbooks'), findsOneWidget);
     expect(find.text('Range Estimate'), findsOneWidget);
     expect(find.text('Fuel vs EV Cost'), findsOneWidget);
     expect(find.text('Time-of-Use Savings'), findsOneWidget);
-    expect(find.text('Home Charger Setup'), findsOneWidget);
     expect(find.text('Nearby Stations'), findsOneWidget);
-    expect(find.text('Service & Inspection Memo'), findsOneWidget);
-    expect(find.text('Mod Compliance Check'), findsOneWidget);
-    expect(find.text('EV Warranty Handbook'), findsOneWidget);
     // 无使用记录时不渲染最近使用组
     expect(find.text('Recently used'), findsNothing);
   });
@@ -74,7 +69,7 @@ void main() {
   ) async {
     final container = await bootstrap(
       store: {
-        'toolsRecentUse': ['fuel-vs-ev', 'home-charger'],
+        'toolsRecentUse': ['fuel-vs-ev', 'range-estimate'],
       },
     );
 
@@ -90,7 +85,7 @@ void main() {
     expect(find.text('Recently used'), findsOneWidget);
     // 最近使用组 + 省钱计算组各渲染一次
     expect(find.text('Fuel vs EV Cost'), findsNWidgets(2));
-    expect(find.text('Home Charger Setup'), findsNWidgets(2));
+    expect(find.text('Range Estimate'), findsNWidgets(2));
   });
 
   testWidgets('fuel_ev_calc_page shows results for default inputs', (

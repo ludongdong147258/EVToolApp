@@ -5,19 +5,16 @@ import 'package:ev_tool_app/core/theme/app_colors.dart';
 
 /// 浮动胶囊底部导航（移植小程序 BottomNav）。
 ///
-/// 4 个 tab：充电记录 / 养车支出 / 实用工具 / 我的；
-/// [showToolsDot] 为工具 tab 的备忘录到期红点。
+/// 4 个 tab：充电记录 / 养车支出 / 实用工具 / 我的。
 class AppBottomNav extends StatelessWidget {
   const AppBottomNav({
     super.key,
     required this.currentIndex,
     this.onTap,
-    this.showToolsDot = false,
   });
 
   final int currentIndex;
   final ValueChanged<int>? onTap;
-  final bool showToolsDot;
 
   @override
   Widget build(BuildContext context) {
@@ -60,7 +57,6 @@ class AppBottomNav extends StatelessWidget {
             icon: Icons.build_rounded,
             label: 'Tools',
             isActive: currentIndex == 2,
-            showDot: showToolsDot,
             onTap: () => onTap?.call(2),
           ),
           _NavItem(
@@ -80,14 +76,12 @@ class _NavItem extends StatelessWidget {
     required this.icon,
     required this.label,
     required this.isActive,
-    this.showDot = false,
     this.onTap,
   });
 
   final IconData icon;
   final String label;
   final bool isActive;
-  final bool showDot;
   final VoidCallback? onTap;
 
   @override
@@ -106,29 +100,7 @@ class _NavItem extends StatelessWidget {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Stack(
-                clipBehavior: Clip.none,
-                children: [
-                  Icon(icon, size: 24, color: color),
-                  if (showDot)
-                    Positioned(
-                      top: -1,
-                      right: -4,
-                      child: Container(
-                        width: 8,
-                        height: 8,
-                        decoration: BoxDecoration(
-                          color: palette.error,
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: palette.surfaceCard,
-                            width: 1.5,
-                          ),
-                        ),
-                      ),
-                    ),
-                ],
-              ),
+              Icon(icon, size: 24, color: color),
               const SizedBox(height: 3),
               Text(
                 label,

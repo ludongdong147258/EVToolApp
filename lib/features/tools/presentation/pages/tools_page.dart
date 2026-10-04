@@ -48,39 +48,11 @@ const List<ToolEntry> toolEntries = <ToolEntry>[
     route: RouteNames.peakValleyCalc,
   ),
   ToolEntry(
-    id: 'home-charger',
-    title: 'Home Charger Setup',
-    desc: 'Estimate installation and running costs of a home charger.',
-    icon: Icons.ev_station,
-    route: RouteNames.homeChargerCalc,
-  ),
-  ToolEntry(
     id: 'nearby-stations',
     title: 'Nearby Stations',
     desc: 'Find charging stations nearby and navigate in one tap.',
     icon: Icons.map_outlined,
     route: RouteNames.nearbyStations,
-  ),
-  ToolEntry(
-    id: 'inspection-memo',
-    title: 'Service & Inspection Memo',
-    desc: 'Track inspection and service dates by registration and mileage.',
-    icon: Icons.verified_user_outlined,
-    route: RouteNames.inspectionMemo,
-  ),
-  ToolEntry(
-    id: 'mod-compliance',
-    title: 'Mod Compliance Check',
-    desc: 'Quick check on legality, filing, and risks of common mods.',
-    icon: Icons.tune,
-    route: RouteNames.modificationCompliance,
-  ),
-  ToolEntry(
-    id: 'warranty-handbook',
-    title: 'EV Warranty Handbook',
-    desc: 'EV warranty, lifetime coverage, and transfer rules by brand.',
-    icon: Icons.menu_book_outlined,
-    route: RouteNames.warrantyHandbook,
   ),
 ];
 
@@ -99,14 +71,9 @@ const List<ToolGroup> toolGroups = <ToolGroup>[
       'range-estimate',
       'fuel-vs-ev',
       'peak-valley',
-      'home-charger',
     ],
   ),
   ToolGroup(title: 'Maps', toolIds: <String>['nearby-stations']),
-  ToolGroup(
-    title: 'Memos & Handbooks',
-    toolIds: <String>['inspection-memo', 'mod-compliance', 'warranty-handbook'],
-  ),
 ];
 
 ToolEntry? findTool(String id) {
