@@ -60,7 +60,16 @@ const List<LegalSection> agreementSections = <LegalSection>[
     ],
   ),
   LegalSection(
-    title: '6. Disclaimer of Warranty',
+    title: '6. Subscriptions and Payments',
+    paragraphs: [
+      'The Service offers an optional auto-renewing subscription ("EV Pro") that unlocks premium features such as unlimited receipt OCR scans, annual report poster export, CSV export, and unlimited vehicle profiles. Current plans, prices, and billing periods are shown on the subscription screen before you purchase.',
+      'Subscriptions are processed entirely by Apple through your Apple ID. Payment is charged to your Apple ID account at confirmation of purchase, and the subscription renews automatically unless cancelled at least 24 hours before the end of the current period. Your Apple ID is charged for renewal within 24 hours before the current period ends.',
+      'You can view, change, or cancel your subscription at any time in your App Store account settings. If you cancel, the subscription remains active until the end of the current billing period. Refunds are handled by Apple according to Apple\'s policies; the Service does not process payments or refunds directly.',
+      'If you reinstall the app or switch devices, you can restore a previous subscription free of charge using the "Restore Purchases" option on the subscription screen with the same Apple ID.',
+    ],
+  ),
+  LegalSection(
+    title: '7. Disclaimer of Warranty',
     paragraphs: [
       'All calculations and statistics provided by the Service are for reference only. They may differ from actual results due to electricity pricing policies, parameter settings, or data entry errors. Any decision you make based on them is your own responsibility.',
       'The Service is provided on an "as is" and "as available" basis, without warranties of any kind. The Service does not guarantee uninterrupted operation and is not liable for losses caused by suspension or interruption due to maintenance, upgrades, or other causes beyond its reasonable control.',
@@ -68,14 +77,14 @@ const List<LegalSection> agreementSections = <LegalSection>[
     ],
   ),
   LegalSection(
-    title: '7. Intellectual Property',
+    title: '8. Intellectual Property',
     paragraphs: [
       'The interface design, code, icons, and related content of the Service are the intellectual property of the operator of the Service.',
       'No one may copy, republish, or use them for other commercial purposes without permission.',
     ],
   ),
   LegalSection(
-    title: '8. Changes to These Terms and Termination',
+    title: '9. Changes to These Terms and Termination',
     paragraphs: [
       'The Service may revise these Terms from time to time to reflect feature adjustments or legal requirements. Revised Terms will be published on this page with an updated date.',
       'If you continue to use the Service after the Terms are revised, you are deemed to have accepted the revised Terms.',
@@ -83,7 +92,7 @@ const List<LegalSection> agreementSections = <LegalSection>[
     ],
   ),
   LegalSection(
-    title: '9. Contact Us',
+    title: '10. Contact Us',
     paragraphs: [
       'If you have any questions or suggestions about these Terms, you may contact us by email at $contactEmail.',
     ],
@@ -112,9 +121,10 @@ const List<LegalSection> privacySections = <LegalSection>[
     title: '3. How Information Is Used',
     paragraphs: [
       'Providing core features: Saving and displaying your charging records, computing statistics (cumulative cost, cost per kWh, and so on), and running tools such as fuel-versus-EV comparison and time-of-use pricing calculations. These computations run on your device using the data you enter.',
-      'Third-party feature calls: Some features rely on external services, and data is sent only when you actively trigger the corresponding feature. When you search for nearby charging stations, your current coordinates are sent over an encrypted connection (HTTPS) to OpenStreetMap (the Overpass API, https://www.openstreetmap.org) to query charging station locations; that query is subject to the OpenStreetMap Foundation privacy policy (https://wiki.osmfoundation.org/wiki/Privacy_Policy). If you use receipt scanning, a single compressed image of the receipt is sent over an encrypted connection (HTTPS) to Zhipu AI (https://open.bigmodel.cn), a third-party optical character recognition service, to extract the text, and is handled under that provider\'s own privacy policy. Converting coordinates into place names is performed on your device by the system location service. If you deny the relevant permission, nothing is sent.',
+      'Third-party feature calls: Some features rely on external services, and data is sent only when you actively trigger the corresponding feature. When you search for nearby charging stations, your current coordinates are sent over an encrypted connection (HTTPS) to OpenStreetMap (the Overpass API, https://www.openstreetmap.org) to query charging station locations; that query is subject to the OpenStreetMap Foundation privacy policy (https://wiki.osmfoundation.org/wiki/Privacy_Policy). If you use receipt scanning, a single compressed image of the receipt is sent over an encrypted connection (HTTPS) to Zhipu AI (https://open.bigmodel.cn), a third-party optical character recognition service, to extract the text, and is handled under that provider\'s own privacy policy. Converting coordinates into place names uses Apple\'s system geocoding service, which sends the coordinates to Apple over an encrypted connection (HTTPS) and is subject to Apple\'s own privacy policy. If you deny the relevant permission, nothing is sent.',
       'Receipt images may contain personal details (such as your name or phone number). Only scan receipts you are comfortable sending to the recognition service for processing.',
-      'No analytics or tracking: The app contains no third-party analytics, advertising, or tracking SDKs, and we do not collect usage data. We do not track you across other apps or websites, and we do not sell or share your information for advertising or tracking purposes.',
+      'Subscriptions: If you purchase an EV Pro subscription, the app uses RevenueCat (https://www.revenuecat.com), a subscription management service, to verify and deliver your subscription across your devices. For this purpose, RevenueCat receives an anonymous, app-generated identifier and your subscription status (including transaction identifiers from Apple). This information is used solely to deliver the subscription features you paid for and is handled under the RevenueCat privacy policy (https://www.revenuecat.com/legal/privacy).',
+      'No advertising or tracking: The app contains no third-party analytics, advertising, or tracking SDKs, does not collect usage data, and does not track you across other apps or websites. We do not sell or share your information for advertising or tracking purposes.',
     ],
   ),
   LegalSection(
@@ -135,7 +145,7 @@ const List<LegalSection> privacySections = <LegalSection>[
   LegalSection(
     title: '6. Third-Party Services and Permissions',
     paragraphs: [
-      'Some features rely on third-party services, including map and location services, receipt recognition, and product search and affiliate links. When you use these features, the data described in Section 3 is transmitted to the corresponding service provider and is subject to that provider\'s own privacy policy.',
+      'Some features rely on third-party services, including map and location services, receipt recognition, and subscription management (RevenueCat). Where product search and affiliate links are offered, the data described in Section 3 is transmitted to the corresponding service provider and is subject to that provider\'s own privacy policy. Not all features may be available in all versions or regions.',
       'If a feature requires a device permission (such as location, camera, or photo library), the Service explains the purpose at the time of use. You may grant or revoke these permissions at any time in your device settings; related features will degrade gracefully when a permission is denied.',
     ],
   ),

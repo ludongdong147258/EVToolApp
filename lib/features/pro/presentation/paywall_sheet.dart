@@ -2,9 +2,11 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:purchases_flutter/purchases_flutter.dart';
 
 import 'package:ev_tool_app/core/domain/date_utils.dart';
+import 'package:ev_tool_app/core/routing/route_names.dart';
 import 'package:ev_tool_app/core/theme/app_colors.dart';
 import 'package:ev_tool_app/core/widgets/app_primary_button.dart';
 import 'package:ev_tool_app/core/widgets/app_sheet.dart';
@@ -54,6 +56,17 @@ String _planTitle(Package p) => switch (p.packageType) {
   PackageType.annual => 'Yearly',
   PackageType.lifetime => 'Lifetime',
   _ => p.identifier,
+};
+
+/// 价格周期后缀（3.1.2：订阅价格需明确对应周期）；终身买断无周期。
+String _planPeriod(Package p) => switch (p.packageType) {
+  PackageType.weekly => '/week',
+  PackageType.monthly => '/month',
+  PackageType.twoMonth => '/2 months',
+  PackageType.threeMonth => '/3 months',
+  PackageType.sixMonth => '/6 months',
+  PackageType.annual => '/year',
+  _ => '',
 };
 
 /// 到期时间 → "Feb 12, 2027"（复用 date_utils 英文月份缩写）。
@@ -222,11 +235,32 @@ class _PaywallSheetState extends ConsumerState<_PaywallSheet> {
           const SizedBox(height: 4),
           Center(
             child: Text(
-              'Cancel anytime. Manage your subscription in the App Store.',
+              'Payment is charged to your Apple ID account at confirmation of '
+              'purchase. Subscriptions auto-renew unless cancelled at least 24 '
+              'hours before the end of the current period. Cancel anytime in '
+              'your App Store subscription settings.',
               textAlign: TextAlign.center,
               style: theme.textTheme.bodySmall?.copyWith(
                 color: theme.colorScheme.onSurfaceVariant,
               ),
+            ),
+          ),
+          const SizedBox(height: 4),
+          // 3.1.2：自动续订订阅必须在付费墙提供隐私政策与使用条款入口
+          Center(
+            child: Wrap(
+              alignment: WrapAlignment.center,
+              spacing: 16,
+              children: [
+                TextButton(
+                  onPressed: () => context.push(RouteNames.privacy),
+                  child: const Text('Privacy Policy'),
+                ),
+                TextButton(
+                  onPressed: () => context.push(RouteNames.agreement),
+                  child: const Text('Terms of Use'),
+                ),
+              ],
             ),
           ),
         ],
@@ -395,7 +429,7 @@ class _PlanCard extends StatelessWidget {
                       ],
                     ),
                     Text(
-                      plan.storeProduct.priceString,
+                      '${plan.storeProduct.priceString}${_planPeriod(plan)}',
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: theme.colorScheme.onSurfaceVariant,
                       ),
