@@ -23,8 +23,8 @@ class OcrException implements Exception {
 /// Key 未配置错误码（调用方据此隐藏入口）
 const String ocrKeyMissingCode = 'OCR_KEY_MISSING';
 
-/// 智谱开放平台地址
-const String ocrApiBase = 'https://open.bigmodel.cn';
+/// Z.ai（智谱国际站）开放平台地址
+const String ocrApiBase = 'https://api.z.ai';
 
 /// 智谱「模型访问量过大」错误码：唯一可重试/可降级的错误
 const String overloadErrorCode = '1305';
@@ -48,7 +48,7 @@ const int ocrMaxOutputTokens = 512;
 /// base64 图片体积上限（估算原始字节），超过则要求重拍
 const int ocrMaxImageBytes = 2 * 1024 * 1024;
 
-/// 模型候选（主模型 glm-4v-flash，过载降级 glm-4.6v-flash）
+/// 模型候选（主模型 glm-4.6v-flash，过载降级 glm-4v-flash）
 class _OcrModel {
   const _OcrModel(this.name, this.supportsThinking);
 
@@ -57,8 +57,8 @@ class _OcrModel {
 }
 
 const List<_OcrModel> _ocrModelChain = [
-  _OcrModel('glm-4v-flash', false),
   _OcrModel('glm-4.6v-flash', true),
+  _OcrModel('glm-4v-flash', false),
 ];
 
 /// 充电小票 OCR 识别仓储（移植小程序 src/services/ocrService.js）。

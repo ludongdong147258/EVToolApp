@@ -109,15 +109,15 @@ void main() {
       final options = calls.single;
       expect(
         options.uri.toString(),
-        'https://open.bigmodel.cn/api/paas/v4/chat/completions',
+        'https://api.z.ai/api/paas/v4/chat/completions',
       );
       expect(
         (options.headers['Authorization'] as String?) ?? '',
         'Bearer TEST_KEY',
       );
       final body = options.data as Map<dynamic, dynamic>;
-      expect(body['model'], 'glm-4v-flash');
-      expect(body.containsKey('thinking'), false);
+      expect(body['model'], 'glm-4.6v-flash');
+      expect(body['thinking'], {'type': 'disabled'});
       expect(body['temperature'], ocrTemperature);
       expect(body['max_tokens'], ocrMaxOutputTokens);
       final messages = body['messages'] as List<dynamic>;
@@ -250,11 +250,11 @@ void main() {
       final result = await repo.recognizeReceipt('/tmp/receipt.jpg');
 
       expect(calls.length, 2);
-      expect((calls[1].data as Map)['model'], 'glm-4v-flash');
+      expect((calls[1].data as Map)['model'], 'glm-4.6v-flash');
       expect(result?.cost, '18.6');
     });
 
-    test('主模型 3 次均过载后降级 glm-4.6v-flash（显式关闭思考模式）', () async {
+    test('主模型 3 次均过载后降级 glm-4v-flash（无 thinking 字段）', () async {
       final calls = <RequestOptions>[];
       final repo = _buildRepo([
         overload(),
@@ -267,8 +267,8 @@ void main() {
 
       expect(calls.length, 4);
       final fallbackBody = calls[3].data as Map<dynamic, dynamic>;
-      expect(fallbackBody['model'], 'glm-4.6v-flash');
-      expect(fallbackBody['thinking'], {'type': 'disabled'});
+      expect(fallbackBody['model'], 'glm-4v-flash');
+      expect(fallbackBody.containsKey('thinking'), false);
       expect(result?.cost, '20');
     });
 
